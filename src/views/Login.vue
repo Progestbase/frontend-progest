@@ -88,9 +88,18 @@ export default {
           password: this.password
         });
 
-        localStorage.setItem('token', response.data.token);
-        localStorage.setItem('name', response.data.name);
-        this.$router.push('/dashboard');
+        // Verifique se a resposta contém os dados necessários
+        if (response.data && response.data.token && response.data.user) {
+          // Salvar no localStorage
+          localStorage.setItem('token', response.data.token);
+          localStorage.setItem('name', response.data.user.name);
+          localStorage.setItem('role', response.data.user.role);
+
+          // Redireciona para o dashboard
+          this.$router.push('/dashboard');
+        } else {
+          this.errorMessage = 'Falha no login. Dados incompletos.';
+        }
       } catch (error) {
         this.errorMessage = 'Email ou senha inválidos';
       } finally {

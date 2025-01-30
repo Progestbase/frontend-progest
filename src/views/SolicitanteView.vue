@@ -1,6 +1,9 @@
-<template>
-  <HeaderSolicitante :userName="userName" :userRole="userRole" />
+<template class="">
+  <div class="bg-[#f7f8fc] min-h-screen">
+    <HeaderSolicitante :userName="userName" :userRole="userRole" />
   <ProductSearch />
+  </div>
+  
 </template>
 
 <script>

@@ -77,8 +77,8 @@ export default {
     },
     methods: {
         navigateToShop() {
-    this.$router.push('/produtos');
-},
+            this.$router.push('/produtos');
+        },
 
         async loadCart() {
             try {
@@ -118,7 +118,49 @@ export default {
         },
         updateCartCount() {
             this.qtdItensCarrinho = this.cart.reduce((acc, item) => acc + item.quantity, 0);
+        },
+        async finalizarPedido() {
+            try {
+                const response = await axios.post(`${this.apiUrl}/orders`, {
+                    user_id: 10, // Supondo que você armazena o ID do usuário no token
+                    justification: this.justificativa,
+                    password: 'sua_senha', // Você deve capturar a senha de forma segura
+                    items: this.cart.map(item => ({
+                        product_id: item.product.id,
+                        quantity: item.quantity,
+                    })),
+                }, {
+                    headers: {
+                        Authorization: `Bearer ${this.token}`,
+                    },
+                });
+
+                await this.clearCart();
+
+                // Limpar o carrinho e redirecionar ou mostrar mensagem de sucesso
+                this.cart = [];
+                this.updateCartCount();
+                alert(response.data.message); // Mensagem de sucesso
+
+            } catch (error) {
+                console.error('Erro ao finalizar o pedido:', error);
+            }
+        },
+        // Método para apagar todos os itens do carrinho no banco de dados
+        async clearCart() {
+            try {
+                const response = await axios.delete(`${this.apiUrl}/cart/items`, {
+                    headers: {
+                        Authorization: `Bearer ${this.token}`,
+                    },
+                });
+
+                console.log('Carrinho limpo:', response.data);
+            } catch (error) {
+                console.error('Erro ao limpar o carrinho:', error);
+            }
         }
+
     },
 };
 </script>

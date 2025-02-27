@@ -5,7 +5,9 @@
       <a href="/itens" class="text-white underline-effect">Itens</a>
       <a href="/historico-pedidos" class="text-white underline-effect">Histórico de Pedidos</a>
       <a href="/devolucoes" class="text-white underline-effect">Devoluções</a>
-      <a href="/finalizar-pedido" class="text-white underline-effect">Finalizar Pedido</a>
+      <router-link to="/pedido" class="text-white underline-effect">Finalizar Pedido</router-link>
+
+
     </nav>
     <div class="flex items-center space-x-4">
       <div class="text-right">
@@ -19,7 +21,7 @@
 </template>
 
 <script>
-import LogoutButton from './LogoutButton.vue';
+import LogoutButton from '../LogoutButton.vue';
 
 export default {
   name: 'Header',

@@ -1,18 +1,19 @@
 <template class="">
   <div class="bg-[#f7f8fc] min-h-screen">
     <HeaderSolicitante :userName="userName" :userRole="userRole" />
-  <ProductSearch />
+    <ProductSearch />
   </div>
   
 </template>
 
 <script>
-import HeaderSolicitante from '@/components/HeaderSolicitante.vue';
-import ProductSearch from '@/components/ProductSearch.vue';
+import HeaderSolicitante from '@/components/roleSolicitante/HeaderSolicitante.vue';
+import ProductSearch from '@/components/roleSolicitante/ProductSearch.vue';
 import axios from 'axios';
+import { API_URL } from '@/config';
 
 export default {
-  name: "SolicitanteView",
+  name: "ItensView",
   components: {
     HeaderSolicitante,
     ProductSearch,
@@ -20,7 +21,8 @@ export default {
   data() {
     return {
       userName: "",
-      userRole: "Solicitante", // Ajuste conforme necessário
+      userRole: "",
+      apiUrl: API_URL, // Ajuste conforme necessário
     };
   },
   created() {
@@ -40,7 +42,7 @@ export default {
           Authorization: `Bearer ${token}`,
         };
 
-        const response = await axios.get("http://localhost:8000/api/user", {
+        const response = await axios.get(`${this.apiUrl}/user`, {
           headers,
         });
 

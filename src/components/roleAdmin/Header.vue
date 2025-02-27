@@ -13,7 +13,7 @@
 </template>
 
 <script>
-import LogoutButton from './LogoutButton.vue';
+import LogoutButton from '../LogoutButton.vue';
 
 export default {
   name: 'Header',

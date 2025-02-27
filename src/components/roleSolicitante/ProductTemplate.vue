@@ -1,6 +1,6 @@
 <template>
   <div class="flex items-center gap-4">
-    <div class="flex w-full items-center rounded-l-lg bg-white p-8">
+    <div class="flex w-full items-center rounded-l-lg bg-white p-8 border border-azul-eclipse">
       <img :src="image" :alt="productName" class="mr-6 max-w-full max-h-32 object-contain rounded-md">
       <div class="space-y-2 flex-1">
         <h2 class="text-xl font-semibold text-azul-eclipse">{{ productName }}</h2>
@@ -9,14 +9,14 @@
       </div>
     </div>
 
-    <div class="flex flex-col items-center space-y-2 bg-white p-[60px] rounded-r-lg">
+    <div class="flex flex-col items-center space-y-2 bg-white p-[60px] rounded-r-lg border border-azul-eclipse">
       <label for="quantidade" class="text-azul-eclipse font-medium">Quantidade</label>
       <input
         type="number"
-        v-model="quantity"
+        v-model.number="quantity"
         name="quantidade"
         id="quantidade"
-        class="w-20 p-2 border border-gray-300 rounded-lg text-center focus:outline-none focus:ring-2 focus:ring-blue-500"
+        class="w-20 p-2 border border-gray-300 rounded-lg text-center focus:outline-none focus:ring-2 focus:ring-azul-eclipse"
       />
     </div>
   </div>
@@ -26,29 +26,31 @@
 export default {
   name: 'ProductTemplate',
   props: {
+    productId: Number, // ID do produto
     productName: String,
     unit: String,
     image: String,
     brand: String,
-    productId: Number,
   },
   data() {
     return {
-      quantity: '' as string | number, // Quantidade selecionada para este produto
+      quantity: "", // Inicializado como número
     };
   },
   methods: {
     updateQuantity() {
-      // Emitir a quantidade alterada para o componente pai
       this.$emit('update-quantity', {
         productId: this.productId,
         quantity: this.quantity,
       });
     },
+    resetQuantity() {
+      this.quantity = ""; // Reseta a quantidade
+    },
   },
   watch: {
-    quantity(newQuantity) {
-      this.updateQuantity(); // Quando a quantidade mudar, atualizar no pai
+    quantity() {
+      this.updateQuantity(); // Chama updateQuantity quando a quantidade muda
     },
   },
 };

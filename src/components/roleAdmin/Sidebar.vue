@@ -15,7 +15,7 @@
           >
             <img
               class="w-8"
-              src="../../src/components/icons/casa.svg"
+              src="../../../src/components/icons/casa.svg"
               alt="Ícone casa"
             />Dashboard
           </router-link>
@@ -28,13 +28,13 @@
           >
             <img
               class="w-8"
-              src="../../src/components/icons/cadastro.svg"
+              src="../../../src/components/icons/cadastro.svg"
               alt="Ícone cadastros"
             />
             Cadastros
             <img
               class="ml-16 transition-transform duration-300 group-hover:rotate-90"
-              src="../../src/components/icons/seta.svg"
+              src="../../../src/components/icons/seta.svg"
               alt="Ícone seta"
             />
           </div>
@@ -106,7 +106,7 @@
           >
             <img
               class="w-8"
-              src="../../src/components/icons/entradas.svg"
+              src="../../../src/components/icons/entradas.svg"
               alt="Ícone entradas"
             />
             Entradas
@@ -121,7 +121,7 @@
           >
             <img
               class="w-8"
-              src="../../src/components/icons/estoque.svg"
+              src="../../../src/components/icons/estoque.svg"
               alt="Ícone estoque"
             />
             Estoque
@@ -135,13 +135,13 @@
           >
             <img
               class="w-8"
-              src="../../src/components/icons/movimentacoes.svg"
+              src="../../../src/components/icons/movimentacoes.svg"
               alt="Ícone movimentações"
             />
             Movimentações
             <img
               class="ml-[22px] transition-transform duration-300 group-hover:rotate-90"
-              src="../../src/components/icons/seta.svg"
+              src="../../../src/components/icons/seta.svg"
               alt="Ícone seta"
             />
           </div>
@@ -172,13 +172,13 @@
           >
             <img
               class="w-8"
-              src="../../src/components/icons/relatorios.svg"
+              src="../../../src/components/icons/relatorios.svg"
               alt="Ícone relatórios"
             />
             Relatórios
             <img
               class="ml-16 transition-transform duration-300 group-hover:rotate-90"
-              src="../../src/components/icons/seta.svg"
+              src="../../../src/components/icons/seta.svg"
               alt="Ícone seta"
             />
           </div>

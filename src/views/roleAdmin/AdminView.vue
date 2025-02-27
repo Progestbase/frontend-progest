@@ -3,7 +3,7 @@
       <Sidebar />
   
       <main class="col-span-10 grid grid-rows-[auto,1fr]">
-        <Header :userName="userName" :userRole="userRole" />
+        <Header :userName="userName" :userRole="userRole"/>
   
         <section class="grid grid-cols-3 gap-4 p-6 h-2/3 text-off-white">
           <Card
@@ -21,10 +21,12 @@
   </template>
   
   <script>
-  import Sidebar from "@/components/Sidebar.vue";
-  import Header from "@/components/Header.vue";
-  import Card from "@/components/Card.vue";
+  import Sidebar from "@/components/roleAdmin/Sidebar.vue";
+  import Header from "@/components/roleAdmin/Header.vue";
+  import Card from "@/components/roleAdmin/Card.vue";
   import axios from "axios";
+  import { API_URL } from '@/config';
+
   
   export default {
     components: {
@@ -34,6 +36,7 @@
     },
     data() {
       return {
+        apiUrl: API_URL,
         userName: "",
         userRole: "Admin", // Você pode ajustar conforme necessário
         cards: [
@@ -91,7 +94,7 @@
           };
   
           // Faz a requisição para obter informações do usuário
-          const response = await axios.get("http://localhost:8000/api/user", {
+          const response = await axios.get(`${this.apiUrl}/user`, {
             headers,
           });
   
@@ -113,16 +116,16 @@
           };
   
           const responseCountUsers = await axios.get(
-            "http://localhost:8000/api/countUsers",
+            `${this.apiUrl}/countUsers`,
             { headers }
           );
   
           const responseBelowMinimumStock = await axios.get(
-            "http://localhost:8000/api/count-below-minimum-stock",
+            `${this.apiUrl}/count-below-minimum-stock`,
             { headers }
           );
           const responseExpiringSoon = await axios.get(
-            "http://localhost:8000/api/count-expiring-soon",
+            `${this.apiUrl}/count-expiring-soon`,
             { headers }
           );
   

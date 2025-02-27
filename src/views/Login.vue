@@ -68,6 +68,7 @@
 
 <script>
 import axios from 'axios';
+import { API_URL } from '@/config';
 
 export default {
   data() {
@@ -75,7 +76,8 @@ export default {
       email: '',
       password: '',
       loading: false,
-      errorMessage: ''
+      errorMessage: '',
+      apiUrl: API_URL
     };
   },
   methods: {
@@ -83,7 +85,7 @@ export default {
       this.loading = true;
       this.errorMessage = '';
       try {
-        const response = await axios.post('http://localhost:8000/api/login', {
+        const response = await axios.post(`${this.apiUrl}/login`, {
           email: this.email,
           password: this.password
         });

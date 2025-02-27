@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import DashboardView from '@/views/DashboardView.vue';
+import PedidoView from '../views/roleSolicitante/PedidoView.vue';
 import Login from '../views/Login.vue';
 import Register from '../views/Register.vue';
 
@@ -22,6 +23,13 @@ const router = createRouter({
       component: DashboardView,
       meta: { requiresAuth: true }, // Rota protegida
     },
+    {
+      path: '/pedido',
+      name: 'pedido',
+      component: PedidoView,
+      meta: { requiresAuth: true }, // Rota protegida
+    },
+
     {
       path: '/:pathMatch(.*)*', // Rota genérica para qualquer caminho não definido
       redirect: (to) => {

@@ -4,7 +4,7 @@
     <AdminView v-if="userRole === 'admin'" />
     
     <!-- Exibe SolicitanteView se a role for solicitante -->
-    <SolicitanteView v-if="userRole === 'solicitante'" />
+    <ItensView v-if="userRole === 'solicitante'" />
     
     <!-- Caso a role não seja reconhecida, exibe uma mensagem de erro -->
     <p v-if="userRole === null">Acesso negado! Role não reconhecida.</p>
@@ -12,14 +12,14 @@
 </template>
 
 <script>
-import AdminView from '@/views/AdminView.vue';
-import SolicitanteView from '@/views/SolicitanteView.vue';
+import AdminView from '@/views/roleAdmin/AdminView.vue';
+import ItensView from '@/views/roleSolicitante/ItensView.vue';
 
 export default {
   name: 'DashboardView',
   components: {
     AdminView,
-    SolicitanteView
+    ItensView
   },
   data() {
     return {

@@ -3,6 +3,7 @@ import DashboardView from '@/views/DashboardView.vue';
 import PedidoView from '../views/roleSolicitante/PedidoView.vue';
 import Login from '../views/Login.vue';
 import Register from '../views/Register.vue';
+import HistoricoDePedidosView from '@/views/roleSolicitante/HistoricoDePedidosView.vue';
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -27,6 +28,12 @@ const router = createRouter({
       path: '/pedido',
       name: 'pedido',
       component: PedidoView,
+      meta: { requiresAuth: true }, // Rota protegida
+    },
+    {
+      path: '/historico',
+      name: 'historico',
+      component: HistoricoDePedidosView,
       meta: { requiresAuth: true }, // Rota protegida
     },
 

@@ -3,7 +3,7 @@
     <h2 class="text-4xl font-semibold text-white ml-2">Progest - Base</h2>
     <nav class="flex items-center space-x-10 text-xl">
       <a href="/itens" class="text-white underline-effect">Itens</a>
-      <a href="/historico-pedidos" class="text-white underline-effect">Histórico de Pedidos</a>
+      <router-link to="/historico" class="text-white underline-effect">Histórico de Pedidos</router-link>
       <a href="/devolucoes" class="text-white underline-effect">Devoluções</a>
       <router-link to="/pedido" class="text-white underline-effect">Finalizar Pedido</router-link>
 

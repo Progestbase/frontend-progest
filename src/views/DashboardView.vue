@@ -1,10 +1,10 @@
 <template>
   <div>
     <!-- Exibe AdminView se a role for admin -->
-    <AdminView v-if="userRole === 'admin'" />
+    <AdminView v-if="userRole === 'A'" />
     
     <!-- Exibe SolicitanteView se a role for solicitante -->
-    <ItensView v-if="userRole === 'solicitante'" />
+    <ItensView v-if="userRole === 'S'" />
     
     <!-- Caso a role não seja reconhecida, exibe uma mensagem de erro -->
     <p v-if="userRole === null">Acesso negado! Role não reconhecida.</p>

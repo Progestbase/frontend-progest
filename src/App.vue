@@ -1,8 +1,9 @@
 <template>
-  <router-view />
+  <div id="app">
+    <router-view />
+  </div>
 </template>
-
-<script lang="ts">
+<script >
 import { defineComponent } from 'vue';
 
 export default defineComponent({
@@ -10,6 +11,6 @@ export default defineComponent({
 });
 </script>
 
-<style>
+<style lang="scss">
 
 </style>

@@ -8,6 +8,7 @@ import HistoricoDePedidosView from '@/views/roleSolicitante/HistoricoDePedidosVi
 // cadastros
 import Home from '@/views/Home.vue';
 import About from '@/views/About.vue';
+import Users from '../views/cadastros/Users.vue';
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -37,6 +38,12 @@ const router = createRouter({
       name: 'dashboard',
       component: DashboardView,
       meta: { requiresAuth: true }, // Rota protegida
+    },
+    {
+      path: '/users',
+      name: 'users',
+      component: Users,
+      meta: { requiresAuth: true},
     },
     {
       path: '/pedido',

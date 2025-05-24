@@ -1,0 +1,66 @@
+import { createStore } from 'vuex';
+
+export default createStore({
+  state: {
+    userToken: localStorage.getItem('token') || null,
+    modalData: {
+      modalTitle: "",
+      modalFunction: "ADD",
+      modalData: {
+        status: 'A',
+        matricula: '',
+        funcao: 'L',
+        name: '',
+        cpf: '',
+        email: '',
+        password: ''
+      }
+    },
+    listUsers: [],
+    idDataLoaded: ""
+  },
+  mutations: {
+    setUserToken(state, token) {
+      state.userToken = token;
+      localStorage.setItem('token', token);
+    },
+    clearUserToken(state) {
+      state.userToken = null;
+      localStorage.removeItem('token');
+    },
+    setModalData(state, payload) {
+      state.modalData.modalData = { ...state.modalData.modalData, ...payload };
+    },
+    resetModalData(state) {
+      state.modalData.modalData = {
+        status: 'A',
+        matricula: '',
+        funcao: 'L',
+        name: '',
+        cpf: '',
+        email: '',
+        password: ''
+      };
+    },
+    setListUsers(state, users) {
+      state.listUsers = users;
+    },
+    setModalTitle(state, title) {
+      state.modalData.modalTitle = title;
+    },
+    setModalFunction(state, func) {
+      state.modalData.modalFunction = func;
+    },
+    setIdDataLoaded(state, id) {
+      state.idDataLoaded = id;
+    }
+  },
+  actions: {
+    // Você pode adicionar ações assíncronas aqui se necessário
+  },
+  getters: {
+    getUserToken: state => state.userToken,
+    getModalData: state => state.modalData.modalData,
+    getListUsers: state => state.listUsers
+  }
+});

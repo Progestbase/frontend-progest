@@ -7,6 +7,7 @@
           <div class="tab-pane fade show active" id="aba_dados" role="tabpanel" aria-labelledby="aba_dados-tab">
 
             <form autocomplete="off">
+
               <div class="row">
                 <div class="col-md-4">
                   <div class="mb-3">
@@ -21,43 +22,81 @@
                   <div class="mb-3">
                     <label class="form-label" for="Matricula">Matricula</label>
                     <input type="text" class="form-control text-uppercase" placeholder="" v-model="modalData.matricula">
-
                   </div>
                 </div>
                 <div class="col-md-4">
                   <div class="mb-3">
                     <label class="form-label">Função</label>
-                    <select class="form-select" v-model="modalData.funcao">
-                      <option value="L">Leitos</option>
-                      <option value="T">Transporte</option>
+                    <select class="form-select" v-model="modalData.usuario_tipo">
+                      <option v-for="tipo in listTiposUsuarioStore" :key="tipo.id" :value="tipo.id">
+                        {{ tipo.nome }}
+                      </option>
                     </select>
                   </div>
                 </div>
+              </div>
+
+              <div class="row">
                 <div class="col-md-12">
                   <div class="mb-3">
                     <label class="form-label" for="UserNome">Nome</label>
                     <input type="text" class="form-control text-uppercase" placeholder="" v-model="modalData.name">
                   </div>
                 </div>
-                <div class="col-md-12">
-                  <div class="mb-3">
-                    <label class="form-label" for="UserCpf">CPF</label>
-                    <input type="text" class="form-control text-uppercase" placeholder="" v-model="modalData.cpf">
-                  </div>
-                </div>
+              </div>
+
+              <div class="row">
                 <div class="col-md-12">
                   <div class="mb-3">
                     <label class="form-label" for="UserEmail">E-mail</label>
                     <input type="text" class="form-control text-lowercase" placeholder="" v-model="modalData.email">
                   </div>
                 </div>
-                <div class="col-md-12">
+              </div>
+
+              <div class="row">
+                <div class="col-md-4">
+                  <div class="mb-3">
+                    <label class="form-label" for="UserCpf">CPF</label>
+                    <input type="text" class="form-control text-uppercase" placeholder="" v-model="modalData.cpf"
+                      v-mask="'###.###.###-##'">
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <div class="mb-3">
+                    <label class="form-label" for="UserTelefone">Telefone</label>
+                    <input type="text" class="form-control" placeholder="(99) 99999-9999" v-model="modalData.telefone"
+                      v-mask="'(##) #####-####'">
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <div class="mb-3">
+                    <label class="form-label" for="UserNascimento">Data de Nascimento</label>
+                    <input type="text" class="form-control" placeholder="dd/mm/aaaa" v-model="modalData.nascimento"
+                      v-mask="'##/##/####'">
+                  </div>
+                </div>
+              </div>
+
+              <div class="row">
+                <div class="col-md-6">
                   <div class="mb-3">
                     <label class="form-label" for="UserPassword">Senha</label>
                     <input type="password" class="form-control" placeholder="" v-model="modalData.password">
                   </div>
                 </div>
+                <div class="col-md-6">
+                  <div class="mb-3">
+                    <label class="form-label" for="User">Unidade Consumidora</label>
+                    <select class="form-select" v-model="modalData.unidade_consumidora_id">
+                      <option v-for="unidade in listUnidadesStore" :key="unidade.id" :value="unidade.id">
+                        {{ unidade.nome }}
+                      </option>
+                    </select>
+                  </div>
+                </div>
               </div>
+
             </form>
 
           </div>
@@ -70,7 +109,7 @@
             <i class="mdi mdi-close-thick font-size-15"></i> Fechar</button>
           <button type="submit" class="btn btn-success" data-bs-target="#success-btn" id="btn-save-event"
             v-on:click="add_UP_User()"><i class="mdi mdi-check-bold font-size-15"></i> {{
-              modalFunction == 'ADD' ? 'Salvar' : 'Atualizar' }}</button>
+              modalFunction === 'ADD' ? 'Salvar' : 'Atualizar' }}</button>
         </div>
       </div>
 
@@ -85,7 +124,8 @@ import Funcoes from '@/functions/cad_usuarios.js';
 export default {
   name: 'ModalUser01',
   components: {
-    ModalBase01
+    ModalBase01,
+    Funcoes
   },
   props: ['idModal', 'functions'],
   data() {
@@ -94,19 +134,26 @@ export default {
     };
   },
   mounted() {
-    // Código que deve ser executado quando o componente é montado
+    this.listTiposUsuario();
+    this.listUnidades();
   },
-methods: {
-  add_UP_User() {
-    const content = {
-      $axios: this.$axios,
-      $store: this.$store,
-      $toastr: this.$toastr,
-      modalData: JSON.parse(JSON.stringify(this.modalData)) // Cópia profunda
-    };
-    this.functions.ADD_UP(content, this.modalFunction); // Use a prop functions
-  }
-},
+  methods: {
+    add_UP_User() {
+      const content = {
+        $axios: this.$axios,
+        $store: this.$store,
+        $toastr: this.$toastr,
+        modalData: JSON.parse(JSON.stringify(this.modalData))
+      };
+      this.functions.ADD_UP(this, this.modalFunction);
+    },
+    listTiposUsuario() {
+      Funcoes.listTiposUsuario(this);
+    },
+    listUnidades(){
+      Funcoes.listUnidades(this);
+    }
+  },
   computed: {
     modalTitle() {
       return this.$store.state.modalData.modalTitle;
@@ -116,18 +163,16 @@ methods: {
     },
     modalFunction() {
       return this.$store.state.modalData.modalFunction;
+    },
+    listTiposUsuarioStore() {
+      return this.$store.state.listTiposUsuario;
+    },
+    listUnidadesStore() {
+      return this.$store.state.listUnidades;
     }
   },
   state: {
     modalData: {
-      status: 'A', // Valor padrão (Ativo)
-      matricula: '',
-      funcao: 'L', // Valor padrão (Leitos)
-      name: '',
-      cpf: '',
-      email: '',
-      password: '',
-      // Adicione outras propriedades conforme necessário
     },
     // ... outros estados
   },
@@ -143,13 +188,7 @@ methods: {
     resetModalData(state) {
       // Reseta para os valores iniciais
       state.modalData = {
-        status: 'A',
-        matricula: '',
-        funcao: 'L',
-        name: '',
-        cpf: '',
-        email: '',
-        password: ''
+      
       };
     }
     // ... outras mutations

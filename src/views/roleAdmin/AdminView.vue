@@ -4,7 +4,7 @@
     <Sidebar class="sidebar" />
     <!-- Conteúdo principal -->
     <main class="content">
-      <Header :userName="userName" :userRole="userRole" />
+      <Header :userName="userName" :userRole="userRole" :headerName="headerName" />
       <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 p-6 h-2/3 text-off-white">
         <Card v-for="(card, index) in cards" :key="index" :title="card.title" :number="card.number" :icon="card.icon"
           :cardClass="card.cardClass" :buttonClass="card.buttonClass" />
@@ -30,7 +30,8 @@ export default {
     return {
       apiUrl: API_URL,
       userName: "",
-      userRole: "Admin", // Você pode ajustar conforme necessário
+      userRole: "Admin",
+      headerName: '',
       cards: [
         {
           title: "Pedidos pendentes",

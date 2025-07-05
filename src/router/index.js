@@ -1,6 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import DashboardView from '@/views/DashboardView.vue';
-import PedidoView from '../views/roleSolicitante/PedidoView.vue';
 import Login from '../views/Login.vue';
 import Register from '../views/Register.vue';
 import HistoricoDePedidosView from '@/views/roleSolicitante/HistoricoDePedidosView.vue';
@@ -9,6 +8,9 @@ import HistoricoDePedidosView from '@/views/roleSolicitante/HistoricoDePedidosVi
 import Home from '@/views/Home.vue';
 import About from '@/views/About.vue';
 import Users from '../views/cadastros/Users.vue';
+import TiposUsuario from '../views/cadastros/TiposUsuario.vue';
+import Unidades from '../views/cadastros/Unidades.vue';
+import Produtos from '../views/cadastros/Produtos.vue';
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -46,9 +48,21 @@ const router = createRouter({
       meta: { requiresAuth: true},
     },
     {
-      path: '/pedido',
-      name: 'pedido',
-      component: PedidoView,
+      path: '/tiposUsuario',
+      name: 'tiposUsuario',
+      component: TiposUsuario,
+      meta: {requiresAuth: true},
+    },
+    {
+      path: '/unidades',
+      name: 'unidades',
+      component: Unidades,
+      meta: { requireAuth: true },
+    },    
+    {
+      path: '/produtos',
+      name: 'produtos',
+      component: Produtos,
       meta: { requiresAuth: true }, // Rota protegida
     },
     {

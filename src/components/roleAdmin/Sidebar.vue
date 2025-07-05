@@ -21,39 +21,21 @@
         <span class="material-icons">person</span>
         <span class="text">Usuários</span>
       </router-link>
-      <router-link class="button" to="/produtos">
-        <span class="material-icons">holiday_village</span>
-        <span class="text">Unidades</span>
+      <router-link class="button" to="/tiposUsuario">
+        <span class="material-icons">groups</span>
+        <span class="text">Tipos de Usuário</span>
       </router-link>
-      <router-link class="button" to="/fornecedores">
+      <router-link class="button" to="/unidades">
         <span class="material-icons">apartment</span>
         <span class="text">Unidade Consumidora</span>
       </router-link>
-      <router-link class="button" to="/coordenacao">
-        <span class="material-icons">groups</span>
-        <span class="text">Coordenação</span>
+      <router-link class="button" to="/produtos">
+        <span class="material-icons">inventory_2</span>
+        <span class="text">Produtos</span>
       </router-link>
-      <router-link class="button" to="/fornecedores">
-        <span class="material-icons">contact_page</span>
-        <span class="text">Fornecedores</span>
-      </router-link>
-      <router-link class="button" to="/itens">
-        <span class="material-icons">library_books</span>
-        <span class="text">Itens</span>
-      </router-link>
-      <router-link class="button" to="/">
-        <span class="material-icons">category</span>
-        <span class="text">Categoria de Itens</span>
-      </router-link>
-
-
     </div>
-
-
-
   </aside>
 </template>
-
 
 <script setup>
 import { ref } from 'vue';
@@ -64,7 +46,6 @@ const ToggleMenu = () => {
   is_expanded.value = !is_expanded.value
 }
 </script>
-
 
 <style lang="scss" scoped>
 aside {

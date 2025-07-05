@@ -1,10 +1,9 @@
 <template>
-  <div class="modal fade" :id="idModal" tabindex="-1" :aria-labelledby="idModal + 'Label'" aria-hidden="true">
+  <div class="modal modal-lg fade" :id="idModal" tabindex="-1" :aria-labelledby="idModal + 'Label'" aria-hidden="true">
     <div class="modal-dialog" :class="modalSizeClass" :style="{ width: !modalSizeClass ? width : null }">
       <div class="modal-content">
         <div class="modal-header">
-          <h5 class="modal-title" :id="idModal + 'Label'">{{ title }}</h5>
-          <button type="button" class="btn-close" @click="handleInternalClose" aria-label="Close"></button>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" @click="handleInternalClose" aria-label="Close"></button>
         </div>
         <div class="modal-body">
           <slot></slot>
@@ -26,44 +25,32 @@ export default {
       required: true
     },
     title: String,
-    // A prop 'isOpen' não controlará mais o v-if.
-    // Pode ser usada se o pai quiser abrir/fechar o modal programaticamente usando a API JS do Bootstrap.
-    // isOpen: Boolean,
-    width: String, // Usado se modalSizeClass não for fornecido
+    width: String,
     showFooter: {
       type: Boolean,
       default: true
     },
-    modalSizeClass: String // Ex: 'modal-lg', 'modal-sm', 'modal-xl' para controlar o tamanho
+    modalSizeClass: String
   },
-  emits: ['closed'], 
+  emits: ['closed'],
   methods: {
     handleInternalClose() {
-      // Este método é chamado pelo botão de fechar interno do ModalBase.
-      // Ele deve sinalizar ao componente pai ou diretamente fechar via API JS se este componente gerenciar a instância.
-      this.$emit('closed'); // O pai pode usar isso para atualizar seu estado, se necessário.
-
-      // Para fechar usando a API do Bootstrap diretamente daqui (se este componente fosse autônomo):
-      // const modalEl = document.getElementById(this.idModal);
-      // if (modalEl) {
-      //   const modalInstance = bootstrap.Modal.getInstance(modalEl);
-      //   if (modalInstance) {
-      //     modalInstance.hide();
-      //   }
-      // }
+      const modalEl = document.getElementById(this.idModal);
+      console.log('modalEl:', modalEl, 'bootstrap:', window.bootstrap);
+      if (modalEl) {
+        const modalInstance = window.bootstrap.Modal.getInstance(modalEl) || new window.bootstrap.Modal(modalEl);
+        modalInstance.hide();
+      }
+      this.$emit('closed');
     }
   },
   mounted() {
-    // Opcional: Escutar eventos do Bootstrap e reemiti-los ou sincronizar estado
     const modalEl = document.getElementById(this.idModal);
     if (modalEl) {
       modalEl.addEventListener('hidden.bs.modal', () => {
-        // Este evento é disparado pelo Bootstrap quando o modal termina de ser escondido.
         this.$emit('closed');
       });
-      // modalEl.addEventListener('shown.bs.modal', () => {
-      //   this.$emit('opened');
-      // });
+      // moda
     }
   },
 };
@@ -100,7 +87,8 @@ export default {
   align-items: center;
 }
 
-.modal-title { /* Mantendo seu estilo se desejado */
+.modal-title {
+  /* Mantendo seu estilo se desejado */
   font-size: 1.5rem;
   font-weight: bold;
   margin: 0;

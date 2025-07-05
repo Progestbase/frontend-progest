@@ -7,17 +7,15 @@ export default createStore({
       modalTitle: "",
       modalFunction: "ADD",
       modalData: {
-        status: 'A',
-        matricula: '',
-        funcao: 'L',
-        name: '',
-        cpf: '',
-        email: '',
-        password: ''
+        
       }
     },
     listUsers: [],
-    idDataLoaded: ""
+    listTiposUsuarios: [],
+    listUnidades: [],
+    listProdutos: [],
+    idDataLoaded: "",
+    isSearching: '',
   },
   mutations: {
     setUserToken(state, token) {
@@ -45,6 +43,15 @@ export default createStore({
     setListUsers(state, users) {
       state.listUsers = users;
     },
+    setListTiposUsuario(state, users) {
+      state.listTiposUsuario = users;
+    },
+    setListUnidades(state, unidades) {
+      state.listUnidades = unidades;
+    },
+    setListProdutos(state, produtos) {
+      state.listProdutos = produtos;
+    },
     setModalTitle(state, title) {
       state.modalData.modalTitle = title;
     },
@@ -53,6 +60,9 @@ export default createStore({
     },
     setIdDataLoaded(state, id) {
       state.idDataLoaded = id;
+    },
+    setisSearching(state, id){
+      state.isSearching = id;
     }
   },
   actions: {
@@ -61,6 +71,8 @@ export default createStore({
   getters: {
     getUserToken: state => state.userToken,
     getModalData: state => state.modalData.modalData,
-    getListUsers: state => state.listUsers
+    getListUsers: state => state.listUsers,
+    getListTiposUsuario: state => state.listTiposUsuario,
+    getListUnidades: state => state.listUnidades
   }
 });

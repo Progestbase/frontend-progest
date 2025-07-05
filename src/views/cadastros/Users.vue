@@ -16,11 +16,11 @@
                   <!-- Listagem de usuários aqui -->
                   <div class="mt-5">
                     <!-- Tabela de listagem de itens -->
-                    <TBLBASE01 v-if="listUsers && listUsers.data && listUsers.data.data.length > 0" :list="listUsers"
-                      :titles="['#', 'Nome', 'Matricula', 'Email', 'Status', 'Ações']"
+                    <TBLBASE01 v-if="listUsers && listUsers.data && listUsers.data.length > 0" :list="listUsers"
+                      :titles="['#', 'Nome', 'cpf', 'Matricula', 'Data de Nascimento', 'Status', 'Tipo', 'Unidade']"
                       :align="['text-center', 'text-left', 'text-left', 'text-left']" :indexLink="1"
-                      :idModalUP="'#addUPUser'" :functions="functions" classColTable="12" />
-
+                      :idModalUP="'#addUPUser'" :functions="functions" classColTable="12" 
+                      />
                     <!-- Paginação da tabela -->
                     <!-- <PAGINACAOBASE01 :paginacaoData="listUsers" :functions="functions">
                     </PAGINACAOBASE01> -->

@@ -24,7 +24,7 @@ export default {
   data() {
     return {
       // Obtém a role do usuário a partir do localStorage
-      userRole: localStorage.getItem('role') // A role pode ser 'admin' ou 'solicitante'
+      userRole: 'A' // A role pode ser 'admin' ou 'solicitante'
     };
   },
   mounted() {

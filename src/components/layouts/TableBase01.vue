@@ -160,7 +160,7 @@ export default {
     contentTable() {
       console.log(this.list);
       if (this.list.data) {
-        return this.list.data.data;
+        return this.list.data;
       } else {
         console.log('Ainda sem dado para tabular');
         return [];

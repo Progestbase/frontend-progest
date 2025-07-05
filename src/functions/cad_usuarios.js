@@ -1,5 +1,5 @@
 var ADD_UP = (content, funcao) => {
-  console.log("IMPRIMINDO O CONTENT QUE CHEGA AQUI", content);
+  console.log("IMPRIMINDO O CONTENT QUE CHEGA AQUI", funcao);
   content.$axios
     .post(
       funcao == "ADD" ? "/user/add" : "/user/update",
@@ -15,12 +15,13 @@ var ADD_UP = (content, funcao) => {
         }
       }
     )
-    .then(function(response) {
+    .then(function (response) {
       if (response.data.status) {
         listALL(content);
-        content.$toastr.s(
-          funcao == "ADD" ? "Cadastrado" : "Atualizado" + " com sucesso"
-        );
+        alert(funcao == "ADD" ? "Cadastrado" : "Atualizado" + "com sucesso");
+        // content.$toastr.s(
+        //   funcao == "ADD" ? "Cadastrado" : "Atualizado" + " com sucesso"
+        // );
         if (funcao == "ADD") {
           content.modalData.id = response.data.data.id;
           content.$store.commit("setIdDataLoaded", response.data.data.id);
@@ -36,19 +37,20 @@ var ADD_UP = (content, funcao) => {
         }
         alert(erros);
       } else {
+
         console.log(
-          "Erro ao " + funcao == "ADD" ? "cadastrar" : "atualizar",
+          "Erro ao ", funcao == "ADD" ? "cadastrar" : "atualizar",
           response
         );
-        content.$toastr.e(
-          "Erro ao " + funcao == "ADD" ? "cadastrar" : "atualizar"
-        );
+        // content.$toastr.e(
+        //   "Erro ao " + funcao == "ADD" ? "cadastrar" : "atualizar"
+        // );
       }
     })
-    .catch(function(error) {
+    .catch(function (error) {
       console.log(error);
-      //alert("OPS! \nEstamos com algum problema, tente novamente mais tarde.");
-      content.$toastr.e("OPS. Pequena intermitência. Se persistir, realize um novo login.");
+      alert("OPS! \nEstamos com algum problema, tente novamente mais tarde.");
+      // content.$toastr.e("OPS. Pequena intermitência. Se persistir, realize um novo login.");
     });
 };
 
@@ -65,11 +67,11 @@ var EDIT_PERFIL = (content, funcao) => {
         }
       }
     )
-    .then(function(response) {
+    .then(function (response) {
       if (response.data.status) {
-        content.$toastr.s(
-          funcao == "ADD" ? "Cadastrado" : "Atualizado" + " com sucesso"
-        );
+        // content.$toastr.s(
+        //   funcao == "ADD" ? "Cadastrado" : "Atualizado" + " com sucesso"
+        // );
         content.$store.commit("setListUserPerfil", response.data.data);
         sessionStorage.setItem("user", JSON.stringify(response.data.data));
         console.log("USER:", response.data.data);
@@ -90,7 +92,7 @@ var EDIT_PERFIL = (content, funcao) => {
         );
       }
     })
-    .catch(function(error) {
+    .catch(function (error) {
       console.log(error);
       //alert("OPS! \nEstamos com algum problema, tente novamente mais tarde.");
       content.$toastr.e("OPS. Pequena intermitência. Se persistir, realize um novo login.");
@@ -112,10 +114,10 @@ var listALL = (content, url = null) => {
       }
     )
     .then(response => {
-      content.$store.commit("setListUsers", response.data);
+      content.$store.commit("setListUsers", response.data.data);
       // content.$store.commit("setPaginacao", response.data);
-      console.log("setListUsers", response.data);
-      // content.$store.commit("setisSearching", false);
+      console.log("setListUsers", response.data.data);
+      content.$store.commit("setisSearching", false);
     })
     .catch(error => {
       console.error(error);
@@ -140,6 +142,9 @@ var listData = content => {
     .then(response => {
       content.$store.commit("setIdDataLoaded", content.idData);
       content.$store.commit("setModalData", response.data.data);
+      content.$store.commit("setListUnidades", response.data.unidade);
+      content.$store.commit("setListTiposUsuario", response.data.tipo_usuario);
+      console.log('IMPRIMINDO OS DADOS DO USUÁRIO: ', response.data);
       if (content.callback) content.callback(); // Chama o callback após carregar os dados
     })
     .catch(error => {
@@ -171,7 +176,7 @@ var toggleData = (content, idToggle, metodo, field = null, checkd = null) => {
       if (response.data.attached) {
         content.$toastr.s(
           (response.data.attached.length > 0 ? "Vinculado" : "Desvinculado") +
-            " com sucesso"
+          " com sucesso"
         );
       } else {
         content.$toastr.s("Atualizado com sucesso");
@@ -184,12 +189,61 @@ var toggleData = (content, idToggle, metodo, field = null, checkd = null) => {
     });
 };
 
+var listTiposUsuario = (content, url = null) => {
+  content.$axios
+    .post(
+      url == null ? "/tiposUsuario/list" : url,
+      {
+        paginate: 10000,
+        filters: []
+      },
+      {
+        headers: {
+          Authorization: "Bearer " + content.$store.getters.getUserToken
+        }
+      }
+    )
+    .then(response => {
+      content.$store.commit("setListTiposUsuario", response.data.data);
+      console.log("setListTiposUsuario", response.data.data);
+    })
+    .catch(error => {
+      console.error(error);
+      alert("OPS! \nEstamos com algum problema, tente novamente mais tarde.");
+    });
+}
+
+var listUnidades = (content, url = null) => {
+  content.$axios
+    .post(url == null ? "/unidades/list" : url,
+      {
+        paginate: 10000,
+        filters: []
+      },
+      {
+        headers: {
+          Authorization: "Bearer " + content.$store.getters.getUserToken
+        }
+      }
+    )
+    .then(response => {
+      content.$store.commit("setListUnidades", response.data.data);
+      console.log("setListUnidades", response.data.data);
+    })
+    .catch(error => {
+      console.error(error);
+      alert("OPS! \nEstamos com algum problema, tente novamente mais tarde.");
+    });
+};
+
 var exportFunctions = {
   ADD_UP: ADD_UP,
   listALL: listALL,
   listData: listData,
   toggleData: toggleData,
-  EDIT_PERFIL: EDIT_PERFIL
+  EDIT_PERFIL: EDIT_PERFIL,
+  listTiposUsuario: listTiposUsuario,
+  listUnidades: listUnidades,
 };
 
 export default exportFunctions;

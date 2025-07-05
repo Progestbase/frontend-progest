@@ -8,6 +8,7 @@ import VueAxios from 'vue-axios';
 import axios from 'axios';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap/dist/js/bootstrap.bundle.min';
+import VueTheMask from 'vue-the-mask';
 
 const app = createApp(App);
 
@@ -20,3 +21,4 @@ app.use(router);
 app.use(store); // Use o store importado
 
 app.mount('#app');
+app.use(VueTheMask);

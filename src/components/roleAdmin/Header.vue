@@ -42,12 +42,17 @@ export default {
           return 'Dashboard';
         case 'users':
           return 'Usuários';
-        case 'tipos_usuario':
+        case 'tiposUsuario':
           return 'Tipos de Usuário';
         case 'unidades':
           return 'Unidades';
         case 'produtos':
           return 'Produtos';
+        case 'categoriasProdutos':
+          return 'Categorias de Produtos';
+        case 'unidadesMedida':
+          return 'Unidades de Medida';
+
         default:
           return '';
       }

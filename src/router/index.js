@@ -11,7 +11,8 @@ import Users from '../views/cadastros/Users.vue';
 import TiposUsuario from '../views/cadastros/TiposUsuario.vue';
 import Unidades from '../views/cadastros/Unidades.vue';
 import Produtos from '../views/cadastros/Produtos.vue';
-
+import CategoriasProdutos from '../views/cadastros/CategoriasProdutos.vue';
+import UnidadesMedida from '../views/cadastros/UnidadesMedida.vue';
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
@@ -63,6 +64,18 @@ const router = createRouter({
       path: '/produtos',
       name: 'produtos',
       component: Produtos,
+      meta: { requiresAuth: true }, // Rota protegida
+    },
+    {
+      path: '/categoriasProdutos',
+      name: 'categoriasProdutos',
+      component: CategoriasProdutos,
+      meta: { requiresAuth: true }, // Rota protegida
+    },
+    {
+      path: '/unidadesMedida',
+      name: 'unidadesMedida',
+      component: UnidadesMedida,
       meta: { requiresAuth: true }, // Rota protegida
     },
     {

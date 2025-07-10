@@ -5,33 +5,41 @@
     </div>
 
     <div class="menu-toggle-wrap">
-      <button class="menu-toggle" @click="ToggleMenu">
+      <button class="menu-toggle" @click="ToggleMenu" title="Expandir/Recolher Menu">
         <span class="material-icons">keyboard_double_arrow_right</span>
       </button>
     </div>
     <div class="menu">
-      <router-link class="button" to="/dashboard">
+      <router-link class="button" to="/dashboard" title="Tela Inicial">
         <span class="material-icons">home</span>
         <span class="text">Tela Inicial</span>
       </router-link>
     </div>
     <h3>Cadastros</h3>
     <div class="menu">
-      <router-link class="button" to="/users">
+      <router-link class="button" to="/users" title="Usuários">
         <span class="material-icons">person</span>
         <span class="text">Usuários</span>
       </router-link>
-      <router-link class="button" to="/tiposUsuario">
+      <router-link class="button" to="/tiposUsuario" title="Tipos de Usuário">
         <span class="material-icons">groups</span>
         <span class="text">Tipos de Usuário</span>
       </router-link>
-      <router-link class="button" to="/unidades">
+      <router-link class="button" to="/unidades" title="Unidades Consumidoras">
         <span class="material-icons">apartment</span>
         <span class="text">Unidade Consumidora</span>
       </router-link>
-      <router-link class="button" to="/produtos">
+      <router-link class="button" to="/produtos" title="Produtos">
         <span class="material-icons">inventory_2</span>
         <span class="text">Produtos</span>
+      </router-link>
+      <router-link class="button" to="/categoriasProdutos" title="Categorias de Produtos">
+        <span class="material-icons">category</span>
+        <span class="text">Categoria Produtos</span>
+      </router-link>
+      <router-link class="button" to="/unidadesMedida" title="Unidades de Medida">
+        <span class="material-icons">scale</span>
+        <span class="text">Unidades de Medida</span>
       </router-link>
     </div>
   </aside>
@@ -173,6 +181,27 @@ aside {
         margin-right: 1rem;
       }
     }
+
+    .button {
+    position: relative;
+    
+    &:hover::after {
+      content: attr(title);
+      position: absolute;
+      left: 100%;
+      top: 50%;
+      transform: translateY(-50%);
+      background: var(--dark-alt);
+      color: var(--light);
+      padding: 0.5rem;
+      border-radius: 4px;
+      font-size: 0.875rem;
+      white-space: nowrap;
+      z-index: 1000;
+      margin-left: 0.5rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+  }
 
   }
 

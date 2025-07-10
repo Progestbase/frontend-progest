@@ -14,6 +14,9 @@ export default createStore({
     listTiposUsuarios: [],
     listUnidades: [],
     listProdutos: [],
+    listCategoriasProdutos: [],
+    listUnidadesMedida: [],
+    searchFilters: [],
     idDataLoaded: "",
     isSearching: '',
   },
@@ -52,6 +55,12 @@ export default createStore({
     setListProdutos(state, produtos) {
       state.listProdutos = produtos;
     },
+    setListCategoriasProdutos(state, categorias) {
+      state.listCategoriasProdutos = categorias;
+    },
+    setListUnidadesMedida(state, unidadesMedida) {
+      state.listUnidadesMedida = unidadesMedida;
+    },
     setModalTitle(state, title) {
       state.modalData.modalTitle = title;
     },
@@ -73,6 +82,7 @@ export default createStore({
     getModalData: state => state.modalData.modalData,
     getListUsers: state => state.listUsers,
     getListTiposUsuario: state => state.listTiposUsuario,
-    getListUnidades: state => state.listUnidades
+    getListUnidades: state => state.listUnidades,
+    getListCategoriasProdutos: state => state.listCategoriasProdutos
   }
 });

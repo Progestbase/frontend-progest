@@ -60,7 +60,7 @@
                                             v-model="modalData.descricao">
                                     </div>
                                 </div>
-                                <div class="col-md-12">
+                                <!-- <div class="col-md-12">
                                     <div class="mb-3">
                                         <label class="form-label" for="produtoImagem">Imagem</label>
                                         <input type="file" class="form-control" id="produtoImagem"
@@ -70,7 +70,7 @@
                                                 style="max-width: 200px; max-height: 200px; border: 1px solid #ccc; border-radius: 4px;" />
                                         </div>
                                     </div>
-                                </div>
+                                </div> -->
                             </div>
                         </form>
                     </div>

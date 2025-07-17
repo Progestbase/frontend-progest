@@ -41,6 +41,10 @@
         <span class="material-icons">scale</span>
         <span class="text">Unidades de Medida</span>
       </router-link>
+      <router-link class="button" to="/fornecedores" title="Fornecedores">
+        <span class="material-icons">local_shipping</span>
+        <span class="text">Fornecedores</span>
+      </router-link>
     </div>
   </aside>
 </template>

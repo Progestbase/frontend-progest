@@ -101,7 +101,7 @@ var listData = content => {
 var exportFunctions = {
   ADD_UP: ADD_UP,
   listAll: listAll,
-  listData: listData
+  listData: listData,
 };
 
 export default exportFunctions;

@@ -15,7 +15,8 @@
                                             v-if="listProdutos"
                                             :list="listProdutos" :titles="['#', 'Nome', 'Código', 'Descrição', 'Status']"
                                             :align="['text-center', 'text-left']" :indexLink="1"
-                                            :idModalUP="'#addUPProduto'" :functions="functions" classColTable="12" />
+                                            :idModalUP="'#addUPProduto'" :functions="functions" classColTable="12" 
+                                            deleteRoute="/produtos/delete" />
                                     </div>
                                 </div>
                             </div>

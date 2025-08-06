@@ -49,7 +49,7 @@ export default {
         case 'produtos':
           return 'Produtos';
         case 'categoriasProdutos':
-          return 'Categorias de Produtos';
+          return 'Tipos de Produtos';
         case 'unidadesMedida':
           return 'Unidades de Medida';
 

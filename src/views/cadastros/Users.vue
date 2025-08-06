@@ -20,6 +20,7 @@
                       :titles="['#', 'Nome', 'cpf', 'Matricula', 'Data de Nascimento', 'Status', 'Tipo', 'Unidade']"
                       :align="['text-center', 'text-left', 'text-left', 'text-left']" :indexLink="1"
                       :idModalUP="'#addUPUser'" :functions="functions" classColTable="12" 
+                      deleteRoute="/user/delete"
                       />
                     <!-- Paginação da tabela -->
                     <!-- <PAGINACAOBASE01 :paginacaoData="listUsers" :functions="functions">

@@ -98,49 +98,10 @@ var listData = content => {
         });
 };
 
-var update = (content) => {
-    content.$axios
-        .post(
-            "/categoriasProdutos/update",
-            {
-                categoriasProdutos: content.modalData
-            },
-            {
-                headers: {
-                    Authorization: "Bearer " + content.$store.getters.getUserToken
-                }
-            }
-        )
-        .then(function (response) {
-            if (response.data.status) {
-                listAll(content);
-                content.$toastr.s("Atualizado com sucesso");
-                content.$store.commit("setModalTitle", response.data.data.nome);
-                content.$store.commit("setModalFunction", "UP");
-                console.log(response.data.data);
-            } else if (response.data.status == false && response.data.validacao) {
-                console.log("Erros!!!");
-                let erros = "";
-                for (let erro of Object.values(response.data.erros)) {
-                    erros += erro + "\n";
-                }
-                alert(erros);
-            } else {
-                console.log("Erro ao atualizar", response);
-                content.$toastr.e("Erro ao atualizar");
-            }
-        })
-        .catch(function (error) {
-            console.log(error);
-            content.$toastr.e("OPS. Pequena intermitência. Se persistir, realize um novo login.");
-        });
-};
-
 var exportFunctions = {
     ADD_UP: ADD_UP,
     listAll: listAll,
     listData: listData,
-    update: update,
 }
 
 export default exportFunctions;

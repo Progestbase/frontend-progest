@@ -13,11 +13,11 @@
                                         </LinkModal01>
                                     </button>
                                     <div class="mt-5">
-                                        <TBLBASE01 v-if="listTiposUsuario && listTiposUsuario.data.length > 0"
+                                        <TBLBASE01 v-if="listTiposUsuario"
                                             :list="listTiposUsuario" :titles="['#', 'Nome', 'Descricao', 'Status']"
                                             :align="['text-center', 'text-left', 'text-left']"
                                             :indexLink="1" :idModalUP="'#addUPTiposUsuario'" :functions="functions"
-                                            classColTable="12" />
+                                            classColTable="12" deleteRoute="/tiposUsuario/delete" />
                                     </div>
                                 </div>
                             </div>

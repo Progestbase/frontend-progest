@@ -17,7 +17,7 @@
                                             :list="listCategoriasProdutos" :titles="['#', 'Nome', 'Descricao', 'Status']"
                                             :align="['text-center', 'text-left', 'text-left']"
                                             :indexLink="1" :idModalUP="'#addUPCategoriasProdutos'" :functions="functions"
-                                            classColTable="12" />
+                                            classColTable="12" deleteRoute="/categoriasProdutos/delete" />
                                         <div v-else class="text-center p-4">
                                             <p>Nenhuma categoria de produto encontrada.</p>
                                         </div>
@@ -59,7 +59,7 @@ export default {
             categoriasProdutos_data: null,
             functions: functions,
             choice_filters: null,
-            titleModal: 'Categorias de Produtos',
+            titleModal: 'Tipo de Produtos',
             varsModalData: {
                 status: 'A',
                 nome: '',

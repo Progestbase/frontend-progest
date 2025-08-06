@@ -33,7 +33,7 @@
         <span class="material-icons">inventory_2</span>
         <span class="text">Produtos</span>
       </router-link>
-      <router-link class="button" to="/categoriasProdutos" title="Categorias de Produtos">
+      <router-link class="button" to="/categoriasProdutos" title="Tipos de Produtos">
         <span class="material-icons">category</span>
         <span class="text">Categoria Produtos</span>
       </router-link>

@@ -77,10 +77,35 @@ var listAll = (content, url = null) => {
         });
 };
 
+var listData = content => {
+    const abaDados = document.querySelector("#aba_dados");
+    if (abaDados) abaDados.click();
+    content.$axios
+      .post(
+        "/unidades/listData",
+        { id: content.idData },
+        {
+          headers: {
+            Authorization: "Bearer " + content.$store.getters.getUserToken
+          }
+        }
+      )
+      .then(response => {
+        content.$store.commit("setIdDataLoaded", content.idData);
+        content.$store.commit("setModalData", response.data.data);
+        if (content.callback) content.callback(); // Chama o callback após carregar os dados
+      })
+      .catch(error => {
+        console.error(error);
+        content.$toastr.e("OPS. Pequena intermitência. Se persistir, realize um novo login.");
+      });
+  };
+
 
 var exportFunctions = {
     ADD_UP: ADD_UP,
     listAll: listAll,
+    listData: listData
 }
 
 export default exportFunctions;

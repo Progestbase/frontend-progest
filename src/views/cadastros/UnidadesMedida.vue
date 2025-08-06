@@ -15,7 +15,8 @@
                                             v-if="listUnidadesMedida"
                                             :list="listUnidadesMedida" :titles="['#', 'Nome', 'Descrição', 'Status']"
                                             :align="['text-center', 'text-left', 'text-left']" :indexLink="1"
-                                            :idModalUP="'#addUPUnidadesMedida'" :functions="functions" classColTable="12" />
+                                            :idModalUP="'#addUPUnidadesMedida'" :functions="functions" classColTable="12" 
+                                            deleteRoute="/unidadesMedida/delete" />
                                     </div>
                                 </div>
                             </div>

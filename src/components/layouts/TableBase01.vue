@@ -9,11 +9,12 @@
                 title
               }}
               </th>
+              <th class="text-center">Ações</th>
             </tr>
           </thead>
           <tbody>
             <tr v-if="isSearching">
-              <td :colspan="titles.length" style="text-align: center;">
+              <td :colspan="titles.length + 1" style="text-align: center;">
                 <div class="spinner-border text-primary m-1" role="status">
                   <span class="sr-only">Carregando...</span>
                 </div>
@@ -48,88 +49,17 @@
                     style="font-size: 20px; color: black;"></i>
                   <i v-else class="mdi mdi-close-circle text-danger" style="font-size: 20px; color: black;"></i>
                 </span>
-
-                <span v-else-if="col === 'channel_type_id' && i === 1">WhatsApp</span>
-
-                <span v-else-if="col === 'message'" style="text-align: left; display: block;">
-                  {{ truncateText(i, 80) }}
-                </span>
-
-                <span v-else-if="col === 'content'" style="text-align: left; display: block;">
-                  {{ truncateText(i, 80) }}
-                </span>
-
-                <span v-else-if="col === 'value'" style="text-align: left; display: block;" :title="i">
-                  {{ truncateText(i, 20) }}
-                </span>
-
-                <span v-else-if="col === 'description'" style="text-align: left; display: block;" :title="i">
-                  {{ truncateText(i, 20) }}
-                </span>
-
-                <span v-else-if="col === 'rota_default'" style="text-align: center; display: block;" :title="i">
-                  <i
-                    :class="['mdi', 'mdi-' + (i == 'S' ? 'check-circle ' : 'close-circle '), i == 'S' ? 'text-success' : 'text-danger', 'font-size-18']"></i>
-                </span>
-
-                <span v-else-if="col === 'type' && i === 'I'">
-                  <span v-if="urlAtual === '/mensagens-predefinidas'">
-                    <img :src="item.base64" alt="Imagem" style="max-height: 200px; max-width: 200px; height: auto;" />
-                  </span>
-                </span>
-
-                <span v-else-if="col === 'type' && i === 'A'">
-                  <span v-if="urlAtual === '/mensagens-predefinidas'">{{ getTypeLabelMsgPredefinidas(i) }}</span>
-                  <span v-else-if="urlAtual === '/motivos-chat'">{{ getTypeLabelMotivosChat(i) }}</span>
-                  <span v-else> {{ i }} </span>
-                </span>
-
-                <span v-else-if="col === 'type' && i === 'E'">
-                  <span v-if="urlAtual === '/mensagens-predefinidas'">{{ getTypeLabelMsgPredefinidas(i) }}</span>
-                  <span v-else-if="urlAtual === '/motivos-chat'">{{ getTypeLabelMotivosChat(i) }}</span>
-                  <span v-else> {{ i }} </span>
-                </span>
-
-                <span v-else-if="col === 'type' && i === 'T'">
-                  <span v-if="urlAtual === '/mensagens-predefinidas'">{{ getTypeLabelMsgPredefinidas(i) }}</span>
-                  <span v-else-if="urlAtual === '/motivos-chat'">{{ getTypeLabelMotivosChat(i) }}</span>
-                  <span v-else> {{ i }} </span>
-                </span>
-
-                <span v-else-if="col === 'type' && i === 'G'">
-                  <span v-if="urlAtual === '/mensagens-predefinidas'">{{ getTypeLabelMsgPredefinidas(i) }}</span>
-                  <span v-else> {{ i }} </span>
-                </span>
-
-                <span v-else-if="col === 'type' && i === 'V'">
-                  <span v-if="urlAtual === '/mensagens-predefinidas'">{{ getTypeLabelMsgPredefinidas(i) }}</span>
-                  <span v-else> {{ i }} </span>
-                </span>
-
-                <span v-else-if="col === 'type' && i === 'D'">
-                  <span v-if="urlAtual === '/mensagens-predefinidas'">{{ getTypeLabelMsgPredefinidas(i) }}</span>
-                  <span v-else> {{ i }} </span>
-                </span>
-
-                <span v-else-if="col === 'base64'"></span>
-
-
-                <span v-else-if="col === 'type' && i === 'C'">
-                  <span v-if="urlAtual === '/templates-meta'">{{ getTypeLabelTemplatesMeta(i) }}</span>
-                  <span v-else> {{ i }} </span>
-                </span>
-
-                <span v-else-if="col === 'type' && i === 'P'">
-                  <span v-if="urlAtual === '/templates-meta'">{{ getTypeLabelTemplatesMeta(i) }}</span>
-                  <span v-else> {{ i }} </span>
-                </span>
-
-                <span v-else-if="col === 'type' && i === 'F'">
-                  <span v-if="urlAtual === '/templates-meta'">{{ getTypeLabelTemplatesMeta(i) }}</span>
-                  <span v-else> {{ i }} </span>
-                </span>
-
                 <span v-else>{{ i }}</span>
+              </td>
+              <td class="text-center">
+                <button 
+                  class="btn btn-danger btn-sm" 
+                  @click="deleteItem(item.id)"
+                  title="Excluir"
+                  :disabled="item.fixo === 'S'"
+                >
+                  <i class="mdi mdi-delete"></i>
+                </button>
               </td>
             </tr>
           </tbody>
@@ -147,7 +77,7 @@ export default {
   components: {
     LINKMODAL01
   },
-  props: ['list', 'titles', 'align', 'indexLink', 'idModalUP', 'functions', 'classColTable'],
+  props: ['list', 'titles', 'align', 'indexLink', 'idModalUP', 'functions', 'classColTable', 'deleteRoute'],
   data() {
     return {
       msg: ''
@@ -208,6 +138,46 @@ export default {
         F: "Flow"
       };
       return typeMap[type] || type;
+    },
+    
+    deleteItem(id) {
+      if (this.deleteRoute) {
+        this.deleteItemGeneric(id, this.deleteRoute);
+      } 
+      else {
+        console.error('Nenhuma rota de delete ou funções fornecidas');
+        alert('Funcionalidade de exclusão não disponível');
+      }
+    },
+
+    deleteItemGeneric(id, route) {
+      if (confirm("Tem certeza que deseja excluir este item?")) {
+        this.$axios
+          .post(`${route}/${id}`, {
+            headers: {
+              Authorization: "Bearer " + this.$store.getters.getUserToken
+            }
+          })
+          .then((response) => {
+            if (response.data.status) {
+              // Recarrega a lista se houver função de listagem
+              if (this.functions && this.functions.listALL) {
+                this.functions.listALL(this);
+              } else if (this.functions && this.functions.listAll) {
+                this.functions.listAll(this);
+              }
+              alert("Item excluído com sucesso");
+              console.log("Item excluído:", response.data);
+            } else {
+              console.log("Erro ao excluir item:", response);
+              alert("Erro ao excluir item");
+            }
+          })
+          .catch((error) => {
+            console.log(error);
+            alert("OPS! \nEstamos com algum problema, tente novamente mais tarde.");
+          });
+      }
     }
   }
 }
@@ -216,5 +186,31 @@ export default {
 <style scoped>
 td {
   padding: 0.35rem 0.35rem;
+}
+
+.btn-danger {
+  background-color: #dc3545;
+  border-color: #dc3545;
+  color: white;
+  transition: all 0.3s ease;
+}
+
+.btn-danger:hover:not(:disabled) {
+  background-color: #c82333;
+  border-color: #bd2130;
+  transform: scale(1.05);
+}
+
+.btn-danger:disabled {
+  background-color: #6c757d;
+  border-color: #6c757d;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.btn-sm {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.875rem;
+  border-radius: 0.2rem;
 }
 </style>

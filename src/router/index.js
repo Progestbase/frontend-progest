@@ -13,6 +13,7 @@ import Unidades from '../views/cadastros/Unidades.vue';
 import Produtos from '../views/cadastros/Produtos.vue';
 import CategoriasProdutos from '../views/cadastros/CategoriasProdutos.vue';
 import UnidadesMedida from '../views/cadastros/UnidadesMedida.vue';
+import Fornecedores from '../views/cadastros/Fornecedores.vue';
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
@@ -76,6 +77,12 @@ const router = createRouter({
       path: '/unidadesMedida',
       name: 'unidadesMedida',
       component: UnidadesMedida,
+      meta: { requiresAuth: true }, // Rota protegida
+    },
+    {
+      path: '/fornecedores',
+      name: 'fornecedores',
+      component: Fornecedores,
       meta: { requiresAuth: true }, // Rota protegida
     },
     {

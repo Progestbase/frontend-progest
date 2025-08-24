@@ -5,42 +5,91 @@
     </div>
 
     <div class="menu-toggle-wrap">
-      <button class="menu-toggle" @click="ToggleMenu" title="Expandir/Recolher Menu">
+      <button
+        class="menu-toggle"
+        @click="ToggleMenu"
+        title="Expandir/Recolher Menu"
+      >
         <span class="material-icons">keyboard_double_arrow_right</span>
       </button>
     </div>
+
+    <!-- Menu principal -->
     <div class="menu">
       <router-link class="button" to="/dashboard" title="Tela Inicial">
         <span class="material-icons">home</span>
         <span class="text">Tela Inicial</span>
       </router-link>
     </div>
-    <h3>Cadastros</h3>
+
+    <h3>Menu</h3>
     <div class="menu">
+      <div class="submenu">
+        <button class="button" @click="toggleSubmenu" title="Mais Cadastros">
+          <span class="material-icons">point_of_sale</span>
+          <span class="text">Cadastros</span>
+          <span
+            class="material-icons expand-icon"
+            :class="{ open: submenuOpen }"
+            >expand_more</span
+          >
+        </button>
+
+        <div v-show="submenuOpen" class="submenu-items">
+          <router-link
+            class="button"
+            to="/tiposUsuario"
+            title="Tipos de Usuário"
+          >
+            <span class="material-icons">groups</span>
+            <span class="text">Tipos de Usuário</span>
+          </router-link>
+
+          <router-link
+            class="button"
+            to="/categoriasProdutos"
+            title="Tipos de Produtos"
+          >
+            <span class="material-icons">category</span>
+            <span class="text">Categoria Produtos</span>
+          </router-link>
+
+          <router-link
+            class="button"
+            to="/unidadesMedida"
+            title="Unidades de Medida"
+          >
+            <span class="material-icons">scale</span>
+            <span class="text">Unidades de Medida</span>
+          </router-link>
+        </div>
+      </div>
+
+      <!-- Usuários -->
       <router-link class="button" to="/users" title="Usuários">
         <span class="material-icons">person</span>
         <span class="text">Usuários</span>
       </router-link>
-      <router-link class="button" to="/tiposUsuario" title="Tipos de Usuário">
-        <span class="material-icons">groups</span>
-        <span class="text">Tipos de Usuário</span>
-      </router-link>
+
+      <!-- Unidades -->
       <router-link class="button" to="/unidades" title="Unidades Consumidoras">
         <span class="material-icons">apartment</span>
-        <span class="text">Unidade Consumidora</span>
+        <span class="text">Unidades</span>
       </router-link>
+
+      <!-- Produtos -->
       <router-link class="button" to="/produtos" title="Produtos">
         <span class="material-icons">inventory_2</span>
         <span class="text">Produtos</span>
       </router-link>
-      <router-link class="button" to="/categoriasProdutos" title="Tipos de Produtos">
-        <span class="material-icons">category</span>
-        <span class="text">Categoria Produtos</span>
+
+      <!-- Estoque -->
+      <router-link class="button" to="/estoque" title="Estoque">
+        <span class="material-icons">warehouse</span>
+        <span class="text">Estoque</span>
       </router-link>
-      <router-link class="button" to="/unidadesMedida" title="Unidades de Medida">
-        <span class="material-icons">scale</span>
-        <span class="text">Unidades de Medida</span>
-      </router-link>
+
+      <!-- Fornecedores -->
       <router-link class="button" to="/fornecedores" title="Fornecedores">
         <span class="material-icons">local_shipping</span>
         <span class="text">Fornecedores</span>
@@ -50,20 +99,25 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref } from "vue";
 
-const is_expanded = ref(false)
+const is_expanded = ref(false);
+const submenuOpen = ref(false); // ✅ aqui estava faltando
 
 const ToggleMenu = () => {
-  is_expanded.value = !is_expanded.value
-}
+  is_expanded.value = !is_expanded.value;
+};
+
+const toggleSubmenu = () => {
+  submenuOpen.value = !submenuOpen.value;
+};
 </script>
 
 <style lang="scss" scoped>
 aside {
   display: flex;
   flex-direction: column;
-  width: calc(2.8rem + 32px);
+  width: calc(2.8rem + 60px);
   min-height: 100vh;
   overflow: hidden;
   overflow-y: auto;
@@ -72,13 +126,36 @@ aside {
   background-color: var(--dark);
   color: var(--light);
 
-  transition: 0.2s ease-out;
+  transition: width 0.2s ease-out;
 
   .logo {
     margin-bottom: 1rem;
+    display: flex;
+    justify-content: center;
 
     img {
-      width: 70%;
+      max-width: 120px; // quando expandido
+      transition: max-width 0.2s ease;
+    }
+  }
+
+ 
+  &:not(.is-expanded) {
+    .logo img {
+      max-width: 40px; // 👈 diminui a logo
+    }
+  }
+
+  &.is-expanded {
+    width: var(--sidebar-width);
+
+    h3,
+    .button .text {
+      opacity: 1;
+    }
+
+    .logo img {
+      max-width: 120px; // volta ao tamanho normal
     }
   }
 
@@ -86,62 +163,66 @@ aside {
     display: flex;
     justify-content: flex-end;
     margin-bottom: 1rem;
-
-
     position: relative;
-    top: 0;
-    transition: 0.2s ease-out;
 
     .menu-toggle {
-      transition: 0.2s ease-out;
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      padding: 0.5rem;
 
       .material-icons {
         font-size: 1.5rem;
         color: var(--light);
-        transition: 0.2s ease-out;
+        transition: transform 0.2s ease, color 0.2s ease;
       }
 
-      &:hover {
-        .material-icons {
-          color: var(--primary);
-          transform: translateX(0.5rem);
-        }
+      &:hover .material-icons {
+        color: var(--primary);
+        transform: translateX(0.3rem);
       }
     }
   }
 
-  h3,
-  .button .text {
-    opacity: 0;
-    transition: 0.3s ease-out;
-  }
-
   h3 {
     color: var(--grey);
-    font-size: 1rem;
+    font-size: 0.85rem;
     text-transform: uppercase;
+    margin: 1rem 0 0.5rem 1rem;
+    opacity: 0;
+    transition: opacity 0.3s ease;
   }
 
   .menu {
-    margin: 0 -1rem;
+    display: flex;
+    flex-direction: column;
 
     .button {
       display: flex;
       align-items: center;
+      justify-content: space-between;
+      height: 2.8rem;
+      padding: 0 1rem;
       text-decoration: none;
+      gap: 0.8rem;
 
-      padding: 0.5rem 1rem;
-      transition: 0.2rem ease-out;
+      transition: background 0.2s ease, color 0.2s ease;
 
       .material-icons {
-        font-size: 1.5rem;
+        font-size: 1.4rem;
+        min-width: 1.5rem;
+        text-align: center;
         color: var(--light);
-        transition: 0.2s ease-out;
+        transition: color 0.2s ease;
       }
 
       .text {
         color: var(--light);
-        transition: 0.2s ease-out;
+        white-space: nowrap;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+        flex-grow: 1;
+        text-align: left;
       }
 
       &:hover,
@@ -149,70 +230,62 @@ aside {
         background-color: var(--dark-alt);
 
         .material-icons,
-        text {
+        .text {
           color: var(--primary);
         }
       }
 
-      .router-link-exact-active {
-        border-right: 5px solid var(--primary);
+      &.router-link-exact-active {
+        border-right: 4px solid var(--primary);
       }
-
     }
   }
 
   &.is-expanded {
     width: var(--sidebar-width);
 
-    .menu-toggle-wrap {
-      top: -3rem;
-      margin-bottom: -1rem;
-
-      .menu-toggle {
-        transform: rotate(-180deg);
-      }
+    .menu-toggle {
+      transform: rotate(-180deg);
     }
 
     h3,
     .button .text {
       opacity: 1;
-      margin-bottom: 0.5rem;
-      margin-top: 0.5rem;
     }
 
     .button {
       .material-icons {
-        margin-right: 1rem;
+        margin-right: 0.5rem;
+      }
+
+      &::after {
+        display: none !important;
       }
     }
-
-    .button {
-    position: relative;
-    
-    &:hover::after {
-      content: attr(title);
-      position: absolute;
-      left: 100%;
-      top: 50%;
-      transform: translateY(-50%);
-      background: var(--dark-alt);
-      color: var(--light);
-      padding: 0.5rem;
-      border-radius: 4px;
-      font-size: 0.875rem;
-      white-space: nowrap;
-      z-index: 1000;
-      margin-left: 0.5rem;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-    }
-  }
-
   }
 
   @media (max-width: 768px) {
-    // position: fixed;
+    position: fixed;
     z-index: 99;
+  }
+}
 
+.submenu {
+  display: flex;
+  flex-direction: column;
+
+  .submenu-items {
+    display: flex;
+    flex-direction: column;
+    margin-left: 2rem;
+  }
+
+  .expand-icon {
+    transition: transform 0.2s ease;
+  }
+
+  .expand-icon.open {
+    transform: rotate(180deg);
   }
 }
 </style>

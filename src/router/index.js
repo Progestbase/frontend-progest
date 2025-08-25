@@ -14,6 +14,7 @@ import Produtos from '../views/cadastros/Produtos.vue';
 import CategoriasProdutos from '../views/cadastros/CategoriasProdutos.vue';
 import UnidadesMedida from '../views/cadastros/UnidadesMedida.vue';
 import Fornecedores from '../views/cadastros/Fornecedores.vue';
+import Estoque from '../views/cadastros/Estoque.vue';
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
@@ -89,6 +90,12 @@ const router = createRouter({
       path: '/historico',
       name: 'historico',
       component: HistoricoDePedidosView,
+      meta: { requiresAuth: true }, // Rota protegida
+    },
+    {
+      path: '/estoque',
+      name: 'estoque',
+      component: Estoque,
       meta: { requiresAuth: true }, // Rota protegida
     },
     /*

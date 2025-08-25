@@ -45,6 +45,10 @@
         <span class="material-icons">local_shipping</span>
         <span class="text">Fornecedores</span>
       </router-link>
+      <router-link class="button" to="/estoque" title="Estoque">
+        <span class="material-icons">inventory_2</span>
+        <span class="text">Estoque</span>
+      </router-link>
     </div>
   </aside>
 </template>

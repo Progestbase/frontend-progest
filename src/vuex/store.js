@@ -63,6 +63,9 @@ export default createStore({
     setListFornecedores(state, fornecedores) {
       state.listFornecedores = fornecedores;
     },
+    setListEstoque(state, estoque) {
+      state.listEstoque = estoque;
+    },
     setModalTitle(state, title) {
       state.modalData.modalTitle = title;
     },

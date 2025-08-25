@@ -14,7 +14,10 @@ import Produtos from '../views/cadastros/Produtos.vue';
 import CategoriasProdutos from '../views/cadastros/CategoriasProdutos.vue';
 import UnidadesMedida from '../views/cadastros/UnidadesMedida.vue';
 import Fornecedores from '../views/cadastros/Fornecedores.vue';
-import Estoque from '../views/cadastros/Estoque.vue';
+
+import Estoque from '@/views/cadastros/Estoque.vue';
+import EstoqueUnidade from '@/views/cadastros/EstoqueUnidade.vue';
+
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
@@ -42,49 +45,49 @@ const router = createRouter({
       path: '/dashboard',
       name: 'dashboard',
       component: DashboardView,
-      meta: { requiresAuth: true }, // Rota protegida
+      meta: { requiresAuth: true },
     },
     {
       path: '/users',
       name: 'users',
       component: Users,
-      meta: { requiresAuth: true},
+      meta: { requiresAuth: true },
     },
     {
       path: '/tiposUsuario',
       name: 'tiposUsuario',
       component: TiposUsuario,
-      meta: {requiresAuth: true},
+      meta: { requiresAuth: true },
     },
     {
       path: '/unidades',
       name: 'unidades',
       component: Unidades,
-      meta: { requireAuth: true },
+      meta: { requiresAuth: true },
     },    
     {
       path: '/produtos',
       name: 'produtos',
       component: Produtos,
-      meta: { requiresAuth: true }, // Rota protegida
+      meta: { requiresAuth: true },
     },
     {
       path: '/categoriasProdutos',
       name: 'categoriasProdutos',
       component: CategoriasProdutos,
-      meta: { requiresAuth: true }, // Rota protegida
+      meta: { requiresAuth: true },
     },
     {
       path: '/unidadesMedida',
       name: 'unidadesMedida',
       component: UnidadesMedida,
-      meta: { requiresAuth: true }, // Rota protegida
+      meta: { requiresAuth: true },
     },
     {
       path: '/fornecedores',
       name: 'fornecedores',
       component: Fornecedores,
-      meta: { requiresAuth: true }, // Rota protegida
+      meta: { requiresAuth: true },
     },
     {
       path: '/historico',
@@ -92,41 +95,44 @@ const router = createRouter({
       component: HistoricoDePedidosView,
       meta: { requiresAuth: true }, // Rota protegida
     },
+    /*
     {
       path: '/estoque',
       name: 'estoque',
       component: Estoque,
-      meta: { requiresAuth: true }, // Rota protegida
+      meta: { requiresAuth: true },
     },
-    /*
     {
-      path: '/users',
-      name: 'users',
-      component: Users,
-      meta: { requiresAuth: true }, // Rota protegida
+      path: '/estoque/:id',
+      name: 'estoqueUnidade',
+      component: EstoqueUnidade,
+      props: true,
+      meta: { requiresAuth: true },
     },
-    */
+
     {
-      path: '/:pathMatch(.*)*', // Rota genérica para qualquer caminho não definido
+      path: '/:pathMatch(.*)*',
       redirect: (to) => {
-        const isAuthenticated = localStorage.getItem('token'); // Verifica se há um token
-        return isAuthenticated ? '/dashboard' : '/login'; // Decide para onde redirecionar
+        const isAuthenticated = localStorage.getItem('token');
+        return isAuthenticated ? '/dashboard' : '/login';
       },
     },
   ],
 });
 
-// Verificação antes de cada navegação
+// Guard de autenticação
 router.beforeEach((to, from, next) => {
-  const isAuthenticated = localStorage.getItem('token'); // Verifica se há um token no localStorage
+  const isAuthenticated = localStorage.getItem('token');
 
-  // Se o usuário não está autenticado e tenta acessar uma rota protegida
   if (to.meta.requiresAuth && !isAuthenticated) {
-    next('/login'); // Redireciona para login
-  } else if (isAuthenticated && (to.path === '/login' || to.path === '/register')) {
-    next('/dashboard'); // Redireciona para dashboard se já estiver autenticado
+    next('/login');
+  } else if (
+    isAuthenticated &&
+    (to.path === '/login' || to.path === '/register')
+  ) {
+    next('/dashboard');
   } else {
-    next(); // Permite a navegação
+    next();
   }
 });
 

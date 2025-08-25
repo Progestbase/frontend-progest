@@ -1,155 +1,68 @@
 <template>
-    <TemplateAdmin>
-      <div class="main-content">
-        <div class="page-content">
-          <div class="container-fluid">
-            <div class="row">
-              <div class="col-12">
-                <div class="card">
-                  <div class="card-body">
-                    <button class="btn btn-success">
-                      <LinkModal01
-                        :idModalInsertUP="'#addEstoque'"
-                        :label="'NOVO'"
-                        :titleModal="titleModal"
-                        :varsModalData="varsModalData"
-                      >
-                      </LinkModal01>
-                    </button>
-  
-                    <div class="mt-5">
-                      <TBLBASE01
-                        v-if="
-                          listEstoque &&
-                          listEstoque.data &&
-                          listEstoque.data.length > 0
-                        "
-                        :list="listEstoque"
-                        :titles="[
-                          '#',
-                          'Código',
-                          'Nome',
-                          'Descrição',
-                          'Quantidade',
-                          'Unidade de Medida',
-                          'Status',
-                        ]"
-                        :align="[
-                          'text-center',
-                          'text-left',
-                          'text-left',
-                          'text-left',
-                          'text-left',
-                          'text-left',
-                        ]"
-                        :indexLink="1"
-                        :idModalUP="'#addEstoque'"
-                        :functions="functions"
-                        classColTable="12"
-                      />
-                    </div>
-                  </div>
+  <TemplateAdmin>
+    <div class="main-content">
+      <div class="page-content">
+        <div class="container-fluid">
+          <h2 class="mb-4">Estoque - Unidades</h2>
+
+          <!-- Grid de Unidades -->
+          <div class="row g-3">
+            <div
+              v-for="unidade in unidades"
+              :key="unidade.id"
+              class="col-12 col-sm-6 col-md-4 col-lg-3"
+            >
+              <div
+                class="card unidade-card"
+                @click="$router.push(`/estoque/${unidade.id}`)"
+              >
+                <div class="card-body text-center">
+                  <h5 class="card-title">{{ unidade.nome }}</h5>
+                  <p class="card-text">
+                    Estoque atual: {{ unidade.quantidade_atual }}
+                  </p>
+                  <span
+                    class="badge"
+                    :class="unidade.quantidade_atual < unidade.quantidade_minima ? 'bg-danger' : 'bg-success'"
+                  >
+                    {{ unidade.quantidade_atual < unidade.quantidade_minima ? 'Abaixo do mínimo' : 'Normal' }}
+                  </span>
                 </div>
               </div>
             </div>
-  
-            <ModalEstoque
-              idModal="addEstoque"
-              :functions="functions"
-            ></ModalEstoque>
           </div>
         </div>
       </div>
-    </TemplateAdmin>
-  </template>
-    
-  <script>
-  import LinkModal01 from "@/components/layouts/LinkModal01.vue";
-  import TemplateAdmin from "@/views/roleAdmin/TemplateAdmin.vue";
-  import TBLBASE01 from "@/components/layouts/TableBase01.vue";
-  
-  import functions from "../../functions/cad_estoque.js";
-  import ModalEstoque from "../../components/cadastros/ModalEstoque.vue";
-  
-  export default {
-    name: "EstoqueView",
-    components: {
-      LinkModal01,
-      TemplateAdmin,
-      ModalEstoque,
-      TBLBASE01,
-    },
-    data() {
-      return {
-        isCreateEstoqueModalOpen: false,
-        estoque_data: null,
-        functions: functions,
-        choice_filters: null,
-        titleModal: "Cadastro de Estoque",
-        varsModalData: {
-          status: "A",
-          codigo: "",
-          nome: "",
-          descricao: "",
-          quantidade: "",
-          unidade_medida: "",
-          fornecedor: "",
-          status: "",
-        },
-      };
-    },
-    methods: {
-      openCreateEstoqueModal() {
-        this.isCreateEstoqueModalOpen = true;
-      },
-      closeCreateEstoqueModal() {
-        this.isCreateEstoqueModalOpen = false;
-      },
-      createEstoque(estoqueData) {
-        console.log("Estoque criado:", estoqueData);
-        alert("Estoque cadastrado com sucesso!");
-        this.closeCreateEstoqueModal();
-      },
-      listAllEstoque() {
-        functions.listAll(this);
-      },
-    },
-    computed: {
-      listEstoque() {
-        // Retorna o objeto original, pois TBLBASE01 espera array de objetos
-        return this.$store.state.listEstoque;
-      },
-    },
-    created() {},
-    mounted() {
-      this.listAllEstoque();
-    },
-  };
-  </script>
-  
-  <style scoped>
-  .modal-title {
-    font-size: 1.5rem;
-    font-weight: bold;
-    color: #4a4a4a;
-    display: flex;
-    align-items: center;
-    margin-bottom: 1rem;
-  }
-  
-  .form-control {
-    background-color: #f8f9fa;
-    border: 1px solid #ced4da;
-    border-radius: 0.25rem;
-    padding: 0.5rem;
-  }
-  
-  .btn-primary {
-    background-color: var(--dark);
-    border-color: var(--dark);
-    font-size: 1rem;
-    font-weight: bold;
-    border-radius: 0.25rem;
-  }
-  </style>
-  
+    </div>
+  </TemplateAdmin>
+</template>
+
+<script>
+import TemplateAdmin from "@/views/roleAdmin/TemplateAdmin.vue";
+
+export default {
+  name: "Estoque",
+  components: { TemplateAdmin },
+  data() {
+    return {
+      unidades: [
+        { id: 1, nome: "Unidade A", quantidade_atual: 120, quantidade_minima: 50 },
+        { id: 2, nome: "Unidade B", quantidade_atual: 20, quantidade_minima: 30 },
+        { id: 3, nome: "Unidade C", quantidade_atual: 75, quantidade_minima: 40 },
+        { id: 4, nome: "Unidade D", quantidade_atual: 200, quantidade_minima: 80 },
+      ],
+    };
+  },
+};
+</script>
+
+<style scoped>
+.unidade-card {
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.unidade-card:hover {
+  transform: scale(1.03);
+  box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.15);
+}
+</style>

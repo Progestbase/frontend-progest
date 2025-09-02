@@ -17,22 +17,22 @@
                 </div>
                 <div class="col-md-3">
                   <div class="mb-3">
-                    <label class="form-label" for="UnidadeCodigo">Código da Unidade</label>
-                    <input type="text" class="form-control" id="UnidadeCodigo" placeholder=""
-                      v-model="modalData.codigo_unidade">
+                    <label class="form-label" for="SetorCodigo">Código da Setor</label>
+                    <input type="text" class="form-control" id="SetorCodigo" placeholder=""
+                      v-model="modalData.codigo_setor">
                   </div>
                 </div>
                 <div class="col-md-6">
                   <div class="mb-3">
-                    <label class="form-label" for="UnidadeNome">Nome</label>
-                    <input type="text" class="form-control text-uppercase" id="UnidadeNome" placeholder=""
+                    <label class="form-label" for="SetorNome">Nome</label>
+                    <input type="text" class="form-control text-uppercase" id="SetorNome" placeholder=""
                       v-model="modalData.nome">
                   </div>
                 </div>
                 <div class="col-md-12">
                   <div class="mb-3">
-                    <label class="form-label" for="UnidadeDescricao">Descrição</label>
-                    <input type="text" class="form-control" id="UnidadeDescricao" placeholder=""
+                    <label class="form-label" for="SetorDescricao">Descrição</label>
+                    <input type="text" class="form-control" id="SetorDescricao" placeholder=""
                       v-model="modalData.descricao">
                   </div>
                 </div>
@@ -46,7 +46,7 @@
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
             <i class="mdi mdi-close-thick font-size-15"></i> Fechar</button>
           <button type="submit" class="btn btn-success" data-bs-target="#success-btn" id="btn-save-event"
-            v-on:click="add_UP_Unidades()"><i class="mdi mdi-check-bold font-size-15"></i> {{
+            v-on:click="add_UP_Setores()"><i class="mdi mdi-check-bold font-size-15"></i> {{
               modalFunction == 'ADD' ? 'Salvar' : 'Atualizar' }}</button>
         </div>
       </div>
@@ -57,10 +57,10 @@
 <script>
 
 import ModalBase01 from '@/components/layouts/ModalBase01.vue';
-import Funcoes from '@/functions/cad_unidades.js';
+import Funcoes from '@/functions/cad_setores.js';
 
 export default {
-  name: 'ModalUnidades',
+  name: 'ModalSetores',
   components: {
     ModalBase01,
     Funcoes
@@ -75,7 +75,7 @@ export default {
 
   },
   methods: {
-    add_UP_Unidades() {
+    add_UP_Setores() {
       const content = {
         $axios: this.$axios,
         $store: this.$store,
@@ -105,10 +105,9 @@ export default {
   },
   mutations: {
     setModalData(state, payload) {
-      // Atualiza o objeto modalData com os novos valores
       state.modalData = {
-        ...state.modalData, // Mantém os valores existentes
-        ...payload         // Sobrescreve com os novos valores
+        ...state.modalData,
+        ...payload 
       };
     },
   }

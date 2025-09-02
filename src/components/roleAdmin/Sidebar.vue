@@ -71,10 +71,10 @@
         <span class="text">Usuários</span>
       </router-link>
 
-      <!-- Unidades -->
-      <router-link class="button" to="/unidades" title="Unidades Consumidoras">
+      <!-- Setores -->
+      <router-link class="button" to="/setores" title="Setores">
         <span class="material-icons">apartment</span>
-        <span class="text">Unidades</span>
+        <span class="text">Setores</span>
       </router-link>
 
       <!-- Produtos -->
@@ -106,7 +106,7 @@
 import { ref } from "vue";
 
 const is_expanded = ref(false);
-const submenuOpen = ref(false); // ✅ aqui estava faltando
+const submenuOpen = ref(false);
 
 const ToggleMenu = () => {
   is_expanded.value = !is_expanded.value;

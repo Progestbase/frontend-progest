@@ -7,22 +7,22 @@
                         <div class="col-12">
                             <div class="card">
                                 <div class="card-body">
-                                    <LinkModal01 :idModalInsertUP="'#addUPUnidade'" :label="'NOVO'"
+                                    <LinkModal01 :idModalInsertUP="'#addUPSetor '" :label="'NOVO'"
                                         :titleModal="titleModal" :varsModalData="varsModalData">
                                     </LinkModal01>
                                     <div class="mt-5">
                                         <TBLBASE01
-                                            v-if="listUnidades"
-                                            :list="listUnidades" :titles="['#', 'Nome', 'Código', 'Descrição', 'Status']"
+                                            v-if="listSetores"
+                                            :list="listSetores" :titles="['#', 'Nome', 'Código', 'Descrição', 'Status']"
                                             :align="['text-center', 'text-left']" :indexLink="1"
-                                            :idModalUP="'#addUPUnidade'" :functions="functions" classColTable="12" 
-                                            deleteRoute="/unidades/delete" />
+                                            :idModalUP="'#addUPSetor'" :functions="functions" classColTable="12"
+                                            deleteRoute="/setores/delete" />
                                     </div>
                                 </div>
                             </div>
                         </div>
 
-                        <ModalUnidades idModal="addUPUnidade" :functions="functions"></ModalUnidades>
+                        <ModalSetores idModal="addUPSetor" :functions="functions"></ModalSetores    >
 
                     </div>
                 </div>
@@ -35,27 +35,27 @@
 
 import LinkModal01 from "@/components/layouts/LinkModal01.vue";
 import TemplateAdmin from "@/views/roleAdmin/TemplateAdmin.vue";
-import ModalUnidades from "@/components/cadastros/ModalUnidades.vue";
+import ModalSetores from "@/components/cadastros/ModalSetores.vue";
 import TBLBASE01 from "@/components/layouts/TableBase01.vue";
 
-import functions from "../../functions/cad_unidades.js";
+import functions from "../../functions/cad_setores.js";
 
 
 export default {
-    name: 'UnidadesView',
+    name: 'SetoresView',
     components: {
         LinkModal01,
         TemplateAdmin,
-        ModalUnidades,
+        ModalSetores,
         TBLBASE01,
     },
     data() {
         return {
-            isCreateModalUnidadeOpen: false,
-            unidade_data: null,
+            isCreateModalSetorOpen: false,
+            setor_data: null,
             functions: functions,
             choice_filters: null,
-            titleModal: 'Cadastro de Unidades',
+            titleModal: 'Cadastro de Setores',
             varsModalData: {
                 status: 'A',
                 nome: '',
@@ -64,23 +64,23 @@ export default {
         }
     },
     methods: {
-        openCreateUnidadeModal() {
-            this.isCreateUnidadeModalOpen = true;
+        openCreateSetorModal() {
+            this.isCreateSetorModalOpen = true;
         },
-        listAllUnidades() {
+        listAllSetores() {
             functions.listAll(this);
         },
     },
     computed: {
-        listUnidades() {
-            return this.$store.state.listUnidades;
+        listSetores() {
+            return this.$store.state.listSetores;
         }
     },
     created() {
 
     },
     mounted() {
-        this.listAllUnidades();
+        this.listAllSetores();
     }
 }
 

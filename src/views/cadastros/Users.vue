@@ -12,13 +12,12 @@
                       :varsModalData="varsModalData">
                     </LinkModal01>
                   </button>
-                  
                   <!-- Listagem de usuários aqui -->
                   <div class="mt-5">
                     <!-- Tabela de listagem de itens -->
-                    <TBLBASE01 v-if="listUsers && listUsers.data && listUsers.data.length > 0" :list="listUsers"
-                      :titles="['#', 'Nome', 'cpf', 'Matricula', 'Data de Nascimento', 'Status', 'Tipo', 'Unidade']"
-                      :align="['text-center', 'text-left', 'text-left', 'text-left']" :indexLink="1"
+                    <TBLBASE01 v-if="listUsers && listUsers.length > 0" :list="listUsers"
+                          :titles="['#', 'Nome', 'cpf', 'Matricula', 'Data de Nascimento', 'Status', 'Tipo', 'Unidade', 'Perfil', 'Tipo de Vínculo', 'Setor']"
+                          :align="['text-center', 'text-left', 'text-left', 'text-left', 'text-left', 'text-left', 'text-left', 'text-left', 'text-left', 'text-left']" :indexLink="1"
                       :idModalUP="'#addUPUser'" :functions="functions" classColTable="12" 
                       deleteRoute="/user/delete"
                       />

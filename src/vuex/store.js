@@ -18,6 +18,9 @@ export default createStore({
     searchFilters: [],
     idDataLoaded: "",
     isSearching: "",
+      listPerfis: [],
+      listTiposVinculo: [],
+      listSetores: [],
   },
   mutations: {
     setUserToken(state, token) {
@@ -66,6 +69,15 @@ export default createStore({
     setListEstoque(state, estoque) {
       state.listEstoque = estoque;
     },
+      setListPerfis(state, perfis) {
+        state.listPerfis = perfis;
+      },
+      setListTiposVinculo(state, tipos) {
+        state.listTiposVinculo = tipos;
+      },
+      setListSetores(state, setores) {
+        state.listSetores = setores;
+      },
     setModalTitle(state, title) {
       state.modalData.modalTitle = title;
     },
@@ -90,5 +102,8 @@ export default createStore({
     getListUnidades: (state) => state.listUnidades,
     getListCategoriasProdutos: (state) => state.listCategoriasProdutos,
     getListFornecedores: (state) => state.listFornecedores,
+      getListPerfis: (state) => state.listPerfis,
+      getListTiposVinculo: (state) => state.listTiposVinculo,
+      getListSetores: (state) => state.listSetores,
   },
 });

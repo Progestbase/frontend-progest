@@ -88,11 +88,11 @@ export default {
   },
   computed: {
     contentTable() {
-      console.log(this.list);
-      if (this.list.data) {
+      if (Array.isArray(this.list)) {
+        return this.list;
+      } else if (this.list && this.list.data) {
         return this.list.data;
       } else {
-        console.log('Ainda sem dado para tabular');
         return [];
       }
     },

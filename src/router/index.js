@@ -9,7 +9,7 @@ import Home from '@/views/Home.vue';
 import About from '@/views/About.vue';
 import Users from '../views/cadastros/Users.vue';
 import TiposUsuario from '../views/cadastros/TiposUsuario.vue';
-import Unidades from '../views/cadastros/Unidades.vue';
+import Setores from '../views/cadastros/Setores.vue';
 import Produtos from '../views/cadastros/Produtos.vue';
 import CategoriasProdutos from '../views/cadastros/CategoriasProdutos.vue';
 import UnidadesMedida from '../views/cadastros/UnidadesMedida.vue';
@@ -60,9 +60,9 @@ const router = createRouter({
       meta: { requiresAuth: true },
     },
     {
-      path: '/unidades',
-      name: 'unidades',
-      component: Unidades,
+      path: '/setores',
+      name: 'setores',
+      component: Setores,
       meta: { requiresAuth: true },
     },    
     {
@@ -95,21 +95,6 @@ const router = createRouter({
       component: HistoricoDePedidosView,
       meta: { requiresAuth: true }, // Rota protegida
     },
-    /*
-    {
-      path: '/estoque',
-      name: 'estoque',
-      component: Estoque,
-      meta: { requiresAuth: true },
-    },
-    {
-      path: '/estoque/:id',
-      name: 'estoqueUnidade',
-      component: EstoqueUnidade,
-      props: true,
-      meta: { requiresAuth: true },
-    },
-    */
     {
       path: '/:pathMatch(.*)*',
       redirect: (to) => {
@@ -120,10 +105,8 @@ const router = createRouter({
   ],
 });
 
-// Guard de autenticação
 router.beforeEach((to, from, next) => {
   const isAuthenticated = localStorage.getItem('token');
-
   if (to.meta.requiresAuth && !isAuthenticated) {
     next('/login');
   } else if (

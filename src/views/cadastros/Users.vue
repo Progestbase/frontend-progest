@@ -7,20 +7,51 @@
             <div class="col-12">
               <div class="card">
                 <div class="card-body">
-                  <button class="btn btn-success">
-                    <LinkModal01 :idModalInsertUP="'#addUPUser'" :label="'NOVO'" :titleModal="titleModal"
-                      :varsModalData="varsModalData">
-                    </LinkModal01>
-                  </button>
+                  <LinkModal01
+                    :idModalInsertUP="'#addUPUser'"
+                    :label="'NOVO'"
+                    :titleModal="titleModal"
+                    :varsModalData="varsModalData"
+                  >
+                  </LinkModal01>
+
                   <!-- Listagem de usuários aqui -->
                   <div class="mt-5">
                     <!-- Tabela de listagem de itens -->
-                    <TBLBASE01 v-if="listUsers && listUsers.length > 0" :list="listUsers"
-                          :titles="['#', 'Nome', 'cpf', 'Matricula', 'Data de Nascimento', 'Status', 'Tipo', 'Unidade', 'Perfil', 'Tipo de Vínculo', 'Setor']"
-                          :align="['text-center', 'text-left', 'text-left', 'text-left', 'text-left', 'text-left', 'text-left', 'text-left', 'text-left', 'text-left']" :indexLink="1"
-                      :idModalUP="'#addUPUser'" :functions="functions" classColTable="12" 
+                    <TBLBASE01
+                      v-if="listUsers && listUsers.length > 0"
+                      :list="listUsers"
+                      :titles="[
+                        '#',
+                        'Nome',
+                        'cpf',
+                        'Matricula',
+                        'Data de Nascimento',
+                        'Status',
+                        'Tipo',
+                        'Unidade',
+                        'Perfil',
+                        'Tipo de Vínculo',
+                        'Setor',
+                      ]"
+                      :align="[
+                        'text-center',
+                        'text-left',
+                        'text-left',
+                        'text-left',
+                        'text-left',
+                        'text-left',
+                        'text-left',
+                        'text-left',
+                        'text-left',
+                        'text-left',
+                      ]"
+                      :indexLink="1"
+                      :idModalUP="'#addUPUser'"
+                      :functions="functions"
+                      classColTable="12"
                       deleteRoute="/user/delete"
-                      />
+                    />
                     <!-- Paginação da tabela -->
                     <!-- <PAGINACAOBASE01 :paginacaoData="listUsers" :functions="functions">
                     </PAGINACAOBASE01> -->
@@ -31,8 +62,6 @@
           </div>
 
           <ModalUser01 idModal="addUPUser" :functions="functions"></ModalUser01>
-
-
         </div>
       </div>
     </div>
@@ -40,15 +69,15 @@
 </template>
 
 <script>
-import LinkModal01 from "@/components/layouts/LinkModal01.vue"
+import LinkModal01 from "@/components/layouts/LinkModal01.vue";
 import TemplateAdmin from "@/views/roleAdmin/TemplateAdmin.vue";
 import ModalUser01 from "@/components/cadastros/ModalUser01.vue";
-import TBLBASE01 from '@/components/layouts/TableBase01.vue';
+import TBLBASE01 from "@/components/layouts/TableBase01.vue";
 
 import functions from "../../functions/cad_usuarios.js";
 
 export default {
-  name: 'UsersView',
+  name: "UsersView",
   components: {
     LinkModal01,
     TemplateAdmin,
@@ -61,16 +90,16 @@ export default {
       user_data: null,
       functions: functions,
       choice_filters: null,
-      titleModal: 'Cadastro de Usuário',
+      titleModal: "Cadastro de Usuário",
       varsModalData: {
-        status: 'A',
-        matricula: '',
-        funcao: 'L',
-        name: '',
-        cpf: '',
-        email: '',
-        password: ''
-      }
+        status: "A",
+        matricula: "",
+        funcao: "L",
+        name: "",
+        cpf: "",
+        email: "",
+        password: "",
+      },
     };
   },
   methods: {
@@ -87,16 +116,14 @@ export default {
     },
     listAllUsers() {
       functions.listALL(this);
-    }
+    },
   },
   computed: {
     listUsers() {
       return this.$store.state.listUsers;
     },
   },
-  created() {
-
-  },
+  created() {},
   mounted() {
     this.listAllUsers();
   },

@@ -7,15 +7,13 @@
             <div class="col-12">
               <div class="card">
                 <div class="card-body">
-                  <button class="btn btn-success">
-                    <LinkModal01
-                      :idModalInsertUP="'#addFornecedores'"
-                      :label="'NOVO'"
-                      :titleModal="titleModal"
-                      :varsModalData="varsModalData"
-                    >
-                    </LinkModal01>
-                  </button>
+                  <LinkModal01
+                    :idModalInsertUP="'#addFornecedores'"
+                    :label="'NOVO'"
+                    :titleModal="titleModal"
+                    :varsModalData="varsModalData"
+                  >
+                  </LinkModal01>
 
                   <div class="mt-5">
                     <TBLBASE01

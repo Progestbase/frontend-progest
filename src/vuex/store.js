@@ -38,10 +38,12 @@ export default createStore({
       state.modalData.modalData = {
         status: "A",
         matricula: "",
-        funcao: "L",
         name: "",
         cpf: "",
         email: "",
+        telefone: "",
+        data_nascimento: "",
+        tipo_vinculo: "",
         password: "",
       };
     },

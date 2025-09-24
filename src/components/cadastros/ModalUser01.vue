@@ -17,64 +17,43 @@
                 </div>
                 <div class="col-md-4">
                   <div class="mb-3">
-                    <label class="form-label" for="Matricula">Matricula</label>
+                    <label class="form-label" for="Matricula">Matrícula</label>
                     <input type="text" class="form-control text-uppercase" placeholder="" v-model="modalData.matricula">
                   </div>
                 </div>
-                <!-- Perfis do usuário -->
+                <!-- Tipo de vínculo -->
                 <div class="col-md-4">
                   <div class="mb-3">
-                    <label class="form-label" for="UserPerfil">Perfil</label>
-                    <select class="form-select" v-model="modalData.perfil">
-                      <option v-for="perfil in listPerfisStore" :key="perfil.id" :value="perfil.id">
-                        {{ perfil.nome }}
-                      </option>
-                    </select>
-                  </div>
-                </div>
-                <!-- Tipos de vínculo -->
-                <div class="col-md-4">
-                  <div class="mb-3">
-                    <label class="form-label" for="UserTipoVinculo">Tipo de Vínculo</label>
-                    <select class="form-select" v-model="modalData.tipo_vinculo">
+                    <label class="form-label" for="UserTipoVinculo">Tipo de Vínculo *</label>
+                    <select class="form-select" v-model="modalData.tipo_vinculo" required>
+                      <option value="">Selecione um tipo</option>
                       <option v-for="tipo in listTiposVinculoStore" :key="tipo.id" :value="tipo.id">
                         {{ tipo.nome }}
                       </option>
                     </select>
                   </div>
                 </div>
-                <!-- Setor do usuário -->
-                <div class="col-md-4">
+              </div>
+              <div class="row">
+                <div class="col-md-8">
                   <div class="mb-3">
-                    <label class="form-label" for="UserSetor">Setor</label>
-                    <select class="form-select" v-model="modalData.setor">
-                      <option v-for="setor in listSetoresStore" :key="setor.id" :value="setor.id">
-                        {{ setor.nome }}
-                      </option>
-                    </select>
+                    <label class="form-label" for="UserNome">Nome *</label>
+                    <input type="text" class="form-control" placeholder="" v-model="modalData.name" required>
                   </div>
                 </div>
                 <div class="col-md-4">
                   <div class="mb-3">
-                    <label class="form-label" for="UserCpf">CPF</label>
-                    <input type="text" class="form-control text-uppercase" placeholder="" v-model="modalData.cpf"
-                      v-mask="'###.###.###-##'">
+                    <label class="form-label" for="UserCpf">CPF *</label>
+                    <input type="text" class="form-control" placeholder="" v-model="modalData.cpf"
+                      v-mask="'###.###.###-##'" required>
                   </div>
                 </div>
               </div>
               <div class="row">
                 <div class="col-md-12">
                   <div class="mb-3">
-                    <label class="form-label" for="UserNome">Nome</label>
-                    <input type="text" class="form-control text-uppercase" placeholder="" v-model="modalData.name">
-                  </div>
-                </div>
-              </div>
-              <div class="row">
-                <div class="col-md-12">
-                  <div class="mb-3">
-                    <label class="form-label" for="UserEmail">E-mail</label>
-                    <input type="text" class="form-control text-lowercase" placeholder="" v-model="modalData.email">
+                    <label class="form-label" for="UserEmail">E-mail *</label>
+                    <input type="email" class="form-control" placeholder="" v-model="modalData.email" required>
                   </div>
                 </div>
               </div>
@@ -89,14 +68,14 @@
                 <div class="col-md-4">
                   <div class="mb-3">
                     <label class="form-label" for="UserNascimento">Data de Nascimento</label>
-                    <input type="text" class="form-control" placeholder="dd/mm/aaaa" v-model="modalData.nascimento"
-                      v-mask="'##/##/####'">
+                    <input type="date" class="form-control" v-model="modalData.data_nascimento">
                   </div>
                 </div>
                 <div class="col-md-4">
                   <div class="mb-3">
-                    <label class="form-label" for="UserPassword">Senha</label>
-                    <input type="password" class="form-control" placeholder="" v-model="modalData.password">
+                    <label class="form-label" for="UserPassword">Senha {{ modalFunction === 'ADD' ? '*' : '' }}</label>
+                    <input type="password" class="form-control" placeholder="" v-model="modalData.password" 
+                           :required="modalFunction === 'ADD'">
                   </div>
                 </div>
               </div>
@@ -133,33 +112,26 @@ export default {
     };
   },
   mounted() {
-    this.listPerfis();
+    // Carrega apenas os tipos de vínculo que são obrigatórios
     this.listTiposVinculo();
-    this.listSetores();
   },
   methods: {
     add_UP_User() {
-      const content = {
-        $axios: this.$axios,
-        $store: this.$store,
-        $toastr: this.$toastr,
-        modalData: {
-          ...this.modalData,
-          perfil: this.modalData.perfil,
-          tipo_vinculo: this.modalData.tipo_vinculo,
-          setor: this.modalData.setor,
-        }
-      };
+      // Validação simples antes de enviar
+      if (!this.modalData.name || !this.modalData.email || !this.modalData.cpf || !this.modalData.matricula || !this.modalData.tipo_vinculo) {
+        alert('Por favor, preencha todos os campos obrigatórios (*)');
+        return;
+      }
+      
+      if (this.modalFunction === 'ADD' && !this.modalData.password) {
+        alert('Senha é obrigatória para novos usuários');
+        return;
+      }
+
       this.functions.ADD_UP(this, this.modalFunction);
-    },
-    listPerfis() {
-      Funcoes.listPerfis(this);
     },
     listTiposVinculo() {
       Funcoes.listTiposVinculo(this);
-    },
-    listSetores() {
-      Funcoes.listSetores(this);
     },
   },
   computed: {
@@ -172,14 +144,8 @@ export default {
     modalFunction() {
       return this.$store.state.modalData.modalFunction;
     },
-    listPerfisStore() {
-      return this.$store.state.listPerfis || [];
-    },
     listTiposVinculoStore() {
       return this.$store.state.listTiposVinculo || [];
-    },
-    listSetoresStore() {
-      return this.$store.state.listSetores;
     },
   },
   state: {

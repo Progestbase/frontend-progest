@@ -21,22 +21,6 @@ const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     {
-      path: "/estoques",
-      name: "estoques",
-      component: Estoque,
-      meta: { requiresAuth: true },
-      children: [
-        {
-          path: ":id",
-          name: "estoqueUnidade",
-          component: EstoqueUnidade,
-          meta: { requiresAuth: true },
-          props: true,
-        },
-      ],
-    },
-
-    {
       path: "/login",
       name: "login",
       component: Login,
@@ -97,6 +81,19 @@ const router = createRouter({
       name: "fornecedores",
       component: Fornecedores,
       meta: { requiresAuth: true },
+    },
+    {
+      path: "/estoques",
+      name: "estoques",
+      component: Estoque,
+      meta: { requiresAuth: true },
+    },
+    {
+      path: "/estoques/:id",
+      name: "estoqueUnidade",
+      component: EstoqueUnidade,
+      meta: { requiresAuth: true },
+      props: true,
     },
     {
       path: "/historico",

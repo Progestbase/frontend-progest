@@ -24,15 +24,13 @@
                       :titles="[
                         '#',
                         'Nome',
-                        'cpf',
-                        'Matricula',
+                        'E-mail',
+                        'CPF',
+                        'Matrícula',
+                        'Telefone',
                         'Data de Nascimento',
-                        'Status',
-                        'Tipo',
-                        'Unidade',
-                        'Perfil',
                         'Tipo de Vínculo',
-                        'Setor',
+                        'Status',
                       ]"
                       :align="[
                         'text-center',
@@ -43,8 +41,7 @@
                         'text-left',
                         'text-left',
                         'text-left',
-                        'text-left',
-                        'text-left',
+                        'text-center',
                       ]"
                       :indexLink="1"
                       :idModalUP="'#addUPUser'"
@@ -94,10 +91,12 @@ export default {
       varsModalData: {
         status: "A",
         matricula: "",
-        funcao: "L",
         name: "",
         cpf: "",
         email: "",
+        telefone: "",
+        data_nascimento: "",
+        tipo_vinculo: "",
         password: "",
       },
     };
@@ -115,12 +114,20 @@ export default {
       this.closeCreateUserModal();
     },
     listAllUsers() {
+      console.log("Chamando listAllUsers");
+      console.log("Context this:", this);
+      console.log("Functions:", functions);
       functions.listALL(this);
     },
   },
   computed: {
     listUsers() {
-      return this.$store.state.listUsers;
+      const users = this.$store.state.listUsers;
+      console.log("Computed listUsers - dados do store:", users);
+      console.log("Computed listUsers - tipo:", typeof users);
+      console.log("Computed listUsers - é array:", Array.isArray(users));
+      console.log("Computed listUsers - length:", users?.length);
+      return users;
     },
   },
   created() {},

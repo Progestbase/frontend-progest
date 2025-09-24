@@ -17,13 +17,13 @@ var ADD_UP = (content, funcao) => {
     .then(function (response) {
       if (response.data.status) {
         listALL(content);
-        alert(funcao == "ADD" ? "Cadastrado" : "Atualizado" + "com sucesso");
+        alert(funcao == "ADD" ? "Usuário cadastrado com sucesso!" : "Usuário atualizado com sucesso!");
 
         if (funcao == "ADD") {
           content.modalData.id = response.data.data.id;
           content.$store.commit("setIdDataLoaded", response.data.data.id);
         }
-        content.$store.commit("setModalTitle", response.data.data.nome);
+        content.$store.commit("setModalTitle", response.data.data.name);
         content.$store.commit("setModalFunction", "UP");
 
       } else if (response.data.status == false && response.data.validacao) {
@@ -106,15 +106,28 @@ var listALL = (content, url = null) => {
       }
     )
     .then(response => {
-      content.$store.commit("setListUsers", response.data.data);
-      // content.$store.commit("setPaginacao", response.data);
-      console.log("setListUsers", response.data.data);
+      console.log("Resposta completa da API:", response.data);
+      console.log("Status da resposta:", response.data.status);
+      console.log("Dados dos usuários:", response.data.data);
+      
+      if (response.data.status && response.data.data) {
+        content.$store.commit("setListUsers", response.data.data);
+        console.log("Usuários salvos no store:", response.data.data);
+      } else {
+        console.error("Resposta da API sem dados válidos:", response.data);
+        content.$store.commit("setListUsers", []);
+      }
+      
       content.$store.commit("setisSearching", false);
     })
     .catch(error => {
-      console.error(error);
-      //alert("OPS! \nEstamos com algum problema, tente novamente mais tarde.");
-      content.$toastr.e("OPS. Pequena intermitência. Se persistir, realize um novo login.");
+      console.error("Erro na chamada da API listALL:", error);
+      console.error("Response error:", error.response);
+      content.$store.commit("setisSearching", false);
+      content.$store.commit("setListUsers", []);
+      if (content.$toastr) {
+        content.$toastr.e("Erro ao carregar usuários. Verifique o console para mais detalhes.");
+      }
     });
 };
 
@@ -181,23 +194,7 @@ var toggleData = (content, idToggle, metodo, field = null, checkd = null) => {
     });
 };
 
-var listPerfis = (content, url = null) => {
-  content.$axios
-    .post(url == null ? "/perfil/list" : url, {}, {
-      headers: {
-        Authorization: "Bearer " + content.$store.getters.getUserToken
-      }
-    })
-    .then(response => {
-      content.$store.commit("setListPerfis", response.data.data);
-      console.log("setListPerfis", response.data.data);
-    })
-    .catch(error => {
-      console.error(error);
-      alert("OPS! \nEstamos com algum problema, tente novamente mais tarde.");
-    });
-};
-
+// Mantém apenas a função de tipos de vínculo que é obrigatória
 var listTiposVinculo = (content, url = null) => {
   content.$axios
     .post(url == null ? "/tipoVinculo/list" : url, {}, {
@@ -210,25 +207,10 @@ var listTiposVinculo = (content, url = null) => {
       console.log("setListTiposVinculo", response.data.data);
     })
     .catch(error => {
-      console.error(error);
-      alert("OPS! \nEstamos com algum problema, tente novamente mais tarde.");
-    });
-};
-
-var listSetores = (content, url = null) => {
-  content.$axios
-    .post(url == null ? "/setor/list" : url, {}, {
-      headers: {
-        Authorization: "Bearer " + content.$store.getters.getUserToken
-      }
-    })
-    .then(response => {
-      content.$store.commit("setListSetores", response.data.data);
-      console.log("setListSetores", response.data.data);
-    })
-    .catch(error => {
-      console.error(error);
-      alert("OPS! \nEstamos com algum problema, tente novamente mais tarde.");
+      console.error("Erro ao carregar tipos de vínculo:", error);
+      // Inicializa com array vazio para evitar erros no frontend
+      content.$store.commit("setListTiposVinculo", []);
+      // Não mostra alert para não interromper o fluxo principal
     });
 };
 
@@ -238,9 +220,7 @@ var exportFunctions = {
   listData: listData,
   toggleData: toggleData,
   EDIT_PERFIL: EDIT_PERFIL,
-  listPerfis: listPerfis,
   listTiposVinculo: listTiposVinculo,
-  listSetores: listSetores,
 };
 
 export default exportFunctions;

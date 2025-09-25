@@ -21,6 +21,8 @@ export default createStore({
     listPerfis: [],
     listTiposVinculo: [],
     listSetores: [],
+    listUnidadesGerais: [],
+    unidadeAtual: null,
   },
   mutations: {
     setUserToken(state, token) {
@@ -80,6 +82,17 @@ export default createStore({
     setListSetores(state, setores) {
       state.listSetores = setores;
     },
+    setListUnidadesGerais(state, unidades) {
+      state.listUnidadesGerais = unidades;
+    },
+    setUnidadeAtual(state, unidade) {
+      state.unidadeAtual = unidade;
+    },
+    SET_MODAL_DATA(state, payload) {
+      state.modalData.modalTitle = payload.modalTitle || '';
+      state.modalData.modalData = payload.modalData || {};
+      state.modalData.modalFunction = payload.modalFunction || 'ADD';
+    },
     setModalTitle(state, title) {
       state.modalData.modalTitle = title;
     },
@@ -107,5 +120,6 @@ export default createStore({
     getListPerfis: (state) => state.listPerfis,
     getListTiposVinculo: (state) => state.listTiposVinculo,
     getListSetores: (state) => state.listSetores,
+    getListUnidadesGerais: (state) => state.listUnidadesGerais,
   },
 });

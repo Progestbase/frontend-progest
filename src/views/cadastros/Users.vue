@@ -29,8 +29,8 @@
                         'Matrícula',
                         'Telefone',
                         'Data de Nascimento',
-                        'Tipo de Vínculo',
                         'Status',
+                        'Tipo de Vínculo',
                       ]"
                       :align="[
                         'text-center',
@@ -114,20 +114,21 @@ export default {
       this.closeCreateUserModal();
     },
     listAllUsers() {
-      console.log("Chamando listAllUsers");
-      console.log("Context this:", this);
-      console.log("Functions:", functions);
-      functions.listALL(this);
+      // Primeiro carrega os tipos de vínculo, depois os usuários
+      functions
+        .listTiposVinculo(this)
+        .then(() => {
+          functions.listALL(this);
+        })
+        .catch(() => {
+          // Se falhar ao carregar tipos de vínculo, ainda assim carrega os usuários
+          functions.listALL(this);
+        });
     },
   },
   computed: {
     listUsers() {
-      const users = this.$store.state.listUsers;
-      console.log("Computed listUsers - dados do store:", users);
-      console.log("Computed listUsers - tipo:", typeof users);
-      console.log("Computed listUsers - é array:", Array.isArray(users));
-      console.log("Computed listUsers - length:", users?.length);
-      return users;
+      return this.$store.state.listUsers;
     },
   },
   created() {},

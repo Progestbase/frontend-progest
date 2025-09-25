@@ -1,7 +1,14 @@
 <template>
   <header class="flex justify-between items-center bg-white p-4 shadow-md">
     <h2 class="text-xl font-semibold text-azul-eclipse ml-2">
-      {{ headerTitle }}
+      <span v-if="$route.name === 'unidadeDetalhes'">
+        <router-link to="/unidades" class="text-muted">
+          <i class="mdi mdi-arrow-left me-1"></i>Unidades
+        </router-link>
+        <span class="mx-2">/</span>
+        {{ unidadeNomeAtual }}
+      </span>
+      <span v-else>{{ headerTitle }}</span>
     </h2>
     <div class="flex items-center space-x-4">
       <div class="text-right">
@@ -32,11 +39,6 @@ export default {
       required: true,
     },
   },
-  methods: {
-    headerTitle() {
-      return this.$route.meta.title || "";
-    },
-  },
   computed: {
     headerTitle() {
       switch (this.$route.name) {
@@ -48,6 +50,8 @@ export default {
           return "Tipos de Usuário";
         case "unidades":
           return "Unidades";
+        case "unidadeDetalhes":
+          return "Detalhes da Unidade";
         case "produtos":
           return "Produtos";
         case "categoriasProdutos":
@@ -65,6 +69,10 @@ export default {
           return "";
       }
     },
+    unidadeNomeAtual() {
+      // Tenta buscar do store primeiro, senão usa um valor padrão
+      return this.$store.state.unidadeAtual?.nome || 'Carregando...';
+    }
   },
 };
 </script>

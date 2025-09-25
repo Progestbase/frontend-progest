@@ -138,24 +138,11 @@ export default {
   },
   computed: {
     contentTable() {
-      console.log("TableBase01 - list recebida:", this.list);
-      console.log("TableBase01 - é array:", Array.isArray(this.list));
-      console.log("TableBase01 - tipo:", typeof this.list);
-
       if (Array.isArray(this.list)) {
-        console.log(
-          "TableBase01 - retornando array direto, length:",
-          this.list.length
-        );
         return this.list;
       } else if (this.list && this.list.data) {
-        console.log(
-          "TableBase01 - retornando list.data, length:",
-          this.list.data.length
-        );
         return this.list.data;
       } else {
-        console.log("TableBase01 - retornando array vazio");
         return [];
       }
     },

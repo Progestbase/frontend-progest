@@ -24,6 +24,9 @@
                       <option value="A">Ativo</option>
                       <option value="I">Inativo</option>
                     </select>
+                    <small class="text-muted" v-if="modalFunction === 'ADD'">
+                      Novos usuários são criados como "Ativo" por padrão
+                    </small>
                   </div>
                 </div>
                 <div class="col-md-4">
@@ -227,6 +230,17 @@ export default {
     },
     listTiposVinculoStore() {
       return this.$store.state.listTiposVinculo || [];
+    },
+  },
+  watch: {
+    modalFunction(newValue) {
+      // Quando é um novo usuário, garante que o status seja 'A'
+      if (
+        newValue === "ADD" &&
+        (!this.modalData.status || this.modalData.status === "")
+      ) {
+        this.$store.commit("setModalData", { ...this.modalData, status: "A" });
+      }
     },
   },
   state: {

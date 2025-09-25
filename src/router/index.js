@@ -8,14 +8,12 @@ import HistoricoDePedidosView from "@/views/roleSolicitante/HistoricoDePedidosVi
 import Home from "@/views/Home.vue";
 import About from "@/views/About.vue";
 import Users from "../views/cadastros/Users.vue";
-import Setores from "../views/cadastros/Setores.vue";
+import Unidades from "../views/cadastros/Unidades.vue";
+import UnidadeDetalhes from "../views/cadastros/UnidadeDetalhes.vue";
 import Produtos from "../views/cadastros/Produtos.vue";
 import CategoriasProdutos from "../views/cadastros/CategoriasProdutos.vue";
 import UnidadesMedida from "../views/cadastros/UnidadesMedida.vue";
 import Fornecedores from "../views/cadastros/Fornecedores.vue";
-
-import Estoque from "@/views/cadastros/Estoque.vue";
-import EstoqueUnidade from "@/views/cadastros/EstoqueUnidade.vue";
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -53,10 +51,17 @@ const router = createRouter({
       meta: { requiresAuth: true },
     },
     {
-      path: "/setores",
-      name: "setores",
-      component: Setores,
+      path: "/unidades",
+      name: "unidades",
+      component: Unidades,
       meta: { requiresAuth: true },
+    },
+    {
+      path: "/unidade/:id",
+      name: "unidadeDetalhes",
+      component: UnidadeDetalhes,
+      meta: { requiresAuth: true },
+      props: true,
     },
     {
       path: "/produtos",
@@ -81,19 +86,6 @@ const router = createRouter({
       name: "fornecedores",
       component: Fornecedores,
       meta: { requiresAuth: true },
-    },
-    {
-      path: "/estoques",
-      name: "estoques",
-      component: Estoque,
-      meta: { requiresAuth: true },
-    },
-    {
-      path: "/estoques/:id",
-      name: "estoqueUnidade",
-      component: EstoqueUnidade,
-      meta: { requiresAuth: true },
-      props: true,
     },
     {
       path: "/historico",

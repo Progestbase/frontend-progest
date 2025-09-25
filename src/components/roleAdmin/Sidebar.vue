@@ -73,22 +73,16 @@
         <span class="text">Usuários</span>
       </router-link>
 
-      <!-- Setores -->
-      <router-link class="button" to="/setores" title="Setores">
-        <span class="material-icons">apartment</span>
-        <span class="text">Setores</span>
+      <!-- Unidades -->
+      <router-link class="button" to="/unidades" title="Unidades">
+        <span class="material-icons">business</span>
+        <span class="text">Unidades</span>
       </router-link>
 
       <!-- Produtos -->
       <router-link class="button" to="/produtos" title="Produtos">
         <span class="material-icons">inventory_2</span>
         <span class="text">Produtos</span>
-      </router-link>
-
-      <!-- Estoque -->
-      <router-link class="button" to="/estoques" title="Estoque">
-        <span class="material-icons">warehouse</span>
-        <span class="text">Estoque</span>
       </router-link>
 
       <!-- Fornecedores -->

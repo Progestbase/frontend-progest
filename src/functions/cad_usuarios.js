@@ -110,13 +110,24 @@ var listALL = (content, url = null) => {
       }
     )
     .then((response) => {
-      console.log("Resposta completa da API:", response.data);
-      console.log("Status da resposta:", response.data.status);
-      console.log("Dados dos usuários:", response.data.data);
-
       if (response.data.status && response.data.data) {
-        content.$store.commit("setListUsers", response.data.data);
-        console.log("Usuários salvos no store:", response.data.data);
+        // Substituir os valores dos usuários pelos nomes legíveis
+        const enrichedUsers = response.data.data.map((user) => {
+          const tiposVinculo = content.$store.state.listTiposVinculo || [];
+          const tipoVinculo = tiposVinculo.find(
+            (tipo) => tipo.id == user.tipo_vinculo
+          );
+
+          return {
+            ...user,
+            // Substitui o valor numérico pelo nome do tipo de vínculo
+            tipo_vinculo: tipoVinculo ? tipoVinculo.nome : "N/A",
+            // Substitui A/I por Ativo/Inativo
+            status: user.status === "A" ? "Ativo" : "Inativo",
+          };
+        });
+
+        content.$store.commit("setListUsers", enrichedUsers);
       } else {
         console.error("Resposta da API sem dados válidos:", response.data);
         content.$store.commit("setListUsers", []);
@@ -153,8 +164,11 @@ var listData = (content) => {
     .then((response) => {
       content.$store.commit("setIdDataLoaded", content.idData);
       content.$store.commit("setModalData", response.data.data);
-      content.$store.commit("setListUnidades", response.data.unidade);
-      content.$store.commit("setListTiposUsuario", response.data.tipo_usuario);
+      content.$store.commit("setModalFunction", "UP");
+      content.$store.commit(
+        "setModalTitle",
+        response.data.data.name || "Editar Usuário"
+      );
       console.log("IMPRIMINDO OS DADOS DO USUÁRIO: ", response.data);
       if (content.callback) content.callback(); // Chama o callback após carregar os dados
     })
@@ -206,7 +220,7 @@ var toggleData = (content, idToggle, metodo, field = null, checkd = null) => {
 
 // Mantém apenas a função de tipos de vínculo que é obrigatória
 var listTiposVinculo = (content, url = null) => {
-  content.$axios
+  return content.$axios
     .post(
       url == null ? "/tipoVinculo/list" : url,
       {},
@@ -219,12 +233,14 @@ var listTiposVinculo = (content, url = null) => {
     .then((response) => {
       content.$store.commit("setListTiposVinculo", response.data.data);
       console.log("setListTiposVinculo", response.data.data);
+      return response.data.data;
     })
     .catch((error) => {
       console.error("Erro ao carregar tipos de vínculo:", error);
       // Inicializa com array vazio para evitar erros no frontend
       content.$store.commit("setListTiposVinculo", []);
       // Não mostra alert para não interromper o fluxo principal
+      throw error;
     });
 };
 

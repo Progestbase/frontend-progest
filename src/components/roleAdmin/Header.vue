@@ -71,8 +71,8 @@ export default {
     },
     unidadeNomeAtual() {
       // Tenta buscar do store primeiro, senão usa um valor padrão
-      return this.$store.state.unidadeAtual?.nome || 'Carregando...';
-    }
+      return this.$store.state.unidadeAtual?.nome || "Carregando...";
+    },
   },
 };
 </script>

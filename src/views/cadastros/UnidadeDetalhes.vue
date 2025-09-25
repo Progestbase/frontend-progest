@@ -16,7 +16,10 @@
               <div v-else-if="unidade.id" class="card">
                 <div class="card-body">
                   <!-- Tabs Navigation -->
-                  <ul class="nav nav-tabs nav-tabs-custom nav-justified" role="tablist">
+                  <ul
+                    class="nav nav-tabs nav-tabs-custom nav-justified"
+                    role="tablist"
+                  >
                     <li class="nav-item">
                       <a
                         class="nav-link"
@@ -24,7 +27,9 @@
                         @click="changeTab('overview')"
                         href="#"
                       >
-                        <span class="d-block d-sm-none"><i class="fas fa-info-circle"></i></span>
+                        <span class="d-block d-sm-none"
+                          ><i class="fas fa-info-circle"></i
+                        ></span>
                         <span class="d-none d-sm-block">Overview</span>
                       </a>
                     </li>
@@ -35,7 +40,9 @@
                         @click="changeTab('setores')"
                         href="#"
                       >
-                        <span class="d-block d-sm-none"><i class="fas fa-building"></i></span>
+                        <span class="d-block d-sm-none"
+                          ><i class="fas fa-building"></i
+                        ></span>
                         <span class="d-none d-sm-block">Setores</span>
                       </a>
                     </li>
@@ -46,7 +53,9 @@
                         @click="changeTab('estoque')"
                         href="#"
                       >
-                        <span class="d-block d-sm-none"><i class="fas fa-boxes"></i></span>
+                        <span class="d-block d-sm-none"
+                          ><i class="fas fa-boxes"></i
+                        ></span>
                         <span class="d-none d-sm-block">Estoque</span>
                       </a>
                     </li>
@@ -70,19 +79,30 @@
                                 <div class="col-md-6">
                                   <div class="mb-3">
                                     <label class="form-label">Nome:</label>
-                                    <p class="form-control-plaintext">{{ unidade.nome }}</p>
+                                    <p class="form-control-plaintext">
+                                      {{ unidade.nome }}
+                                    </p>
                                   </div>
                                 </div>
                                 <div class="col-md-6">
                                   <div class="mb-3">
                                     <label class="form-label">Código:</label>
-                                    <p class="form-control-plaintext">{{ unidade.codigo_unidade }}</p>
+                                    <p class="form-control-plaintext">
+                                      {{ unidade.codigo_unidade }}
+                                    </p>
                                   </div>
                                 </div>
                                 <div class="col-md-6">
                                   <div class="mb-3">
                                     <label class="form-label">Tipo:</label>
-                                    <span class="badge" :class="unidade.tipo === 'Medicamento' ? 'bg-info' : 'bg-primary'">
+                                    <span
+                                      class="badge"
+                                      :class="
+                                        unidade.tipo === 'Medicamento'
+                                          ? 'bg-info'
+                                          : 'bg-primary'
+                                      "
+                                    >
                                       {{ unidade.tipo }}
                                     </span>
                                   </div>
@@ -90,23 +110,45 @@
                                 <div class="col-md-6">
                                   <div class="mb-3">
                                     <label class="form-label">Status:</label>
-                                    <span class="badge" :class="unidade.status === 'A' ? 'bg-success' : 'bg-secondary'">
-                                      {{ unidade.status === 'A' ? 'Ativo' : 'Inativo' }}
+                                    <span
+                                      class="badge"
+                                      :class="
+                                        unidade.status === 'A'
+                                          ? 'bg-success'
+                                          : 'bg-secondary'
+                                      "
+                                    >
+                                      {{
+                                        unidade.status === "A"
+                                          ? "Ativo"
+                                          : "Inativo"
+                                      }}
                                     </span>
                                   </div>
                                 </div>
                                 <div class="col-md-6">
                                   <div class="mb-3">
-                                    <label class="form-label">Controla Estoque:</label>
-                                    <span class="badge" :class="unidade.estoque ? 'bg-warning' : 'bg-light text-dark'">
-                                      {{ unidade.estoque ? 'Sim' : 'Não' }}
+                                    <label class="form-label"
+                                      >Controla Estoque:</label
+                                    >
+                                    <span
+                                      class="badge"
+                                      :class="
+                                        unidade.estoque
+                                          ? 'bg-warning'
+                                          : 'bg-light text-dark'
+                                      "
+                                    >
+                                      {{ unidade.estoque ? "Sim" : "Não" }}
                                     </span>
                                   </div>
                                 </div>
                                 <div class="col-12" v-if="unidade.descricao">
                                   <div class="mb-3">
                                     <label class="form-label">Descrição:</label>
-                                    <p class="form-control-plaintext">{{ unidade.descricao }}</p>
+                                    <p class="form-control-plaintext">
+                                      {{ unidade.descricao }}
+                                    </p>
                                   </div>
                                 </div>
                               </div>
@@ -152,11 +194,15 @@
                             <div class="card-body">
                               <div class="mb-2">
                                 <small class="text-muted">Criado em:</small>
-                                <p class="mb-1">{{ formatarData(unidade.created_at) }}</p>
+                                <p class="mb-1">
+                                  {{ formatarData(unidade.created_at) }}
+                                </p>
                               </div>
                               <div class="mb-0">
                                 <small class="text-muted">Atualizado em:</small>
-                                <p class="mb-0">{{ formatarData(unidade.updated_at) }}</p>
+                                <p class="mb-0">
+                                  {{ formatarData(unidade.updated_at) }}
+                                </p>
                               </div>
                             </div>
                           </div>
@@ -169,7 +215,9 @@
                       <div class="text-center py-5">
                         <i class="mdi mdi-wrench display-4 text-muted mb-3"></i>
                         <h5>Setores da Unidade</h5>
-                        <p class="text-muted">Esta funcionalidade será implementada em breve.</p>
+                        <p class="text-muted">
+                          Esta funcionalidade será implementada em breve.
+                        </p>
                       </div>
                     </div>
 
@@ -178,7 +226,9 @@
                       <div class="text-center py-5">
                         <i class="mdi mdi-wrench display-4 text-muted mb-3"></i>
                         <h5>Estoque da Unidade</h5>
-                        <p class="text-muted">Esta funcionalidade será implementada em breve.</p>
+                        <p class="text-muted">
+                          Esta funcionalidade será implementada em breve.
+                        </p>
                       </div>
                     </div>
                   </div>
@@ -187,9 +237,13 @@
 
               <!-- Erro -->
               <div v-else class="text-center py-5">
-                <i class="mdi mdi-alert-circle-outline display-4 text-danger mb-3"></i>
+                <i
+                  class="mdi mdi-alert-circle-outline display-4 text-danger mb-3"
+                ></i>
                 <h5>Unidade não encontrada</h5>
-                <p class="text-muted">A unidade solicitada não foi encontrada.</p>
+                <p class="text-muted">
+                  A unidade solicitada não foi encontrada.
+                </p>
                 <router-link to="/unidades" class="btn btn-primary">
                   <i class="mdi mdi-arrow-left me-2"></i>
                   Voltar para Unidades
@@ -213,7 +267,7 @@
 import TemplateAdmin from "@/views/roleAdmin/TemplateAdmin.vue";
 import ModalUnidades from "@/components/cadastros/ModalUnidades.vue";
 import functions from "../../functions/cad_unidades.js";
-import * as bootstrap from 'bootstrap';
+import * as bootstrap from "bootstrap";
 
 export default {
   name: "UnidadeDetalhes",
@@ -221,26 +275,26 @@ export default {
     TemplateAdmin,
     ModalUnidades,
   },
-  props: ['id'],
+  props: ["id"],
   data() {
     return {
       unidade: {},
       loading: false,
-      activeTab: 'overview',
-      functions: functions
+      activeTab: "overview",
+      functions: functions,
     };
   },
   watch: {
-    '$route.query.tab': {
+    "$route.query.tab": {
       handler(newTab) {
-        if (newTab && ['overview', 'setores', 'estoque'].includes(newTab)) {
+        if (newTab && ["overview", "setores", "estoque"].includes(newTab)) {
           this.activeTab = newTab;
         } else {
-          this.activeTab = 'overview';
+          this.activeTab = "overview";
         }
       },
-      immediate: true
-    }
+      immediate: true,
+    },
   },
   methods: {
     async carregarUnidade() {
@@ -250,13 +304,16 @@ export default {
         if (result.success) {
           this.unidade = result.data;
           // Atualizar no store para o header
-          this.$store.commit('setUnidadeAtual', result.data);
+          this.$store.commit("setUnidadeAtual", result.data);
         } else {
-          this.showNotification(result.message || 'Erro ao carregar unidade', 'error');
+          this.showNotification(
+            result.message || "Erro ao carregar unidade",
+            "error"
+          );
         }
       } catch (error) {
-        console.error('Erro ao carregar unidade:', error);
-        this.showNotification('Erro ao carregar unidade', 'error');
+        console.error("Erro ao carregar unidade:", error);
+        this.showNotification("Erro ao carregar unidade", "error");
       } finally {
         this.loading = false;
       }
@@ -266,60 +323,71 @@ export default {
       this.activeTab = tab;
       this.$router.push({
         path: `/unidade/${this.id}`,
-        query: { tab }
+        query: { tab },
       });
     },
 
     editarUnidade() {
-      console.log('=== EDITANDO UNIDADE ===');
-      console.log('Dados da unidade:', this.unidade);
-      
-      this.$store.commit('SET_MODAL_DATA', {
-        modalTitle: 'Editar Unidade',
+      console.log("=== EDITANDO UNIDADE ===");
+      console.log("Dados da unidade:", this.unidade);
+
+      this.$store.commit("SET_MODAL_DATA", {
+        modalTitle: "Editar Unidade",
         modalData: { ...this.unidade },
-        modalFunction: 'UP'
+        modalFunction: "UP",
       });
-      
-      console.log('Dados salvos no store:', this.$store.state.modalData);
-      
-      const modalElement = document.getElementById('editUnidade');
-      console.log('Elemento modal encontrado:', modalElement);
-      
+
+      console.log("Dados salvos no store:", this.$store.state.modalData);
+
+      const modalElement = document.getElementById("editUnidade");
+      console.log("Elemento modal encontrado:", modalElement);
+
       if (modalElement) {
         const modal = new bootstrap.Modal(modalElement);
-        console.log('Modal criado:', modal);
+        console.log("Modal criado:", modal);
         modal.show();
       } else {
-        console.error('Modal editUnidade não encontrado!');
+        console.error("Modal editUnidade não encontrado!");
       }
     },
 
     async confirmarExclusao() {
-      if (confirm(`Tem certeza que deseja excluir a unidade "${this.unidade.nome}"?`)) {
+      if (
+        confirm(
+          `Tem certeza que deseja excluir a unidade "${this.unidade.nome}"?`
+        )
+      ) {
         try {
           const result = await functions.excluirUnidade(this.unidade.id);
           if (result.success) {
-            this.showNotification('Unidade excluída com sucesso!', 'success');
-            this.$router.push('/unidades');
+            this.showNotification("Unidade excluída com sucesso!", "success");
+            this.$router.push("/unidades");
           } else {
-            this.showNotification(result.message || 'Erro ao excluir unidade', 'error');
+            this.showNotification(
+              result.message || "Erro ao excluir unidade",
+              "error"
+            );
           }
         } catch (error) {
-          console.error('Erro ao excluir unidade:', error);
-          this.showNotification('Erro ao excluir unidade', 'error');
+          console.error("Erro ao excluir unidade:", error);
+          this.showNotification("Erro ao excluir unidade", "error");
         }
       }
     },
 
     formatarData(dataString) {
-      if (!dataString) return '-';
+      if (!dataString) return "-";
       const data = new Date(dataString);
-      return data.toLocaleDateString('pt-BR') + ' às ' + data.toLocaleTimeString('pt-BR');
+      return (
+        data.toLocaleDateString("pt-BR") +
+        " às " +
+        data.toLocaleTimeString("pt-BR")
+      );
     },
 
     showNotification(message, type) {
       if (this.$toastr) {
-        if (type === 'success') {
+        if (type === "success") {
           this.$toastr.success(message);
         } else {
           this.$toastr.error(message);
@@ -328,39 +396,44 @@ export default {
         console.log(`[${type.toUpperCase()}] ${message}`);
         alert(message);
       }
-    }
+    },
   },
   created() {
     // Configurar função personalizada para o modal
     this.functions.ADD_UP = async (content, modalFunction) => {
       try {
         const result = await functions.atualizarUnidade(content.modalData);
-        
+
         if (result.success) {
-          this.showNotification('Unidade atualizada com sucesso!', 'success');
-          
+          this.showNotification("Unidade atualizada com sucesso!", "success");
+
           // Fechar modal
-          const modal = bootstrap.Modal.getInstance(document.getElementById('editUnidade'));
+          const modal = bootstrap.Modal.getInstance(
+            document.getElementById("editUnidade")
+          );
           modal.hide();
-          
+
           // Recarregar dados da unidade
           this.carregarUnidade();
         } else {
           if (result.errors) {
             return result;
           } else {
-            this.showNotification(result.message || 'Erro ao atualizar unidade', 'error');
+            this.showNotification(
+              result.message || "Erro ao atualizar unidade",
+              "error"
+            );
           }
         }
       } catch (error) {
-        console.error('Erro ao atualizar unidade:', error);
-        this.showNotification('Erro ao atualizar unidade', 'error');
+        console.error("Erro ao atualizar unidade:", error);
+        this.showNotification("Erro ao atualizar unidade", "error");
       }
     };
   },
   mounted() {
     this.carregarUnidade();
-  }
+  },
 };
 </script>
 

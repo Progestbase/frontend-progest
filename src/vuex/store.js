@@ -89,9 +89,9 @@ export default createStore({
       state.unidadeAtual = unidade;
     },
     SET_MODAL_DATA(state, payload) {
-      state.modalData.modalTitle = payload.modalTitle || '';
+      state.modalData.modalTitle = payload.modalTitle || "";
       state.modalData.modalData = payload.modalData || {};
-      state.modalData.modalFunction = payload.modalFunction || 'ADD';
+      state.modalData.modalFunction = payload.modalFunction || "ADD";
     },
     setModalTitle(state, title) {
       state.modalData.modalTitle = title;

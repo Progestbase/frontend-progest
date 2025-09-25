@@ -1,4 +1,5 @@
 import axios from "axios";
+import { API_URL } from '@/config';
 
 // Função para adicionar ou atualizar unidade (compatível com o sistema existente)
 var ADD_UP = (content, funcao) => {
@@ -209,7 +210,7 @@ var listData = (content) => {
 // Funções modernas para uso direto (sem dependências do Vue 2)
 export const criarUnidade = async (dadosUnidade) => {
   try {
-    const response = await fetch("/api/unidades/add", {
+    const response = await fetch(`${API_URL}/unidades/add`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -247,7 +248,7 @@ export const listarUnidades = async (
       if (filters) body.filters = filters;
       if (paginate) body.paginate = paginate;
 
-      const response = await fetch("/api/unidades/list", {
+      const response = await fetch(`${API_URL}/unidades/list`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -297,25 +298,22 @@ export const buscarUnidadePorId = async (id) => {
   try {
     console.log("=== buscarUnidadePorId iniciado para ID:", id);
 
-    const result = await axios
-      .post("unidades/listData", { id })
-      .then((response) => {
-        console.log("Response recebido:", response.data);
-        return response.data;
-      })
-      .catch((error) => {
-        console.error("Erro axios:", error);
-        throw error;
-      });
+    const response = await axios.post(`${API_URL}/unidades/listData`, { id }, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+      },
+    });
 
-    if (result.status) {
-      console.log("Unidade encontrada:", result.data);
-      return { success: true, data: result.data };
+    console.log("Response recebido:", response.data);
+    
+    if (response.data.status) {
+      console.log("Unidade encontrada:", response.data.data);
+      return { success: true, data: response.data.data };
     } else {
-      console.log("Erro no status:", result.message);
+      console.log("Erro no status:", response.data.message);
       return {
         success: false,
-        message: result.message || "Erro ao buscar unidade",
+        message: response.data.message || "Erro ao buscar unidade",
       };
     }
   } catch (error) {
@@ -326,23 +324,19 @@ export const buscarUnidadePorId = async (id) => {
 
 export const atualizarUnidade = async (dadosUnidade) => {
   try {
-    const result = await axios
-      .post("unidades/update", { unidades: dadosUnidade })
-      .then((response) => {
-        return response.data;
-      })
-      .catch((error) => {
-        console.error("Erro axios:", error);
-        throw error;
-      });
+    const response = await axios.post(`${API_URL}/unidades/update`, { unidades: dadosUnidade }, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+      },
+    });
 
-    if (result.status) {
-      return { success: true, data: result.data };
+    if (response.data.status) {
+      return { success: true, data: response.data.data };
     } else {
       return {
         success: false,
-        errors: result.erros || null,
-        message: result.message || "Erro ao atualizar unidade",
+        errors: response.data.erros || null,
+        message: response.data.message || "Erro ao atualizar unidade",
       };
     }
   } catch (error) {
@@ -351,31 +345,51 @@ export const atualizarUnidade = async (dadosUnidade) => {
   }
 };
 
-export const excluirUnidade = async (id) => {
-  try {
-    const result = await axios
-      .post(`unidades/delete/${id}`)
-      .then((response) => {
-        return response.data;
-      })
-      .catch((error) => {
-        console.error("Erro axios:", error);
-        throw error;
-      });
-
-    if (result.status) {
-      return { success: true, message: result.message };
-    } else {
-      return {
-        success: false,
-        message: result.message || "Erro ao excluir unidade",
-        references: result.references || null,
-      };
-    }
-  } catch (error) {
-    console.error("Erro na requisição:", error);
-    return { success: false, message: "Erro de conexão com o servidor" };
-  }
+// Função para excluir unidade (seguindo o padrão das funções antigas)
+var deleteUnidade = (content, id) => {
+  content.$axios
+    .post(
+      `/unidades/delete/${id}`,
+      {
+        headers: {
+          Authorization: "Bearer " + content.$store.getters.getUserToken,
+        },
+      }
+    )
+    .then(function (response) {
+      if (response.data.status) {
+        if (content.$toastr) {
+          content.$toastr.success("Unidade excluída com sucesso!");
+        } else {
+          alert("Unidade excluída com sucesso!");
+        }
+        // Redirecionar ou recarregar lista conforme necessário
+        if (content.$router) {
+          content.$router.push("/unidades");
+        }
+      } else {
+        const mensagem = response.data.message || "Erro ao excluir unidade";
+        if (content.$toastr) {
+          content.$toastr.error(mensagem);
+        } else {
+          alert(mensagem);
+        }
+        
+        // Se houver referências, mostrar informações específicas
+        if (response.data.references) {
+          console.log("Referências encontradas:", response.data.references);
+        }
+      }
+    })
+    .catch(function (error) {
+      console.error("Erro na requisição de exclusão:", error);
+      
+      if (content.$toastr) {
+        content.$toastr.error("Erro de conexão com o servidor");
+      } else {
+        alert("Erro de conexão com o servidor");
+      }
+    });
 };
 
 var exportFunctions = {
@@ -386,7 +400,7 @@ var exportFunctions = {
   listarUnidades: listarUnidades,
   buscarUnidadePorId: buscarUnidadePorId,
   atualizarUnidade: atualizarUnidade,
-  excluirUnidade: excluirUnidade,
+  deleteUnidade: deleteUnidade,
 };
 
 export default exportFunctions;

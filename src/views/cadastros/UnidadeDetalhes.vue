@@ -351,27 +351,14 @@ export default {
       }
     },
 
-    async confirmarExclusao() {
+    confirmarExclusao() {
       if (
         confirm(
           `Tem certeza que deseja excluir a unidade "${this.unidade.nome}"?`
         )
       ) {
-        try {
-          const result = await functions.excluirUnidade(this.unidade.id);
-          if (result.success) {
-            this.showNotification("Unidade excluída com sucesso!", "success");
-            this.$router.push("/unidades");
-          } else {
-            this.showNotification(
-              result.message || "Erro ao excluir unidade",
-              "error"
-            );
-          }
-        } catch (error) {
-          console.error("Erro ao excluir unidade:", error);
-          this.showNotification("Erro ao excluir unidade", "error");
-        }
+        // Usar a nova função que segue o padrão do sistema
+        functions.deleteUnidade(this, this.unidade.id);
       }
     },
 

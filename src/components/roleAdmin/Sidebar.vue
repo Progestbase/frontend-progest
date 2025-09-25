@@ -31,10 +31,34 @@
 
     <h3>Menu</h3>
     <div class="menu">
-      <!-- Submenu -->
+      <!-- Unidades -->
+      <router-link class="button" to="/unidades" title="Unidades">
+        <span class="material-icons">apartment</span>
+        <span class="text">Unidades</span>
+      </router-link>
+
+      <!-- Usuários -->
+      <router-link class="button" to="/users" title="Usuários">
+        <span class="material-icons">group</span>
+        <span class="text">Usuários</span>
+      </router-link>
+
+      <!-- Produtos -->
+      <router-link class="button" to="/produtos" title="Produtos">
+        <span class="material-icons">inventory</span>
+        <span class="text">Produtos</span>
+      </router-link>
+
+      <!-- Fornecedores -->
+      <router-link class="button" to="/fornecedores" title="Fornecedores">
+        <span class="material-icons">business_center</span>
+        <span class="text">Fornecedores</span>
+      </router-link>
+
+      <!-- Submenu Cadastros -->
       <div class="submenu">
         <button class="button" @click="toggleSubmenu" title="Mais Cadastros">
-          <span class="material-icons">point_of_sale</span>
+          <span class="material-icons">settings</span>
           <span class="text">Cadastros</span>
           <span
             class="material-icons expand-icon"
@@ -49,9 +73,9 @@
             <router-link
               class="button"
               to="/categoriasProdutos"
-              title="Tipos de Produtos"
+              title="Categorias de Produtos"
             >
-              <span class="material-icons">category</span>
+              <span class="material-icons">label</span>
               <span class="text">Categoria Produtos</span>
             </router-link>
 
@@ -60,36 +84,12 @@
               to="/unidadesMedida"
               title="Unidades de Medida"
             >
-              <span class="material-icons">scale</span>
+              <span class="material-icons">straighten</span>
               <span class="text">Unidades de Medida</span>
             </router-link>
           </div>
         </transition>
       </div>
-
-      <!-- Usuários -->
-      <router-link class="button" to="/users" title="Usuários">
-        <span class="material-icons">person</span>
-        <span class="text">Usuários</span>
-      </router-link>
-
-      <!-- Unidades -->
-      <router-link class="button" to="/unidades" title="Unidades">
-        <span class="material-icons">business</span>
-        <span class="text">Unidades</span>
-      </router-link>
-
-      <!-- Produtos -->
-      <router-link class="button" to="/produtos" title="Produtos">
-        <span class="material-icons">inventory_2</span>
-        <span class="text">Produtos</span>
-      </router-link>
-
-      <!-- Fornecedores -->
-      <router-link class="button" to="/fornecedores" title="Fornecedores">
-        <span class="material-icons">local_shipping</span>
-        <span class="text">Fornecedores</span>
-      </router-link>
     </div>
   </aside>
 </template>
@@ -97,7 +97,7 @@
 <script setup>
 import { ref, watch, onMounted } from "vue";
 
-const is_expanded = ref(false);
+const is_expanded = ref(true);
 const submenuOpen = ref(false);
 
 const ToggleMenu = () => {

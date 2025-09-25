@@ -1,15 +1,26 @@
 <template>
   <header class="flex justify-between items-center bg-white p-4 shadow-md">
-    <h2 class="text-xl font-semibold text-azul-eclipse ml-2">
-      <span v-if="$route.name === 'unidadeDetalhes'">
-        <router-link to="/unidades" class="text-muted">
-          <i class="mdi mdi-arrow-left me-1"></i>Unidades
-        </router-link>
-        <span class="mx-2">/</span>
-        {{ unidadeNomeAtual }}
-      </span>
-      <span v-else>{{ headerTitle }}</span>
-    </h2>
+    <div class="flex items-center">
+      <!-- Botão de toggle do menu -->
+      <button
+        class="menu-toggle-btn me-3"
+        @click="$emit('toggleSidebar')"
+        title="Expandir/Recolher Menu"
+      >
+        <span class="material-icons">menu</span>
+      </button>
+
+      <h2 class="text-xl font-semibold text-azul-eclipse">
+        <span v-if="$route.name === 'unidadeDetalhes'">
+          <router-link to="/unidades" class="text-muted">
+            <i class="mdi mdi-arrow-left me-1"></i>Unidades
+          </router-link>
+          <span class="mx-2">/</span>
+          {{ unidadeNomeAtual }}
+        </span>
+        <span v-else>{{ headerTitle }}</span>
+      </h2>
+    </div>
     <div class="flex items-center space-x-4">
       <div class="text-right">
         <p class="font-bold text-azul-eclipse">{{ userName }}</p>

@@ -1,5 +1,5 @@
 import axios from "axios";
-import { API_URL } from '@/config';
+import { API_URL } from "@/config";
 
 // Função para adicionar ou atualizar unidade (compatível com o sistema existente)
 var ADD_UP = (content, funcao) => {
@@ -298,14 +298,18 @@ export const buscarUnidadePorId = async (id) => {
   try {
     console.log("=== buscarUnidadePorId iniciado para ID:", id);
 
-    const response = await axios.post(`${API_URL}/unidades/listData`, { id }, {
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem("token")}`,
-      },
-    });
+    const response = await axios.post(
+      `${API_URL}/unidades/listData`,
+      { id },
+      {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      }
+    );
 
     console.log("Response recebido:", response.data);
-    
+
     if (response.data.status) {
       console.log("Unidade encontrada:", response.data.data);
       return { success: true, data: response.data.data };
@@ -324,11 +328,15 @@ export const buscarUnidadePorId = async (id) => {
 
 export const atualizarUnidade = async (dadosUnidade) => {
   try {
-    const response = await axios.post(`${API_URL}/unidades/update`, { unidades: dadosUnidade }, {
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem("token")}`,
-      },
-    });
+    const response = await axios.post(
+      `${API_URL}/unidades/update`,
+      { unidades: dadosUnidade },
+      {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      }
+    );
 
     if (response.data.status) {
       return { success: true, data: response.data.data };
@@ -348,14 +356,11 @@ export const atualizarUnidade = async (dadosUnidade) => {
 // Função para excluir unidade (seguindo o padrão das funções antigas)
 var deleteUnidade = (content, id) => {
   content.$axios
-    .post(
-      `/unidades/delete/${id}`,
-      {
-        headers: {
-          Authorization: "Bearer " + content.$store.getters.getUserToken,
-        },
-      }
-    )
+    .post(`/unidades/delete/${id}`, {
+      headers: {
+        Authorization: "Bearer " + content.$store.getters.getUserToken,
+      },
+    })
     .then(function (response) {
       if (response.data.status) {
         if (content.$toastr) {
@@ -374,7 +379,7 @@ var deleteUnidade = (content, id) => {
         } else {
           alert(mensagem);
         }
-        
+
         // Se houver referências, mostrar informações específicas
         if (response.data.references) {
           console.log("Referências encontradas:", response.data.references);
@@ -383,7 +388,7 @@ var deleteUnidade = (content, id) => {
     })
     .catch(function (error) {
       console.error("Erro na requisição de exclusão:", error);
-      
+
       if (content.$toastr) {
         content.$toastr.error("Erro de conexão com o servidor");
       } else {

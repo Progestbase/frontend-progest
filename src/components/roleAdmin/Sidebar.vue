@@ -72,11 +72,11 @@
           <div v-show="submenuOpen" class="submenu-items">
             <router-link
               class="button"
-              to="/categoriasProdutos"
-              title="Categorias de Produtos"
+              to="/grupoProduto"
+              title="Grupos de Produtos"
             >
               <span class="material-icons">label</span>
-              <span class="text">Categoria Produtos</span>
+              <span class="text">Grupos de Produtos</span>
             </router-link>
 
             <router-link

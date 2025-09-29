@@ -395,10 +395,15 @@ export default {
           this.showNotification("Unidade atualizada com sucesso!", "success");
 
           // Fechar modal
-          const modal = bootstrap.Modal.getInstance(
-            document.getElementById("editUnidade")
-          );
-          modal.hide();
+            try {
+              const modalEl = document.getElementById("editUnidade");
+              if (modalEl && window && window.bootstrap && window.bootstrap.Modal) {
+                const modal = window.bootstrap.Modal.getInstance(modalEl);
+                if (modal) modal.hide();
+              }
+            } catch (e) {
+              console.warn('Não foi possível fechar editUnidade automaticamente:', e);
+            }
 
           // Recarregar dados da unidade
           this.carregarUnidade();

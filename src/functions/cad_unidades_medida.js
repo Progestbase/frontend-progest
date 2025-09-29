@@ -57,13 +57,15 @@ var ADD_UP = (content, funcao) => {
         content.$store.commit("setModalTitle", response.data.data.nome);
         content.$store.commit("setModalFunction", "UP");
 
-        // Fechar modal
-        const modal = document.querySelector("#addUPUnidadesMedida");
-        if (modal) {
-          const bootstrapModal = bootstrap.Modal.getInstance(modal);
-          if (bootstrapModal) {
-            bootstrapModal.hide();
+        // Fechar modal (proteção para casos onde bootstrap não esteja disponível)
+        try {
+          const modal = document.querySelector("#addUPUnidadesMedida");
+          if (modal && window && window.bootstrap && window.bootstrap.Modal) {
+            const bootstrapModal = window.bootstrap.Modal.getInstance(modal);
+            if (bootstrapModal) bootstrapModal.hide();
           }
+        } catch (e) {
+          console.warn('Não foi possível fechar o modal automaticamente:', e);
         }
       } else if (response.data.status == false && response.data.validacao) {
         console.log("Erros de validação:", response.data.erros);

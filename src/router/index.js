@@ -11,9 +11,9 @@ import Users from "../views/cadastros/Users.vue";
 import Unidades from "../views/cadastros/Unidades.vue";
 import UnidadeDetalhes from "../views/cadastros/UnidadeDetalhes.vue";
 import Produtos from "../views/cadastros/Produtos.vue";
-import CategoriasProdutos from "../views/cadastros/CategoriasProdutos.vue";
 import UnidadesMedida from "../views/cadastros/UnidadesMedida.vue";
 import Fornecedores from "../views/cadastros/Fornecedores.vue";
+import GrupoProduto from "../views/cadastros/GrupoProduto.vue";
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -69,10 +69,11 @@ const router = createRouter({
       component: Produtos,
       meta: { requiresAuth: true },
     },
+    /* categoriasProdutos removed in favor of grupoProduto */
     {
-      path: "/categoriasProdutos",
-      name: "categoriasProdutos",
-      component: CategoriasProdutos,
+      path: "/grupoProduto",
+      name: "grupoProduto",
+      component: GrupoProduto,
       meta: { requiresAuth: true },
     },
     {

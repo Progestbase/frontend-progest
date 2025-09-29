@@ -11,9 +11,9 @@ export default createStore({
     listUsers: [],
     listTiposUsuarios: [],
     listUnidades: [],
-    listProdutos: [],
-    listCategoriasProdutos: [],
+  listProdutos: [],
     listUnidadesMedida: [],
+  listGrupoProdutos: [],
     listFornecedores: [],
     searchFilters: [],
     idDataLoaded: "",
@@ -61,8 +61,8 @@ export default createStore({
     setListProdutos(state, produtos) {
       state.listProdutos = produtos;
     },
-    setListCategoriasProdutos(state, categorias) {
-      state.listCategoriasProdutos = categorias;
+    setListGrupoProdutos(state, grupos) {
+      state.listGrupoProdutos = grupos;
     },
     setListUnidadesMedida(state, unidadesMedida) {
       state.listUnidadesMedida = unidadesMedida;
@@ -114,8 +114,8 @@ export default createStore({
     getModalData: (state) => state.modalData.modalData,
     getListUsers: (state) => state.listUsers,
     getListTiposUsuario: (state) => state.listTiposUsuario,
-    getListUnidades: (state) => state.listUnidades,
-    getListCategoriasProdutos: (state) => state.listCategoriasProdutos,
+  getListUnidades: (state) => state.listUnidades,
+  getListGrupoProdutos: (state) => state.listGrupoProdutos,
     getListFornecedores: (state) => state.listFornecedores,
     getListPerfis: (state) => state.listPerfis,
     getListTiposVinculo: (state) => state.listTiposVinculo,

@@ -65,8 +65,8 @@ export default {
           return "Detalhes da Unidade";
         case "produtos":
           return "Produtos";
-        case "categoriasProdutos":
-          return "Tipos de Produtos";
+        case "grupoProduto":
+          return "Grupos de Produtos";
         case "unidadesMedida":
           return "Unidades de Medida";
         case "setores":

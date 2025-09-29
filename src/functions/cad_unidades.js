@@ -41,14 +41,16 @@ var ADD_UP = (content, funcao) => {
         content.$store.commit("setModalFunction", "UP");
         console.log(response.data.data);
 
-        // Fechar modal após sucesso
+        // Fechar modal após sucesso (proteção contra bootstrap não disponível)
         setTimeout(() => {
-          const modalElement = document.getElementById("addUPUnidade");
-          if (modalElement) {
-            const modal = bootstrap.Modal.getInstance(modalElement);
-            if (modal) {
-              modal.hide();
+          try {
+            const modalElement = document.getElementById("addUPUnidade");
+            if (modalElement && window && window.bootstrap && window.bootstrap.Modal) {
+              const modal = window.bootstrap.Modal.getInstance(modalElement);
+              if (modal) modal.hide();
             }
+          } catch (e) {
+            console.warn('Não foi possível fechar o modal addUPUnidade automaticamente:', e);
           }
         }, 100);
       } else if (response.data.status === "error" && response.data.errors) {

@@ -3,7 +3,9 @@
 
 var ADD_UP = (content, funcao) => {
   console.log(
-    "Executando " + (funcao == "ADD" ? "cadastro" : "atualização") + " de grupo de produto"
+    "Executando " +
+      (funcao == "ADD" ? "cadastro" : "atualização") +
+      " de grupo de produto"
   );
 
   const grupoData = {
@@ -19,12 +21,16 @@ var ADD_UP = (content, funcao) => {
   }
 
   content.$axios
-    .post(funcao == "ADD" ? "/grupoProduto/add" : "/grupoProduto/update", grupoData, {
-      headers: {
-        Authorization: "Bearer " + content.$store.getters.getUserToken,
-        "Content-Type": "application/json",
-      },
-    })
+    .post(
+      funcao == "ADD" ? "/grupoProduto/add" : "/grupoProduto/update",
+      grupoData,
+      {
+        headers: {
+          Authorization: "Bearer " + content.$store.getters.getUserToken,
+          "Content-Type": "application/json",
+        },
+      }
+    )
     .then(function (response) {
       console.log("Resposta da API:", response.data);
 
@@ -52,7 +58,7 @@ var ADD_UP = (content, funcao) => {
             if (bootstrapModal) bootstrapModal.hide();
           }
         } catch (e) {
-          console.warn('Não foi possível fechar o modal automaticamente:', e);
+          console.warn("Não foi possível fechar o modal automaticamente:", e);
         }
       } else if (response.data.status == false && response.data.validacao) {
         console.log("Erros de validação:", response.data.erros);
@@ -65,8 +71,13 @@ var ADD_UP = (content, funcao) => {
         if (content.$toastr) content.$toastr.e("Erro de validação:\n" + erros);
         else alert("Erro de validação:\n" + erros);
       } else {
-        console.log("Erro ao " + (funcao == "ADD" ? "cadastrar" : "atualizar"), response);
-        const mensagem = response.data.message || ("Erro ao " + (funcao == "ADD" ? "cadastrar" : "atualizar"));
+        console.log(
+          "Erro ao " + (funcao == "ADD" ? "cadastrar" : "atualizar"),
+          response
+        );
+        const mensagem =
+          response.data.message ||
+          "Erro ao " + (funcao == "ADD" ? "cadastrar" : "atualizar");
         if (content.$toastr) content.$toastr.e(mensagem);
         else alert(mensagem);
       }
@@ -91,7 +102,12 @@ var listAll = (content, url = null) => {
     .post(
       endpoint,
       { filters: content.$store.state.searchFilters || [] },
-      { headers: { Authorization: "Bearer " + content.$store.getters.getUserToken, "Content-Type": "application/json" } }
+      {
+        headers: {
+          Authorization: "Bearer " + content.$store.getters.getUserToken,
+          "Content-Type": "application/json",
+        },
+      }
     )
     .then((response) => {
       console.log("Resposta da API listAll:", response.data);
@@ -101,10 +117,16 @@ var listAll = (content, url = null) => {
           statusFormatted: item.status === "A" ? "Ativo" : "Inativo",
         }));
 
-        content.$store.commit("setListGrupoProdutos", { ...response.data, data: enriched });
+        content.$store.commit("setListGrupoProdutos", {
+          ...response.data,
+          data: enriched,
+        });
         console.log("setListGrupoProdutos - registros:", enriched.length);
       } else {
-        content.$store.commit("setListGrupoProdutos", { status: false, data: [] });
+        content.$store.commit("setListGrupoProdutos", {
+          status: false,
+          data: [],
+        });
       }
 
       content.$store.commit("setisSearching", false);
@@ -112,8 +134,13 @@ var listAll = (content, url = null) => {
     .catch((error) => {
       console.error("Erro na chamada da API listAll:", error);
       content.$store.commit("setisSearching", false);
-      content.$store.commit("setListGrupoProdutos", { status: false, data: [] });
-      const mensagem = error.response?.data?.message || "Erro ao carregar grupos de produto. Verifique sua conexão.";
+      content.$store.commit("setListGrupoProdutos", {
+        status: false,
+        data: [],
+      });
+      const mensagem =
+        error.response?.data?.message ||
+        "Erro ao carregar grupos de produto. Verifique sua conexão.";
       if (content.$toastr) content.$toastr.e(mensagem);
       else alert(mensagem);
     });
@@ -129,7 +156,12 @@ var listData = (content) => {
     .post(
       "/grupoProduto/listData",
       { id: content.idData },
-      { headers: { Authorization: "Bearer " + content.$store.getters.getUserToken, "Content-Type": "application/json" } }
+      {
+        headers: {
+          Authorization: "Bearer " + content.$store.getters.getUserToken,
+          "Content-Type": "application/json",
+        },
+      }
     )
     .then((response) => {
       console.log("Resposta da API listData:", response.data);
@@ -138,26 +170,39 @@ var listData = (content) => {
         content.$store.commit("setModalData", response.data.data);
         if (content.callback) content.callback();
       } else {
-        const mensagem = response.data.message || "Grupo de produto não encontrado";
+        const mensagem =
+          response.data.message || "Grupo de produto não encontrado";
         if (content.$toastr) content.$toastr.e(mensagem);
         else alert(mensagem);
       }
     })
     .catch((error) => {
       console.error("Erro na requisição listData:", error);
-      const mensagem = error.response?.data?.message || "OPS. Pequena intermitência. Se persistir, realize um novo login.";
+      const mensagem =
+        error.response?.data?.message ||
+        "OPS. Pequena intermitência. Se persistir, realize um novo login.";
       if (content.$toastr) content.$toastr.e(mensagem);
       else alert(mensagem);
     });
 };
 
 var deleteData = (content, id) => {
-  if (!confirm("Tem certeza de que deseja excluir este grupo de produto?")) return;
+  if (!confirm("Tem certeza de que deseja excluir este grupo de produto?"))
+    return;
 
   console.log("Excluindo grupo de produto ID:", id);
 
   content.$axios
-    .post(`/grupoProduto/delete/${id}`, {}, { headers: { Authorization: "Bearer " + content.$store.getters.getUserToken, "Content-Type": "application/json" } })
+    .post(
+      `/grupoProduto/delete/${id}`,
+      {},
+      {
+        headers: {
+          Authorization: "Bearer " + content.$store.getters.getUserToken,
+          "Content-Type": "application/json",
+        },
+      }
+    )
     .then(function (response) {
       console.log("Resposta da API delete:", response.data);
       if (response.data.status) {
@@ -173,10 +218,13 @@ var deleteData = (content, id) => {
     })
     .catch(function (error) {
       console.error("Erro na requisição delete:", error);
-      let mensagem = "OPS. Pequena intermitência. Se persistir, realize um novo login.";
+      let mensagem =
+        "OPS. Pequena intermitência. Se persistir, realize um novo login.";
       if (error.response?.status === 422 && error.response?.data?.message) {
         mensagem = error.response.data.message;
-        if (error.response.data.references) mensagem += "\nReferências: " + error.response.data.references.join(", ");
+        if (error.response.data.references)
+          mensagem +=
+            "\nReferências: " + error.response.data.references.join(", ");
       } else if (error.response?.data?.message) {
         mensagem = error.response.data.message;
       }
@@ -185,6 +233,11 @@ var deleteData = (content, id) => {
     });
 };
 
-var exportFunctions = { ADD_UP: ADD_UP, listAll: listAll, listData: listData, deleteData: deleteData };
+var exportFunctions = {
+  ADD_UP: ADD_UP,
+  listAll: listAll,
+  listData: listData,
+  deleteData: deleteData,
+};
 
 export default exportFunctions;

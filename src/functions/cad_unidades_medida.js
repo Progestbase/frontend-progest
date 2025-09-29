@@ -65,7 +65,7 @@ var ADD_UP = (content, funcao) => {
             if (bootstrapModal) bootstrapModal.hide();
           }
         } catch (e) {
-          console.warn('Não foi possível fechar o modal automaticamente:', e);
+          console.warn("Não foi possível fechar o modal automaticamente:", e);
         }
       } else if (response.data.status == false && response.data.validacao) {
         console.log("Erros de validação:", response.data.erros);

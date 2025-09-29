@@ -45,12 +45,20 @@ var ADD_UP = (content, funcao) => {
         setTimeout(() => {
           try {
             const modalElement = document.getElementById("addUPUnidade");
-            if (modalElement && window && window.bootstrap && window.bootstrap.Modal) {
+            if (
+              modalElement &&
+              window &&
+              window.bootstrap &&
+              window.bootstrap.Modal
+            ) {
               const modal = window.bootstrap.Modal.getInstance(modalElement);
               if (modal) modal.hide();
             }
           } catch (e) {
-            console.warn('Não foi possível fechar o modal addUPUnidade automaticamente:', e);
+            console.warn(
+              "Não foi possível fechar o modal addUPUnidade automaticamente:",
+              e
+            );
           }
         }, 100);
       } else if (response.data.status === "error" && response.data.errors) {

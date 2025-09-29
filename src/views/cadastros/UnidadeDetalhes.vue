@@ -395,15 +395,23 @@ export default {
           this.showNotification("Unidade atualizada com sucesso!", "success");
 
           // Fechar modal
-            try {
-              const modalEl = document.getElementById("editUnidade");
-              if (modalEl && window && window.bootstrap && window.bootstrap.Modal) {
-                const modal = window.bootstrap.Modal.getInstance(modalEl);
-                if (modal) modal.hide();
-              }
-            } catch (e) {
-              console.warn('Não foi possível fechar editUnidade automaticamente:', e);
+          try {
+            const modalEl = document.getElementById("editUnidade");
+            if (
+              modalEl &&
+              window &&
+              window.bootstrap &&
+              window.bootstrap.Modal
+            ) {
+              const modal = window.bootstrap.Modal.getInstance(modalEl);
+              if (modal) modal.hide();
             }
+          } catch (e) {
+            console.warn(
+              "Não foi possível fechar editUnidade automaticamente:",
+              e
+            );
+          }
 
           // Recarregar dados da unidade
           this.carregarUnidade();

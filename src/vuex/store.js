@@ -8,6 +8,8 @@ export default createStore({
       modalFunction: "ADD",
       modalData: {},
     },
+    // Armazena erros de validação para exibição no modal
+    modalErrors: {},
     listUsers: [],
     listTiposUsuarios: [],
     listUnidades: [],
@@ -98,6 +100,9 @@ export default createStore({
     },
     setModalFunction(state, func) {
       state.modalData.modalFunction = func;
+    },
+    setModalErrors(state, errors) {
+      state.modalErrors = errors || {};
     },
     setIdDataLoaded(state, id) {
       state.idDataLoaded = id;

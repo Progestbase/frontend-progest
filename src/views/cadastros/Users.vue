@@ -15,11 +15,21 @@
                   >
                   </LinkModal01>
 
-                  <!-- Listagem de usuários aqui -->
                   <div class="mt-5">
-                    <!-- Tabela de listagem de itens -->
+                    <!-- Loading -->
+                    <div
+                      v-if="$store.state.isSearching"
+                      class="text-center mt-5"
+                    >
+                      <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Carregando...</span>
+                      </div>
+                      <p class="mt-2">Carregando usuários...</p>
+                    </div>
+
+                    <!-- Tabela com dados -->
                     <TBLBASE01
-                      v-if="listUsers && listUsers.length > 0"
+                      v-else-if="listUsers && listUsers.length > 0"
                       :list="listUsers"
                       :titles="[
                         '#',
@@ -49,6 +59,21 @@
                       classColTable="12"
                       deleteRoute="/user/delete"
                     />
+
+                    <!-- Estado vazio -->
+                    <div v-else class="text-center p-5">
+                      <div class="mb-3">
+                        <i
+                          class="mdi mdi-account-outline text-muted"
+                          style="font-size: 3rem"
+                        ></i>
+                      </div>
+                      <h5 class="text-muted">Nenhum usuário encontrado</h5>
+                      <p class="text-muted">
+                        Clique em "NOVO" para cadastrar o primeiro usuário.
+                      </p>
+                    </div>
+
                     <!-- Paginação da tabela -->
                     <!-- <PAGINACAOBASE01 :paginacaoData="listUsers" :functions="functions">
                     </PAGINACAOBASE01> -->

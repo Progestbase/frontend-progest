@@ -9,7 +9,7 @@
                 <div class="card-body">
                   <LinkModal01
                     :idModalInsertUP="'#addUPUnidade '"
-                    :label="'NOVA UNIDADE'"
+                    :label="'NOVO'"
                     :titleModal="titleModal"
                     :varsModalData="varsModalData"
                   >

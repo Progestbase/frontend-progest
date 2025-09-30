@@ -62,20 +62,23 @@
       </div>
       <div class="row mmt-2">
         <div class="col-12 text-end">
-          <button
-            type="button"
-            class="btn btn-secondary"
-            data-bs-dismiss="modal"
-          >
-            Fechar
-          </button>
-          <button
-            type="submit"
-            class="btn btn-success"
-            v-on:click="add_UP_Grupo_Produto()"
-          >
-            {{ modalFunction == "ADD" ? "Salvar" : "Atualizar" }}
-          </button>
+          <div class="d-flex gap-2 justify-content-end">
+            <button
+              type="button"
+              class="btn btn-secondary btn-modal"
+              data-bs-dismiss="modal"
+            >
+              <i class="mdi mdi-close-thick me-2"></i>Fechar
+            </button>
+            <button
+              type="submit"
+              class="btn btn-success btn-modal"
+              v-on:click="add_UP_Grupo_Produto()"
+            >
+              <i class="mdi mdi-check-bold me-2"></i>
+              {{ modalFunction == "ADD" ? "Salvar" : "Atualizar" }}
+            </button>
+          </div>
         </div>
       </div>
     </ModalBase01>
@@ -113,5 +116,41 @@ export default {
 <style scoped>
 .form-control {
   padding: 0.5rem;
+}
+
+/* Estilos para botões dos modais */
+.btn-modal {
+  font-weight: 600;
+  font-size: 0.9rem;
+  padding: 0.6rem 1.25rem;
+  border-radius: 0.4rem;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  border: none;
+  min-width: 100px;
+}
+
+.btn-modal.btn-secondary {
+  background-color: #6c757d;
+  color: white;
+}
+
+.btn-modal.btn-secondary:hover {
+  background-color: #5a6268;
+  color: white;
+}
+
+.btn-modal.btn-success {
+  background-color: #28a745;
+  color: white;
+}
+
+.btn-modal.btn-success:hover {
+  background-color: #218838;
+  color: white;
+}
+
+.btn-modal i {
+  font-size: 0.9rem;
 }
 </style>

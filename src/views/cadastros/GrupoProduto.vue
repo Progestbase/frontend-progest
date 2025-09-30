@@ -15,8 +15,22 @@
                   >
                   </LinkModal01>
                   <div class="mt-5">
+                    <!-- Loading -->
+                    <div
+                      v-if="$store.state.isSearching"
+                      class="text-center mt-5"
+                    >
+                      <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Carregando...</span>
+                      </div>
+                      <p class="mt-2">Carregando grupos de produtos...</p>
+                    </div>
+
+                    <!-- Tabela com dados -->
                     <TBLBASE01
-                      v-if="listGrupoProdutos && listGrupoProdutos.length > 0"
+                      v-else-if="
+                        listGrupoProdutos && listGrupoProdutos.length > 0
+                      "
                       :list="formattedList"
                       :titles="['#', 'Nome', 'Tipo', 'Status']"
                       :align="[
@@ -31,8 +45,22 @@
                       classColTable="12"
                       deleteRoute="/grupoProduto/delete"
                     />
-                    <div v-else class="text-center p-4">
-                      <p>Nenhum grupo de produto encontrado.</p>
+
+                    <!-- Estado vazio -->
+                    <div v-else class="text-center p-5">
+                      <div class="mb-3">
+                        <i
+                          class="mdi mdi-folder-outline text-muted"
+                          style="font-size: 3rem"
+                        ></i>
+                      </div>
+                      <h5 class="text-muted">
+                        Nenhum grupo de produto encontrado
+                      </h5>
+                      <p class="text-muted">
+                        Clique em "NOVO" para cadastrar o primeiro grupo de
+                        produto.
+                      </p>
                     </div>
                   </div>
                 </div>

@@ -1,11 +1,30 @@
 <template>
-  <div class="modal modal-lg fade" :id="idModal" tabindex="-1" :aria-labelledby="idModal + 'Label'" aria-hidden="true">
-    <div class="modal-dialog" :class="modalSizeClass" :style="{ width: !modalSizeClass ? width : null }">
-      <div class="modal-content">
+  <div
+    class="modal modal-lg fade"
+    :id="idModal"
+    tabindex="-1"
+    :aria-labelledby="idModal + 'Label'"
+    aria-hidden="true"
+  >
+    <div
+      class="modal-dialog"
+      :class="modalSizeClass"
+      :style="{ width: !modalSizeClass ? width : null }"
+    >
+      <div class="modal-content" style="max-height: 90vh">
         <div class="modal-header">
-          <button type="button" class="btn-close" data-bs-dismiss="modal" @click="handleInternalClose" aria-label="Close"></button>
+          <button
+            type="button"
+            class="btn-close"
+            data-bs-dismiss="modal"
+            @click="handleInternalClose"
+            aria-label="Close"
+          ></button>
         </div>
-        <div class="modal-body">
+        <div
+          class="modal-body"
+          style="max-height: calc(90vh - 120px); overflow-y: auto"
+        >
           <slot></slot>
         </div>
         <div v-if="showFooter" class="modal-footer">
@@ -18,37 +37,39 @@
 
 <script>
 export default {
-  name: 'ModalBase01',
+  name: "ModalBase01",
   props: {
     idModal: {
       type: String,
-      required: true
+      required: true,
     },
     title: String,
     width: String,
     showFooter: {
       type: Boolean,
-      default: true
+      default: true,
     },
-    modalSizeClass: String
+    modalSizeClass: String,
   },
-  emits: ['closed'],
+  emits: ["closed"],
   methods: {
     handleInternalClose() {
       const modalEl = document.getElementById(this.idModal);
-      console.log('modalEl:', modalEl, 'bootstrap:', window.bootstrap);
+      console.log("modalEl:", modalEl, "bootstrap:", window.bootstrap);
       if (modalEl) {
-        const modalInstance = window.bootstrap.Modal.getInstance(modalEl) || new window.bootstrap.Modal(modalEl);
+        const modalInstance =
+          window.bootstrap.Modal.getInstance(modalEl) ||
+          new window.bootstrap.Modal(modalEl);
         modalInstance.hide();
       }
-      this.$emit('closed');
-    }
+      this.$emit("closed");
+    },
   },
   mounted() {
     const modalEl = document.getElementById(this.idModal);
     if (modalEl) {
-      modalEl.addEventListener('hidden.bs.modal', () => {
-        this.$emit('closed');
+      modalEl.addEventListener("hidden.bs.modal", () => {
+        this.$emit("closed");
       });
       // moda
     }
@@ -104,6 +125,25 @@ export default {
 
 .modal-body {
   padding: 20px;
+}
+
+/* Personalização do scroll */
+.modal-body::-webkit-scrollbar {
+  width: 8px;
+}
+
+.modal-body::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+.modal-body::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+}
+
+.modal-body::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
 }
 
 .modal-footer {

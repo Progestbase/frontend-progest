@@ -193,7 +193,17 @@ export default {
     },
 
     deleteItem(id) {
-      if (this.deleteRoute) {
+      if (this.functions && this.functions.deleteData) {
+        // Usar função personalizada de delete se disponível
+        this.functions.deleteData(
+          {
+            $axios: this.$axios,
+            $store: this.$store,
+            $toastr: this.$toastr,
+          },
+          id
+        );
+      } else if (this.deleteRoute) {
         this.deleteItemGeneric(id, this.deleteRoute);
       } else {
         console.error("Nenhuma rota de delete ou funções fornecidas");

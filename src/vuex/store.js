@@ -25,6 +25,8 @@ export default createStore({
     listSetores: [],
     listUnidadesGerais: [],
     unidadeAtual: null,
+    gruposProdutos: [],
+    unidadesMedidaAux: [],
   },
   mutations: {
     setUserToken(state, token) {
@@ -109,6 +111,12 @@ export default createStore({
     },
     setisSearching(state, id) {
       state.isSearching = id;
+    },
+    setGruposProdutos(state, grupos) {
+      state.gruposProdutos = grupos;
+    },
+    setUnidadesMedidaAux(state, unidades) {
+      state.unidadesMedidaAux = unidades;
     },
   },
   actions: {

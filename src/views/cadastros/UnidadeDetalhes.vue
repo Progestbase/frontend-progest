@@ -46,7 +46,7 @@
                         <span class="d-none d-sm-block">Setores</span>
                       </a>
                     </li>
-                    <li class="nav-item">
+                    <li class="nav-item" v-if="unidade.estoque">
                       <a
                         class="nav-link"
                         :class="{ active: activeTab === 'estoque' }"
@@ -223,13 +223,11 @@
 
                     <!-- Estoque Tab -->
                     <div v-show="activeTab === 'estoque'">
-                      <div class="text-center py-5">
-                        <i class="mdi mdi-wrench display-4 text-muted mb-3"></i>
-                        <h5>Estoque da Unidade</h5>
-                        <p class="text-muted">
-                          Esta funcionalidade será implementada em breve.
-                        </p>
-                      </div>
+                      <EstoqueUnidade
+                        v-if="unidade.id"
+                        :unidadeId="unidade.id"
+                        :key="unidade.id"
+                      />
                     </div>
                   </div>
                 </div>
@@ -266,6 +264,7 @@
 <script>
 import TemplateAdmin from "@/views/roleAdmin/TemplateAdmin.vue";
 import ModalUnidades from "@/components/cadastros/ModalUnidades.vue";
+import EstoqueUnidade from "./EstoqueUnidade.vue";
 import functions from "../../functions/cad_unidades.js";
 import * as bootstrap from "bootstrap";
 
@@ -274,6 +273,7 @@ export default {
   components: {
     TemplateAdmin,
     ModalUnidades,
+    EstoqueUnidade,
   },
   props: ["id"],
   data() {
@@ -295,6 +295,15 @@ export default {
       },
       immediate: true,
     },
+    "unidade.estoque": {
+      handler() {
+        // Reprocessar aba ativa quando dados da unidade carregarem
+        const currentTab = this.$route.query.tab;
+        if (currentTab === "estoque" && !this.unidade.estoque) {
+          this.changeTab("overview");
+        }
+      },
+    },
   },
   methods: {
     async carregarUnidade() {
@@ -303,17 +312,15 @@ export default {
         const result = await functions.buscarUnidadePorId(this.id);
         if (result.success) {
           this.unidade = result.data;
-          // Atualizar no store para o header
-          this.$store.commit("setUnidadeAtual", result.data);
+          // Atualizar no store para o header se existir
+          if (this.$store.commit) {
+            this.$store.commit("setUnidadeAtual", result.data);
+          }
         } else {
-          this.showNotification(
-            result.message || "Erro ao carregar unidade",
-            "error"
-          );
+          console.error("Erro:", result.message || "Erro ao carregar unidade");
         }
       } catch (error) {
         console.error("Erro ao carregar unidade:", error);
-        this.showNotification("Erro ao carregar unidade", "error");
       } finally {
         this.loading = false;
       }
@@ -370,6 +377,15 @@ export default {
         " às " +
         data.toLocaleTimeString("pt-BR")
       );
+    },
+
+    changeTab(tab) {
+      this.activeTab = tab;
+      // Atualizar URL para manter estado após refresh
+      this.$router.push({
+        path: this.$route.path,
+        query: { ...this.$route.query, tab: tab },
+      });
     },
 
     showNotification(message, type) {

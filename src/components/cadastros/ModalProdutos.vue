@@ -170,7 +170,7 @@
                           :key="unidade.id"
                           :value="unidade.id"
                         >
-                          {{ unidade.nome }} ({{ unidade.sigla }})
+                          {{ unidade.nome }}
                         </option>
                       </select>
                       <button
@@ -195,7 +195,7 @@
                       class="mt-2 p-3 bg-light rounded border"
                     >
                       <div class="row g-2">
-                        <div class="col-md-8">
+                        <div class="col-md-12">
                           <label
                             for="novaUnidadeNome"
                             class="form-label small fw-bold"
@@ -207,22 +207,6 @@
                             type="text"
                             class="form-control form-control-sm text-uppercase"
                             placeholder="Ex: QUILOGRAMA"
-                            required
-                          />
-                        </div>
-                        <div class="col-md-4">
-                          <label
-                            for="novaUnidadeSigla"
-                            class="form-label small fw-bold"
-                            >Sigla *</label
-                          >
-                          <input
-                            id="novaUnidadeSigla"
-                            v-model="novaUnidade.sigla"
-                            type="text"
-                            class="form-control form-control-sm text-uppercase"
-                            placeholder="Ex: KG"
-                            maxlength="10"
                             @keyup.enter="salvarUnidadeInline"
                             required
                           />
@@ -241,9 +225,7 @@
                               type="button"
                               class="btn btn-success btn-sm"
                               @click="salvarUnidadeInline"
-                              :disabled="
-                                !novaUnidade.nome || !novaUnidade.sigla
-                              "
+                              :disabled="!novaUnidade.nome"
                             >
                               <i class="mdi mdi-check font-size-12"></i> Salvar
                             </button>
@@ -345,8 +327,6 @@
 <script>
 import ModalBase01 from "@/components/layouts/ModalBase01.vue";
 import Funcoes from "@/functions/cad_produtos.js";
-import GrupoFunctions from "@/functions/cad_grupo_produto.js";
-import UnidadeFunctions from "@/functions/cad_unidades_medida.js";
 
 export default {
   name: "ModalProdutos",
@@ -368,7 +348,6 @@ export default {
       // Dados para cadastro inline de unidade
       novaUnidade: {
         nome: "",
-        sigla: "",
       },
     };
   },
@@ -492,7 +471,7 @@ export default {
       this.showUnidadeForm = !this.showUnidadeForm;
       if (this.showUnidadeForm) {
         // Limpar dados quando abrir
-        this.novaUnidade = { nome: "", sigla: "" };
+        this.novaUnidade = { nome: "" };
         // Focar no input após renderização
         this.$nextTick(() => {
           const input = document.getElementById("novaUnidadeNome");
@@ -506,7 +485,7 @@ export default {
     },
     cancelarUnidadeForm() {
       this.showUnidadeForm = false;
-      this.novaUnidade = { nome: "", sigla: "" };
+      this.novaUnidade = { nome: "" };
     },
     salvarGrupoInline() {
       if (!this.novoGrupo.nome) return;
@@ -562,12 +541,11 @@ export default {
         });
     },
     salvarUnidadeInline() {
-      if (!this.novaUnidade.nome || !this.novaUnidade.sigla) return;
+      if (!this.novaUnidade.nome) return;
 
       const unidadeData = {
         unidadeMedida: {
           nome: this.novaUnidade.nome.toUpperCase(),
-          sigla: this.novaUnidade.sigla.toUpperCase(),
           quantidade_unidade_minima: 1,
           status: "A",
         },
@@ -595,7 +573,7 @@ export default {
 
             // Fechar formulário
             this.showUnidadeForm = false;
-            this.novaUnidade = { nome: "", sigla: "" };
+            this.novaUnidade = { nome: "" };
 
             // Exibir mensagem de sucesso
             if (this.$toastr && this.$toastr.s) {

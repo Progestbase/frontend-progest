@@ -17,6 +17,7 @@ export default createStore({
     listUnidadesMedida: [],
     listGrupoProdutos: [],
     listFornecedores: [],
+    listPolos: [],
     searchFilters: [],
     idDataLoaded: "",
     isSearching: "",
@@ -73,6 +74,9 @@ export default createStore({
     },
     setListFornecedores(state, fornecedores) {
       state.listFornecedores = fornecedores;
+    },
+    setListPolos(state, polos) {
+      state.listPolos = polos;
     },
     setListEstoque(state, estoque) {
       state.listEstoque = estoque;

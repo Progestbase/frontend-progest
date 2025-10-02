@@ -69,6 +69,8 @@ export default {
           return "Grupos de Produtos";
         case "unidadesMedida":
           return "Unidades de Medida";
+        case "polos":
+          return "Polos";
         case "setores":
           return "Setores";
         case "estoques":

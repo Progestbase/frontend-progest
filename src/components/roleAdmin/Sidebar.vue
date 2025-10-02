@@ -87,6 +87,11 @@
               <span class="material-icons">straighten</span>
               <span class="text">Unidades de Medida</span>
             </router-link>
+
+            <router-link class="button" to="/polos" title="Polos">
+              <span class="material-icons">map</span>
+              <span class="text">Polos</span>
+            </router-link>
           </div>
         </transition>
       </div>

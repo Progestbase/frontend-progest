@@ -14,6 +14,7 @@ import Produtos from "../views/cadastros/Produtos.vue";
 import UnidadesMedida from "../views/cadastros/UnidadesMedida.vue";
 import Fornecedores from "../views/cadastros/Fornecedores.vue";
 import GrupoProduto from "../views/cadastros/GrupoProduto.vue";
+import Polos from "../views/cadastros/Polos.vue";
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -86,6 +87,12 @@ const router = createRouter({
       path: "/fornecedores",
       name: "fornecedores",
       component: Fornecedores,
+      meta: { requiresAuth: true },
+    },
+    {
+      path: "/polos",
+      name: "polos",
+      component: Polos,
       meta: { requiresAuth: true },
     },
     {

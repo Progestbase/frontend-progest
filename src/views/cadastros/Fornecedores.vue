@@ -7,28 +7,36 @@
             <div class="col-12">
               <div class="card">
                 <div class="card-body">
-                  <button class="btn btn-success">
-                    <LinkModal01
-                      :idModalInsertUP="'#addFornecedores'"
-                      :label="'NOVO'"
-                      :titleModal="titleModal"
-                      :varsModalData="varsModalData"
-                    >
-                    </LinkModal01>
-                  </button>
+                  <LinkModal01
+                    :idModalInsertUP="'#addFornecedores'"
+                    :label="'NOVO'"
+                    :titleModal="titleModal"
+                    :varsModalData="varsModalData"
+                  >
+                  </LinkModal01>
 
                   <div class="mt-5">
+                    <!-- Loading -->
+                    <div
+                      v-if="$store.state.isSearching"
+                      class="text-center mt-5"
+                    >
+                      <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Carregando...</span>
+                      </div>
+                      <p class="mt-2">Carregando fornecedores...</p>
+                    </div>
+
                     <TBLBASE01
-                      v-if="
-                        listFornecedores &&
-                        listFornecedores.data &&
-                        listFornecedores.data.length > 0
+                      v-else-if="
+                        formattedFornecedores &&
+                        formattedFornecedores.length > 0
                       "
-                      :list="listFornecedores"
+                      :list="formattedFornecedores"
                       :titles="[
                         '#',
                         'Código',
-                        'CNPJ',
+                        'CPF/CNPJ',
                         'Razão Social',
                         'Status',
                       ]"
@@ -43,6 +51,20 @@
                       :functions="functions"
                       classColTable="12"
                     />
+
+                    <!-- Mensagem quando não há fornecedores -->
+                    <div
+                      v-else-if="!$store.state.isSearching"
+                      class="text-center mt-5"
+                    >
+                      <div class="d-flex flex-column align-items-center">
+                        <i class="mdi mdi-store display-4 text-muted mb-3"></i>
+                        <h5>Nenhum fornecedor encontrado</h5>
+                        <p class="text-muted">
+                          Crie seu primeiro fornecedor clicando no botão "NOVO"
+                        </p>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -77,25 +99,25 @@ export default {
   },
   data() {
     return {
-      isCreateFornecedorModalOpen: false,
-      fornecedor_data: null,
       functions: functions,
-      choice_filters: null,
       titleModal: "Cadastro de Fornecedor",
       varsModalData: {
         status: "A",
         codigo: "",
         cnpj: "",
-        razao_social: "",
+        razao_social_nome: "",
+        tipo_pessoa: "J",
       },
     };
   },
   methods: {
     openCreateFornecedorModal() {
-      this.isCreateFornecedorModalOpen = true;
+      // prepara modal para ADD
+      this.$store.commit("setModalFunction", "ADD");
+      this.$store.commit("setModalData", this.varsModalData);
     },
     closeCreateFornecedorModal() {
-      this.isCreateFornecedorModalOpen = false;
+      // apenas fecha modal via bootstrap (o componente ModalBase lida com isso)
     },
     createFornecedor(fornecedorData) {
       console.log("Fornecedor criado:", fornecedorData);
@@ -108,11 +130,25 @@ export default {
   },
   computed: {
     listFornecedores() {
-      // Retorna o objeto original, pois TBLBASE01 espera array de objetos
-      return this.$store.state.listFornecedores;
+      const lf = this.$store.state.listFornecedores;
+      if (!lf) return [];
+      if (Array.isArray(lf)) return lf;
+      if (lf.data && Array.isArray(lf.data)) return lf.data;
+      return [];
+    },
+    formattedFornecedores() {
+      return this.listFornecedores.map((f) => ({
+        id: f.id,
+        codigo: f.codigo,
+        cnpj: f.cnpj || f.cpf || "",
+        razao_social: f.razao_social_nome || f.razao_social || f.nome || "",
+        status: f.statusFormatted || (f.status === "A" ? "Ativo" : "Inativo"),
+      }));
     },
   },
-  created() {},
+  created() {
+    this.listAllFornecedores();
+  },
   mounted() {
     this.listAllFornecedores();
   },

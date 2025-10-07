@@ -1,32 +1,29 @@
-// MÓDULO DE UNIDADES DE MEDIDA
-// Implementação seguindo a documentação oficial da API
+// MÓDULO DE GRUPO DE PRODUTOS
+// Segue o padrão usado em outros módulos (unidades de medida)
 
 var ADD_UP = (content, funcao) => {
   console.log(
     "Executando " +
       (funcao == "ADD" ? "cadastro" : "atualização") +
-      " de unidade de medida"
+      " de grupo de produto"
   );
 
-  // Preparar dados conforme documentação da API
-  const unidadeMedidaData = {
-    unidadeMedida: {
+  const grupoData = {
+    grupoProduto: {
       nome: content.modalData.nome,
-      quantidade_unidade_minima:
-        parseInt(content.modalData.quantidade_unidade_minima) || 1,
+      tipo: content.modalData.tipo || "Material",
       status: content.modalData.status || "A",
     },
   };
 
-  // Se for atualização, incluir ID
   if (funcao == "UP") {
-    unidadeMedidaData.unidadeMedida.id = content.modalData.id;
+    grupoData.grupoProduto.id = content.modalData.id;
   }
 
   content.$axios
     .post(
-      funcao == "ADD" ? "/unidadeMedida/add" : "/unidadeMedida/update",
-      unidadeMedidaData,
+      funcao == "ADD" ? "/grupoProduto/add" : "/grupoProduto/update",
+      grupoData,
       {
         headers: {
           Authorization: "Bearer " + content.$store.getters.getUserToken,
@@ -42,13 +39,9 @@ var ADD_UP = (content, funcao) => {
 
         const mensagem =
           funcao == "ADD"
-            ? "Unidade de medida cadastrada com sucesso!"
-            : "Unidade de medida atualizada com sucesso!";
-        if (content.$toastr) {
-          content.$toastr.s(mensagem);
-        } else {
-          alert(mensagem);
-        }
+            ? "Grupo de produto cadastrado com sucesso!"
+            : "Grupo de produto atualizado com sucesso!";
+        if (content.$toastr) content.$toastr.s(mensagem);
 
         if (funcao == "ADD") {
           content.modalData.id = response.data.data.id;
@@ -57,9 +50,9 @@ var ADD_UP = (content, funcao) => {
         content.$store.commit("setModalTitle", response.data.data.nome);
         content.$store.commit("setModalFunction", "UP");
 
-        // Fechar modal (proteção para casos onde bootstrap não esteja disponível)
+        // Fechar modal se existir (uso defensivo: window.bootstrap pode não estar definido)
         try {
-          const modal = document.querySelector("#addUPUnidadesMedida");
+          const modal = document.querySelector("#addUPGrupoProduto");
           if (modal && window && window.bootstrap && window.bootstrap.Modal) {
             const bootstrapModal = window.bootstrap.Modal.getInstance(modal);
             if (bootstrapModal) bootstrapModal.hide();
@@ -75,11 +68,8 @@ var ADD_UP = (content, funcao) => {
             erros += erro + "\n";
           }
         }
-        if (content.$toastr) {
-          content.$toastr.e("Erro de validação:\n" + erros);
-        } else {
-          alert("Erro de validação:\n" + erros);
-        }
+        if (content.$toastr) content.$toastr.e("Erro de validação:\n" + erros);
+        else alert("Erro de validação:\n" + erros);
       } else {
         console.log(
           "Erro ao " + (funcao == "ADD" ? "cadastrar" : "atualizar"),
@@ -88,11 +78,8 @@ var ADD_UP = (content, funcao) => {
         const mensagem =
           response.data.message ||
           "Erro ao " + (funcao == "ADD" ? "cadastrar" : "atualizar");
-        if (content.$toastr) {
-          content.$toastr.e(mensagem);
-        } else {
-          alert(mensagem);
-        }
+        if (content.$toastr) content.$toastr.e(mensagem);
+        else alert(mensagem);
       }
     })
     .catch(function (error) {
@@ -100,26 +87,21 @@ var ADD_UP = (content, funcao) => {
       const mensagem =
         error.response?.data?.message ||
         "OPS. Pequena intermitência. Se persistir, realize um novo login.";
-      if (content.$toastr) {
-        content.$toastr.e(mensagem);
-      } else {
-        alert(mensagem);
-      }
+      if (content.$toastr) content.$toastr.e(mensagem);
+      else alert(mensagem);
     });
 };
 
 var listAll = (content, url = null) => {
   content.$store.commit("setisSearching", true);
 
-  const endpoint = url == null ? "/unidadeMedida/list" : url;
-  console.log("Carregando unidades de medida:", endpoint);
+  const endpoint = url == null ? "/grupoProduto/list" : url;
+  console.log("Carregando grupos de produto:", endpoint);
 
   content.$axios
     .post(
       endpoint,
-      {
-        filters: content.$store.state.searchFilters || [],
-      },
+      { filters: content.$store.state.searchFilters || [] },
       {
         headers: {
           Authorization: "Bearer " + content.$store.getters.getUserToken,
@@ -129,29 +111,19 @@ var listAll = (content, url = null) => {
     )
     .then((response) => {
       console.log("Resposta da API listAll:", response.data);
-
       if (response.data.status && response.data.data) {
-        // Enriquecer dados com formatação para exibição
-        const enrichedUnidades = response.data.data.map((unidade) => {
-          return {
-            ...unidade,
-            // Manter campo status original da API e adicionar versão formatada
-            statusFormatted: unidade.status === "A" ? "Ativo" : "Inativo",
-          };
-        });
+        const enriched = response.data.data.map((item) => ({
+          ...item,
+          statusFormatted: item.status === "A" ? "Ativo" : "Inativo",
+        }));
 
-        content.$store.commit("setListUnidadesMedida", {
+        content.$store.commit("setListGrupoProdutos", {
           ...response.data,
-          data: enrichedUnidades,
+          data: enriched,
         });
-
-        console.log(
-          "setListUnidadesMedida - dados carregados:",
-          enrichedUnidades.length
-        );
+        console.log("setListGrupoProdutos - registros:", enriched.length);
       } else {
-        console.error("Resposta da API sem dados válidos:", response.data);
-        content.$store.commit("setListUnidadesMedida", {
+        content.$store.commit("setListGrupoProdutos", {
           status: false,
           data: [],
         });
@@ -161,21 +133,16 @@ var listAll = (content, url = null) => {
     })
     .catch((error) => {
       console.error("Erro na chamada da API listAll:", error);
-      console.error("Response error:", error.response);
       content.$store.commit("setisSearching", false);
-      content.$store.commit("setListUnidadesMedida", {
+      content.$store.commit("setListGrupoProdutos", {
         status: false,
         data: [],
       });
-
       const mensagem =
         error.response?.data?.message ||
-        "Erro ao carregar unidades de medida. Verifique sua conexão.";
-      if (content.$toastr) {
-        content.$toastr.e(mensagem);
-      } else {
-        alert(mensagem);
-      }
+        "Erro ao carregar grupos de produto. Verifique sua conexão.";
+      if (content.$toastr) content.$toastr.e(mensagem);
+      else alert(mensagem);
     });
 };
 
@@ -183,11 +150,11 @@ var listData = (content) => {
   const abaDados = document.querySelector("#aba_dados");
   if (abaDados) abaDados.click();
 
-  console.log("Carregando dados da unidade de medida ID:", content.idData);
+  console.log("Carregando dados do grupo ID:", content.idData);
 
   content.$axios
     .post(
-      "/unidadeMedida/listData",
+      "/grupoProduto/listData",
       { id: content.idData },
       {
         headers: {
@@ -198,21 +165,15 @@ var listData = (content) => {
     )
     .then((response) => {
       console.log("Resposta da API listData:", response.data);
-
       if (response.data.status && response.data.data) {
         content.$store.commit("setIdDataLoaded", content.idData);
         content.$store.commit("setModalData", response.data.data);
-        console.log("DADOS DA UNIDADE DE MEDIDA:", response.data.data);
         if (content.callback) content.callback();
       } else {
-        console.error("Erro ao carregar dados:", response.data);
         const mensagem =
-          response.data.message || "Unidade de medida não encontrada";
-        if (content.$toastr) {
-          content.$toastr.e(mensagem);
-        } else {
-          alert(mensagem);
-        }
+          response.data.message || "Grupo de produto não encontrado";
+        if (content.$toastr) content.$toastr.e(mensagem);
+        else alert(mensagem);
       }
     })
     .catch((error) => {
@@ -220,24 +181,20 @@ var listData = (content) => {
       const mensagem =
         error.response?.data?.message ||
         "OPS. Pequena intermitência. Se persistir, realize um novo login.";
-      if (content.$toastr) {
-        content.$toastr.e(mensagem);
-      } else {
-        alert(mensagem);
-      }
+      if (content.$toastr) content.$toastr.e(mensagem);
+      else alert(mensagem);
     });
 };
 
 var deleteData = (content, id) => {
-  if (!confirm("Tem certeza de que deseja excluir esta unidade de medida?")) {
+  if (!confirm("Tem certeza de que deseja excluir este grupo de produto?"))
     return;
-  }
 
-  console.log("Excluindo unidade de medida ID:", id);
+  console.log("Excluindo grupo de produto ID:", id);
 
   content.$axios
     .post(
-      `/unidadeMedida/delete/${id}`,
+      `/grupoProduto/delete/${id}`,
       {},
       {
         headers: {
@@ -248,46 +205,31 @@ var deleteData = (content, id) => {
     )
     .then(function (response) {
       console.log("Resposta da API delete:", response.data);
-
       if (response.data.status) {
         listAll(content);
-        const mensagem = "Unidade de medida excluída com sucesso.";
-        if (content.$toastr) {
-          content.$toastr.s(mensagem);
-        } else {
-          alert(mensagem);
-        }
+        const mensagem = "Grupo de produto excluído com sucesso.";
+        if (content.$toastr) content.$toastr.s(mensagem);
+        else alert(mensagem);
       } else {
-        console.log("Erro ao excluir", response);
         const mensagem = response.data.message || "Erro ao excluir";
-        if (content.$toastr) {
-          content.$toastr.e(mensagem);
-        } else {
-          alert(mensagem);
-        }
+        if (content.$toastr) content.$toastr.e(mensagem);
+        else alert(mensagem);
       }
     })
     .catch(function (error) {
       console.error("Erro na requisição delete:", error);
       let mensagem =
         "OPS. Pequena intermitência. Se persistir, realize um novo login.";
-
-      // Tratar erro específico de referências existentes (422)
       if (error.response?.status === 422 && error.response?.data?.message) {
         mensagem = error.response.data.message;
-        if (error.response.data.references) {
+        if (error.response.data.references)
           mensagem +=
             "\nReferências: " + error.response.data.references.join(", ");
-        }
       } else if (error.response?.data?.message) {
         mensagem = error.response.data.message;
       }
-
-      if (content.$toastr) {
-        content.$toastr.e(mensagem);
-      } else {
-        alert(mensagem);
-      }
+      if (content.$toastr) content.$toastr.e(mensagem);
+      else alert(mensagem);
     });
 };
 

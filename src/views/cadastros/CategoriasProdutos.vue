@@ -7,11 +7,9 @@
                         <div class="col-12">
                             <div class="card">
                                 <div class="card-body">
-                                    <button class="btn btn-success">
                                         <LinkModal01 :idModalInsertUP="'#addUPCategoriasProdutos'" :label="'NOVO'"
                                             :titleModal="titleModal" :varsModalData="varsModalData">
                                         </LinkModal01>
-                                    </button>
                                     <div class="mt-5">
                                         <TBLBASE01 v-if="listCategoriasProdutos && listCategoriasProdutos.data && listCategoriasProdutos.data.length > 0"
                                             :list="listCategoriasProdutos" :titles="['#', 'Nome', 'Descricao', 'Status']"

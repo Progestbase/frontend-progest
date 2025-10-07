@@ -8,16 +8,26 @@ export default createStore({
       modalFunction: "ADD",
       modalData: {},
     },
+    // Armazena erros de validação para exibição no modal
+    modalErrors: {},
     listUsers: [],
     listTiposUsuarios: [],
     listUnidades: [],
     listProdutos: [],
-    listCategoriasProdutos: [],
     listUnidadesMedida: [],
+    listGrupoProdutos: [],
     listFornecedores: [],
+    listPolos: [],
     searchFilters: [],
     idDataLoaded: "",
     isSearching: "",
+    listPerfis: [],
+    listTiposVinculo: [],
+    listSetores: [],
+    listUnidadesGerais: [],
+    unidadeAtual: null,
+    gruposProdutos: [],
+    unidadesMedidaAux: [],
     listPerfis: [],
     listTiposVinculo: [],
     listSetores: [],
@@ -38,10 +48,12 @@ export default createStore({
       state.modalData.modalData = {
         status: "A",
         matricula: "",
-        funcao: "L",
         name: "",
         cpf: "",
         email: "",
+        telefone: "",
+        data_nascimento: "",
+        tipo_vinculo: "",
         password: "",
       };
     },
@@ -57,8 +69,8 @@ export default createStore({
     setListProdutos(state, produtos) {
       state.listProdutos = produtos;
     },
-    setListCategoriasProdutos(state, categorias) {
-      state.listCategoriasProdutos = categorias;
+    setListGrupoProdutos(state, grupos) {
+      state.listGrupoProdutos = grupos;
     },
     setListUnidadesMedida(state, unidadesMedida) {
       state.listUnidadesMedida = unidadesMedida;
@@ -66,8 +78,31 @@ export default createStore({
     setListFornecedores(state, fornecedores) {
       state.listFornecedores = fornecedores;
     },
+    setListPolos(state, polos) {
+      state.listPolos = polos;
+    },
     setListEstoque(state, estoque) {
       state.listEstoque = estoque;
+    },
+    setListPerfis(state, perfis) {
+      state.listPerfis = perfis;
+    },
+    setListTiposVinculo(state, tipos) {
+      state.listTiposVinculo = tipos;
+    },
+    setListSetores(state, setores) {
+      state.listSetores = setores;
+    },
+    setListUnidadesGerais(state, unidades) {
+      state.listUnidadesGerais = unidades;
+    },
+    setUnidadeAtual(state, unidade) {
+      state.unidadeAtual = unidade;
+    },
+    SET_MODAL_DATA(state, payload) {
+      state.modalData.modalTitle = payload.modalTitle || "";
+      state.modalData.modalData = payload.modalData || {};
+      state.modalData.modalFunction = payload.modalFunction || "ADD";
     },
     setListPerfis(state, perfis) {
       state.listPerfis = perfis;
@@ -84,11 +119,20 @@ export default createStore({
     setModalFunction(state, func) {
       state.modalData.modalFunction = func;
     },
+    setModalErrors(state, errors) {
+      state.modalErrors = errors || {};
+    },
     setIdDataLoaded(state, id) {
       state.idDataLoaded = id;
     },
     setisSearching(state, id) {
       state.isSearching = id;
+    },
+    setGruposProdutos(state, grupos) {
+      state.gruposProdutos = grupos;
+    },
+    setUnidadesMedidaAux(state, unidades) {
+      state.unidadesMedidaAux = unidades;
     },
   },
   actions: {
@@ -100,8 +144,12 @@ export default createStore({
     getListUsers: (state) => state.listUsers,
     getListTiposUsuario: (state) => state.listTiposUsuario,
     getListUnidades: (state) => state.listUnidades,
-    getListCategoriasProdutos: (state) => state.listCategoriasProdutos,
+    getListGrupoProdutos: (state) => state.listGrupoProdutos,
     getListFornecedores: (state) => state.listFornecedores,
+    getListPerfis: (state) => state.listPerfis,
+    getListTiposVinculo: (state) => state.listTiposVinculo,
+    getListSetores: (state) => state.listSetores,
+    getListUnidadesGerais: (state) => state.listUnidadesGerais,
     getListPerfis: (state) => state.listPerfis,
     getListTiposVinculo: (state) => state.listTiposVinculo,
     getListSetores: (state) => state.listSetores,

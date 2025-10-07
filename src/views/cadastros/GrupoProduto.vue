@@ -8,7 +8,7 @@
               <div class="card">
                 <div class="card-body">
                   <LinkModal01
-                    :idModalInsertUP="'#addUPUnidadesMedida'"
+                    :idModalInsertUP="'#addUPGrupoProduto'"
                     :label="'NOVO'"
                     :titleModal="titleModal"
                     :varsModalData="varsModalData"
@@ -23,52 +23,54 @@
                       <div class="spinner-border text-primary" role="status">
                         <span class="visually-hidden">Carregando...</span>
                       </div>
-                      <p class="mt-2">Carregando unidades de medida...</p>
+                      <p class="mt-2">Carregando grupos de produtos...</p>
                     </div>
 
                     <!-- Tabela com dados -->
                     <TBLBASE01
                       v-else-if="
-                        listUnidadesMedida && listUnidadesMedida.length > 0
+                        listGrupoProdutos && listGrupoProdutos.length > 0
                       "
-                      :list="formattedUnidadesMedida"
-                      :titles="['#', 'Nome', 'Qtd. Mín.', 'Status']"
+                      :list="formattedList"
+                      :titles="['#', 'Nome', 'Tipo', 'Status']"
                       :align="[
                         'text-center',
                         'text-left',
-                        'text-center',
+                        'text-left',
                         'text-center',
                       ]"
                       :indexLink="1"
-                      :idModalUP="'#addUPUnidadesMedida'"
+                      :idModalUP="'#addUPGrupoProduto'"
                       :functions="functions"
                       classColTable="12"
-                      deleteRoute="/unidadeMedida/delete"
+                      deleteRoute="/grupoProduto/delete"
                     />
 
-                    <!-- Mensagem quando não há unidades de medida -->
-                    <div
-                      v-else-if="!$store.state.isSearching"
-                      class="text-center mt-5"
-                    >
-                      <div class="d-flex flex-column align-items-center">
-                        <i class="mdi mdi-ruler display-4 text-muted mb-3"></i>
-                        <h5>Nenhuma unidade de medida encontrada</h5>
-                        <p class="text-muted">
-                          Crie sua primeira unidade de medida clicando no botão
-                          "NOVO"
-                        </p>
+                    <!-- Estado vazio -->
+                    <div v-else class="text-center p-5">
+                      <div class="mb-3">
+                        <i
+                          class="mdi mdi-folder-outline text-muted"
+                          style="font-size: 3rem"
+                        ></i>
                       </div>
+                      <h5 class="text-muted">
+                        Nenhum grupo de produto encontrado
+                      </h5>
+                      <p class="text-muted">
+                        Clique em "NOVO" para cadastrar o primeiro grupo de
+                        produto.
+                      </p>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
 
-            <ModalUnidadesMedida
-              idModal="addUPUnidadesMedida"
+            <ModalGrupoProduto
+              idModal="addUPGrupoProduto"
               :functions="functions"
-            ></ModalUnidadesMedida>
+            ></ModalGrupoProduto>
           </div>
         </div>
       </div>
@@ -79,56 +81,44 @@
 <script>
 import LinkModal01 from "@/components/layouts/LinkModal01.vue";
 import TemplateAdmin from "@/views/roleAdmin/TemplateAdmin.vue";
-import ModalUnidadesMedida from "@/components/cadastros/ModalUnidadesMedida.vue";
+import ModalGrupoProduto from "@/components/cadastros/ModalGrupoProduto.vue";
 import TBLBASE01 from "@/components/layouts/TableBase01.vue";
 
-import functions from "../../functions/cad_unidades_medida.js";
+import functions from "../../functions/cad_grupo_produto.js";
 
 export default {
-  name: "UnidadesMedidaView",
-  components: {
-    LinkModal01,
-    TemplateAdmin,
-    ModalUnidadesMedida,
-    TBLBASE01,
-  },
+  name: "GrupoProdutoView",
+  components: { LinkModal01, TemplateAdmin, ModalGrupoProduto, TBLBASE01 },
   data() {
     return {
       functions: functions,
-      titleModal: "Unidades de Medida",
-      varsModalData: {
-        status: "A",
-        nome: "",
-        quantidade_unidade_minima: 1,
-      },
+      titleModal: "Grupos de Produtos",
+      varsModalData: { status: "A", nome: "", tipo: "Material" },
     };
   },
   methods: {
-    openCreateUnidadesMedidaModal() {
-      this.isCreateUnidadesMedidaModalOpen = true;
-    },
-    listAllUnidadesMedida() {
+    listAll() {
       functions.listAll(this);
     },
   },
   computed: {
-    listUnidadesMedida() {
-      return this.$store.state.listUnidadesMedida?.data || [];
+    listGrupoProdutos() {
+      return this.$store.state.listGrupoProdutos?.data || [];
     },
-    formattedUnidadesMedida() {
-      return this.listUnidadesMedida.map((unidade) => ({
-        id: unidade.id,
-        nome: unidade.nome,
-        quantidade_unidade_minima: unidade.quantidade_unidade_minima,
-        status: unidade.status === "A" ? "Ativo" : "Inativo",
+    formattedList() {
+      return this.listGrupoProdutos.map((g) => ({
+        id: g.id,
+        nome: g.nome,
+        tipo: g.tipo,
+        status: g.status === "A" ? "Ativo" : "Inativo",
       }));
     },
   },
   created() {
-    this.listAllUnidadesMedida();
+    this.listAll();
   },
   mounted() {
-    this.listAllUnidadesMedida();
+    this.listAll();
   },
 };
 </script>
@@ -142,14 +132,12 @@ export default {
   align-items: center;
   margin-bottom: 1rem;
 }
-
 .form-control {
   background-color: #f8f9fa;
   border: 1px solid #ced4da;
   border-radius: 0.25rem;
   padding: 0.5rem;
 }
-
 .btn-primary {
   background-color: var(--dark);
   border-color: var(--dark);

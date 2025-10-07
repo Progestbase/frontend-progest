@@ -3,10 +3,9 @@
     <div class="main-content">
       <div class="page-content">
         <div class="container-fluid">
-          <h2 class="mb-4">Estoque - Unidades</h2>
 
           <!-- Grid de Unidades -->
-          <div class="row g-3">
+          <div class="row g-3 mt-3">
             <div
               v-for="unidade in unidades"
               :key="unidade.id"
@@ -16,17 +15,28 @@
                 class="card unidade-card"
                 @click="$router.push(`/estoque/${unidade.id}`)"
               >
-                <div class="card-body text-center">
-                  <h5 class="card-title">{{ unidade.nome }}</h5>
-                  <p class="card-text">
-                    Estoque atual: {{ unidade.quantidade_atual }}
-                  </p>
-                  <span
-                    class="badge"
-                    :class="unidade.quantidade_atual < unidade.quantidade_minima ? 'bg-danger' : 'bg-success'"
-                  >
-                    {{ unidade.quantidade_atual < unidade.quantidade_minima ? 'Abaixo do mínimo' : 'Normal' }}
-                  </span>
+                <div class="card-body text-center d-flex flex-column align-items-center justify-content-center">
+                  <!-- Nome -->
+                  <h5 class="card-title mb-3">{{ unidade.nome }}</h5>
+
+                  <!-- Infos -->
+                  <div class="d-flex flex-column gap-2">
+                    <!-- Se é central -->
+                    <span
+                      class="badge"
+                      :class="unidade.central ? 'bg-primary' : 'bg-secondary'"
+                    >
+                      {{ unidade.central ? 'Central' : 'Unidade' }}
+                    </span>
+
+                    <!-- Status de estoque -->
+                    <span
+                      class="badge"
+                      :class="unidade.itensAbaixoMinimo ? 'bg-danger' : 'bg-success'"
+                    >
+                      {{ unidade.itensAbaixoMinimo ? 'Itens abaixo do mínimo' : 'Todos normais' }}
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -46,10 +56,10 @@ export default {
   data() {
     return {
       unidades: [
-        { id: 1, nome: "Unidade A", quantidade_atual: 120, quantidade_minima: 50 },
-        { id: 2, nome: "Unidade B", quantidade_atual: 20, quantidade_minima: 30 },
-        { id: 3, nome: "Unidade C", quantidade_atual: 75, quantidade_minima: 40 },
-        { id: 4, nome: "Unidade D", quantidade_atual: 200, quantidade_minima: 80 },
+        { id: 1, nome: "Unidade A", central: true, itensAbaixoMinimo: false },
+        { id: 2, nome: "Unidade B", central: false, itensAbaixoMinimo: true },
+        { id: 3, nome: "Unidade C", central: false, itensAbaixoMinimo: false },
+        { id: 4, nome: "Unidade D", central: true, itensAbaixoMinimo: true },
       ],
     };
   },
@@ -60,6 +70,10 @@ export default {
 .unidade-card {
   cursor: pointer;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
+  min-height: 160px; /* deixa os cards com altura mínima maior */
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 .unidade-card:hover {
   transform: scale(1.03);

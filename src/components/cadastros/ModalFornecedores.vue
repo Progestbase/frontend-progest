@@ -1,7 +1,7 @@
 <template>
   <span>
     <ModalBase01
-      :id="idModal"
+      :idModal="idModal"
       modalClass="modal-dialog modal-lg modal-dialog-centered"
     >
       <div class="col-md-12">
@@ -19,18 +19,24 @@
               <div class="row">
                 <div class="col-md-12">
                   <div class="mb-3">
-                    <label class="form-label">Razão Social</label>
+                    <label class="form-label">Razão Social / Nome</label>
                     <input
                       type="text"
                       class="form-control text-uppercase"
-                      v-model="modalData.razao_social"
+                      v-model="modalData.razao_social_nome"
                     />
+                    <div
+                      v-if="fieldError('razao_social_nome')"
+                      class="invalid-feedback d-block"
+                    >
+                      {{ fieldError("razao_social_nome") }}
+                    </div>
                   </div>
                 </div>
               </div>
 
               <div class="row">
-                <div class="col-md-4">
+                <div class="col-md-3">
                   <div class="mb-3">
                     <label class="form-label">Código</label>
                     <input
@@ -41,19 +47,54 @@
                   </div>
                 </div>
 
-                <div class="col-md-4">
+                <div class="col-md-3">
                   <div class="mb-3">
-                    <label class="form-label">CNPJ</label>
-                    <input
-                      type="text"
-                      class="form-control"
-                      v-model="modalData.cnpj"
-                      v-mask="'##.###.###/####-##'"
-                    />
+                    <label class="form-label">Tipo Pessoa</label>
+                    <select class="form-select" v-model="modalData.tipo_pessoa">
+                      <option value="J">Pessoa Jurídica</option>
+                      <option value="F">Pessoa Física</option>
+                    </select>
                   </div>
                 </div>
 
-                <div class="col-md-4">
+                <div class="col-md-3">
+                  <div v-if="modalData.tipo_pessoa === 'J'">
+                    <div class="mb-3">
+                      <label class="form-label">CNPJ</label>
+                      <input
+                        type="text"
+                        class="form-control"
+                        v-model="modalData.cnpj"
+                        v-mask="'##.###.###/####-##'"
+                      />
+                      <div
+                        v-if="fieldError('cnpj')"
+                        class="invalid-feedback d-block"
+                      >
+                        {{ fieldError("cnpj") }}
+                      </div>
+                    </div>
+                  </div>
+                  <div v-else>
+                    <div class="mb-3">
+                      <label class="form-label">CPF</label>
+                      <input
+                        type="text"
+                        class="form-control"
+                        v-model="modalData.cpf"
+                        v-mask="'###.###.###-##'"
+                      />
+                      <div
+                        v-if="fieldError('cpf')"
+                        class="invalid-feedback d-block"
+                      >
+                        {{ fieldError("cpf") }}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="col-md-3">
                   <div class="mb-3">
                     <label class="form-label">Status</label>
                     <select class="form-select" v-model="modalData.status">
@@ -70,22 +111,24 @@
 
       <div class="row mt-2">
         <div class="col-12 text-end">
-          <button
-            type="button"
-            class="btn btn-secondary"
-            data-bs-dismiss="modal"
-          >
-            <i class="mdi mdi-close-thick font-size-15"></i> Fechar
-          </button>
-          <button
-            type="submit"
-            class="btn btn-success"
-            id="btn-save-event"
-            @click="add_UP_Fornecedor"
-          >
-            <i class="mdi mdi-check-bold font-size-15"></i>
-            {{ modalFunction === "ADD" ? "Salvar" : "Atualizar" }}
-          </button>
+          <div class="d-flex gap-2 justify-content-end">
+            <button
+              type="button"
+              class="btn btn-secondary btn-modal"
+              data-bs-dismiss="modal"
+            >
+              <i class="mdi mdi-close-thick me-2"></i>Fechar
+            </button>
+            <button
+              type="submit"
+              class="btn btn-success btn-modal"
+              id="btn-save-event"
+              @click="add_UP_Fornecedor"
+            >
+              <i class="mdi mdi-check-bold me-2"></i>
+              {{ modalFunction === "ADD" ? "Salvar" : "Atualizar" }}
+            </button>
+          </div>
         </div>
       </div>
     </ModalBase01>
@@ -94,14 +137,10 @@
 
 <script>
 import ModalBase01 from "@/components/layouts/ModalBase01.vue";
-import Funcoes from "@/functions/cad_fornecedores.js";
 
 export default {
   name: "ModalFornecedores",
-  components: {
-    ModalBase01,
-    Funcoes,
-  },
+  components: { ModalBase01 },
   props: ["idModal", "functions"],
   computed: {
     modalData() {
@@ -110,28 +149,87 @@ export default {
     modalFunction() {
       return this.$store.state.modalData.modalFunction;
     },
+    modalErrors() {
+      return this.$store.state.modalErrors || {};
+    },
   },
   methods: {
     add_UP_Fornecedor() {
+      // limpa erros anteriores
+      try {
+        this.$store.commit("setModalErrors", {});
+      } catch (e) {}
+      // Validação mínima do CPF/CNPJ conforme tipo_pessoa
+      const tipo = this.modalData.tipo_pessoa || "J";
+      const onlyDigits = (s) => (s || "").toString().replace(/\D/g, "");
+
+      // Sanitiza e valida comprimento exato
+      const payloadData = JSON.parse(JSON.stringify(this.modalData));
+      if (payloadData.cnpj) payloadData.cnpj = onlyDigits(payloadData.cnpj);
+      if (payloadData.cpf) payloadData.cpf = onlyDigits(payloadData.cpf);
+
+      if (tipo === "J") {
+        const cnpj = payloadData.cnpj || "";
+        if (!cnpj || cnpj.length !== 14) {
+          this.$store.commit("setModalErrors", {
+            cnpj: ["CNPJ deve ter exatamente 14 dígitos"],
+          });
+          this.$toastr.e(
+            "Informe um CNPJ válido para Pessoa Jurídica (14 dígitos)."
+          );
+          return;
+        }
+        // garante cpf vazio
+        payloadData.cpf = null;
+      } else {
+        const cpf = payloadData.cpf || "";
+        if (!cpf || cpf.length !== 11) {
+          this.$store.commit("setModalErrors", {
+            cpf: ["CPF deve ter exatamente 11 dígitos"],
+          });
+          this.$toastr.e(
+            "Informe um CPF válido para Pessoa Física (11 dígitos)."
+          );
+          return;
+        }
+        // garante cnpj vazio
+        payloadData.cnpj = null;
+      }
+
+      // Renomeia razao_social -> razao_social_nome para obedecer à API
+      if (payloadData.razao_social) {
+        payloadData.razao_social_nome = payloadData.razao_social;
+        delete payloadData.razao_social;
+      }
+
       const content = {
         $axios: this.$axios,
         $store: this.$store,
         $toastr: this.$toastr,
-        modalData: JSON.parse(JSON.stringify(this.modalData)),
+        modalData: payloadData,
       };
-      this.functions.ADD_UP(this, this.modalFunction);
+
+      if (this.functions && this.functions.ADD_UP) {
+        this.functions.ADD_UP(
+          content,
+          this.modalFunction === "ADD" ? "ADD" : "UP"
+        );
+      }
+    },
+    fieldError(field) {
+      const errors = this.modalErrors || {};
+      if (!errors) return null;
+      // backend pode retornar { campo: ["msg1","msg2"] } ou { campo: "msg" }
+      const v = errors[field];
+      if (!v) return null;
+      if (Array.isArray(v)) return v[0];
+      return v;
     },
   },
 };
 </script>
 
 <style scoped>
-/* .user-form { */
-/*   display: grid; */
-/*   gap: 1rem; */
-/*   grid-template-columns: 1fr 1fr; */
-/* } */
-
 .form-group {
   display: flex;
   flex-direction: column;
@@ -177,8 +275,41 @@ export default {
 }
 
 @media (max-width: 768px) {
-  /* .user-form { */
-  /*   grid-template-columns: 1fr; */
-  /* } */
+}
+
+/* Estilos para botões dos modais */
+.btn-modal {
+  font-weight: 600;
+  font-size: 0.9rem;
+  padding: 0.6rem 1.25rem;
+  border-radius: 0.4rem;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  border: none;
+  min-width: 100px;
+}
+
+.btn-modal.btn-secondary {
+  background-color: #6c757d;
+  color: white;
+}
+
+.btn-modal.btn-secondary:hover {
+  background-color: #5a6268;
+  color: white;
+}
+
+.btn-modal.btn-success {
+  background-color: #28a745;
+  color: white;
+}
+
+.btn-modal.btn-success:hover {
+  background-color: #218838;
+  color: white;
+}
+
+.btn-modal i {
+  font-size: 0.9rem;
 }
 </style>

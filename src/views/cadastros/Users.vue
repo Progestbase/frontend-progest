@@ -7,20 +7,73 @@
             <div class="col-12">
               <div class="card">
                 <div class="card-body">
-                  <button class="btn btn-success">
-                    <LinkModal01 :idModalInsertUP="'#addUPUser'" :label="'NOVO'" :titleModal="titleModal"
-                      :varsModalData="varsModalData">
-                    </LinkModal01>
-                  </button>
-                  <!-- Listagem de usuários aqui -->
+                  <LinkModal01
+                    :idModalInsertUP="'#addUPUser'"
+                    :label="'NOVO'"
+                    :titleModal="titleModal"
+                    :varsModalData="varsModalData"
+                  >
+                  </LinkModal01>
+
                   <div class="mt-5">
-                    <!-- Tabela de listagem de itens -->
-                    <TBLBASE01 v-if="listUsers && listUsers.length > 0" :list="listUsers"
-                          :titles="['#', 'Nome', 'cpf', 'Matricula', 'Data de Nascimento', 'Status', 'Tipo', 'Unidade', 'Perfil', 'Tipo de Vínculo', 'Setor']"
-                          :align="['text-center', 'text-left', 'text-left', 'text-left', 'text-left', 'text-left', 'text-left', 'text-left', 'text-left', 'text-left']" :indexLink="1"
-                      :idModalUP="'#addUPUser'" :functions="functions" classColTable="12" 
+                    <!-- Loading -->
+                    <div
+                      v-if="$store.state.isSearching"
+                      class="text-center mt-5"
+                    >
+                      <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Carregando...</span>
+                      </div>
+                      <p class="mt-2">Carregando usuários...</p>
+                    </div>
+
+                    <!-- Tabela com dados -->
+                    <TBLBASE01
+                      v-else-if="listUsers && listUsers.length > 0"
+                      :list="listUsers"
+                      :titles="[
+                        '#',
+                        'Nome',
+                        'E-mail',
+                        'CPF',
+                        'Matrícula',
+                        'Telefone',
+                        'Data de Nascimento',
+                        'Status',
+                        'Tipo de Vínculo',
+                      ]"
+                      :align="[
+                        'text-center',
+                        'text-left',
+                        'text-left',
+                        'text-left',
+                        'text-left',
+                        'text-left',
+                        'text-left',
+                        'text-left',
+                        'text-center',
+                      ]"
+                      :indexLink="1"
+                      :idModalUP="'#addUPUser'"
+                      :functions="functions"
+                      classColTable="12"
                       deleteRoute="/user/delete"
-                      />
+                    />
+
+                    <!-- Estado vazio -->
+                    <div v-else class="text-center p-5">
+                      <div class="mb-3">
+                        <i
+                          class="mdi mdi-account-outline text-muted"
+                          style="font-size: 3rem"
+                        ></i>
+                      </div>
+                      <h5 class="text-muted">Nenhum usuário encontrado</h5>
+                      <p class="text-muted">
+                        Clique em "NOVO" para cadastrar o primeiro usuário.
+                      </p>
+                    </div>
+
                     <!-- Paginação da tabela -->
                     <!-- <PAGINACAOBASE01 :paginacaoData="listUsers" :functions="functions">
                     </PAGINACAOBASE01> -->
@@ -31,8 +84,6 @@
           </div>
 
           <ModalUser01 idModal="addUPUser" :functions="functions"></ModalUser01>
-
-
         </div>
       </div>
     </div>
@@ -40,15 +91,15 @@
 </template>
 
 <script>
-import LinkModal01 from "@/components/layouts/LinkModal01.vue"
+import LinkModal01 from "@/components/layouts/LinkModal01.vue";
 import TemplateAdmin from "@/views/roleAdmin/TemplateAdmin.vue";
 import ModalUser01 from "@/components/cadastros/ModalUser01.vue";
-import TBLBASE01 from '@/components/layouts/TableBase01.vue';
+import TBLBASE01 from "@/components/layouts/TableBase01.vue";
 
 import functions from "../../functions/cad_usuarios.js";
 
 export default {
-  name: 'UsersView',
+  name: "UsersView",
   components: {
     LinkModal01,
     TemplateAdmin,
@@ -61,16 +112,18 @@ export default {
       user_data: null,
       functions: functions,
       choice_filters: null,
-      titleModal: 'Cadastro de Usuário',
+      titleModal: "Cadastro de Usuário",
       varsModalData: {
-        status: 'A',
-        matricula: '',
-        funcao: 'L',
-        name: '',
-        cpf: '',
-        email: '',
-        password: ''
-      }
+        status: "A",
+        matricula: "",
+        name: "",
+        cpf: "",
+        email: "",
+        telefone: "",
+        data_nascimento: "",
+        tipo_vinculo: "",
+        password: "",
+      },
     };
   },
   methods: {
@@ -86,17 +139,24 @@ export default {
       this.closeCreateUserModal();
     },
     listAllUsers() {
-      functions.listALL(this);
-    }
+      // Primeiro carrega os tipos de vínculo, depois os usuários
+      functions
+        .listTiposVinculo(this)
+        .then(() => {
+          functions.listALL(this);
+        })
+        .catch(() => {
+          // Se falhar ao carregar tipos de vínculo, ainda assim carrega os usuários
+          functions.listALL(this);
+        });
+    },
   },
   computed: {
     listUsers() {
       return this.$store.state.listUsers;
     },
   },
-  created() {
-
-  },
+  created() {},
   mounted() {
     this.listAllUsers();
   },

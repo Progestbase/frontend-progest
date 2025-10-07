@@ -1,7 +1,14 @@
 <template>
   <aside :class="`${is_expanded ? 'is-expanded' : ''}`">
     <div class="logo">
-      <img src="/src/assets/logo-horizontal.png" alt="Logo" />
+      <img
+        :src="
+          is_expanded
+            ? '/src/assets/logo-horizontal.png'
+            : '/src/assets/logo-icon.png'
+        "
+        alt="Logo"
+      />
     </div>
 
     <div class="menu-toggle-wrap">
@@ -24,9 +31,34 @@
 
     <h3>Menu</h3>
     <div class="menu">
+      <!-- Unidades -->
+      <router-link class="button" to="/unidades" title="Unidades">
+        <span class="material-icons">apartment</span>
+        <span class="text">Unidades</span>
+      </router-link>
+
+      <!-- Usuários -->
+      <router-link class="button" to="/users" title="Usuários">
+        <span class="material-icons">group</span>
+        <span class="text">Usuários</span>
+      </router-link>
+
+      <!-- Produtos -->
+      <router-link class="button" to="/produtos" title="Produtos">
+        <span class="material-icons">inventory</span>
+        <span class="text">Produtos</span>
+      </router-link>
+
+      <!-- Fornecedores -->
+      <router-link class="button" to="/fornecedores" title="Fornecedores">
+        <span class="material-icons">business_center</span>
+        <span class="text">Fornecedores</span>
+      </router-link>
+
+      <!-- Submenu Cadastros -->
       <div class="submenu">
         <button class="button" @click="toggleSubmenu" title="Mais Cadastros">
-          <span class="material-icons">point_of_sale</span>
+          <span class="material-icons">settings</span>
           <span class="text">Cadastros</span>
           <span
             class="material-icons expand-icon"
@@ -35,34 +67,33 @@
           >
         </button>
 
-        <div v-show="submenuOpen" class="submenu-items">
-          <router-link
-            class="button"
-            to="/tiposUsuario"
-            title="Tipos de Usuário"
-          >
-            <span class="material-icons">groups</span>
-            <span class="text">Tipos de Usuário</span>
-          </router-link>
+        <!-- transition para suavizar -->
+        <transition name="submenu">
+          <div v-show="submenuOpen" class="submenu-items">
+            <router-link
+              class="button"
+              to="/grupoProduto"
+              title="Grupos de Produtos"
+            >
+              <span class="material-icons">label</span>
+              <span class="text">Grupos de Produtos</span>
+            </router-link>
 
-          <router-link
-            class="button"
-            to="/categoriasProdutos"
-            title="Tipos de Produtos"
-          >
-            <span class="material-icons">category</span>
-            <span class="text">Categoria Produtos</span>
-          </router-link>
+            <router-link
+              class="button"
+              to="/unidadesMedida"
+              title="Unidades de Medida"
+            >
+              <span class="material-icons">straighten</span>
+              <span class="text">Unidades de Medida</span>
+            </router-link>
 
-          <router-link
-            class="button"
-            to="/unidadesMedida"
-            title="Unidades de Medida"
-          >
-            <span class="material-icons">scale</span>
-            <span class="text">Unidades de Medida</span>
-          </router-link>
-        </div>
+            <router-link class="button" to="/polos" title="Polos">
+              <span class="material-icons">map</span>
+              <span class="text">Polos</span>
+            </router-link>
+          </div>
+        </transition>
       </div>
 
       <!-- Usuários -->
@@ -108,9 +139,9 @@
 </template>
 
 <script setup>
-import { ref } from "vue";
+import { ref, watch, onMounted } from "vue";
 
-const is_expanded = ref(false);
+const is_expanded = ref(true);
 const submenuOpen = ref(false);
 
 const ToggleMenu = () => {
@@ -120,6 +151,17 @@ const ToggleMenu = () => {
 const toggleSubmenu = () => {
   submenuOpen.value = !submenuOpen.value;
 };
+
+// 🔹 Carregar valor salvo ao montar
+onMounted(() => {
+  const saved = localStorage.getItem("submenuOpen");
+  submenuOpen.value = saved === "true";
+});
+
+// 🔹 Salvar sempre que mudar
+watch(submenuOpen, (val) => {
+  localStorage.setItem("submenuOpen", val);
+});
 </script>
 
 <style lang="scss" scoped>
@@ -148,7 +190,6 @@ aside {
     }
   }
 
- 
   &:not(.is-expanded) {
     .logo img {
       max-width: 40px; // 👈 diminui a logo
@@ -286,7 +327,7 @@ aside {
   .submenu-items {
     display: flex;
     flex-direction: column;
-    margin-left: 2rem;
+    margin-left: 1rem;
   }
 
   .expand-icon {
@@ -296,5 +337,24 @@ aside {
   .expand-icon.open {
     transform: rotate(180deg);
   }
+}
+
+/* animação do submenu */
+.submenu-enter-active,
+.submenu-leave-active {
+  transition: all 0.3s ease;
+  overflow: hidden;
+}
+
+.submenu-enter-from,
+.submenu-leave-to {
+  max-height: 0;
+  opacity: 0;
+}
+
+.submenu-enter-to,
+.submenu-leave-from {
+  max-height: 200px; /* ajuste dependendo da quantidade de itens */
+  opacity: 1;
 }
 </style>

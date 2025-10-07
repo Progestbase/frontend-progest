@@ -1,9 +1,20 @@
 <template>
   <span>
-    <ModalBase01 :id="idModal" modalClass="modal-dialog modal-lg modal-dialog-centered">
+    <ModalBase01
+      :id="idModal"
+      modalClass="modal-dialog modal-lg modal-dialog-centered"
+    >
       <div class="col-md-12">
-        <div class="tab-content text-muted mt-4 mt-md-0" id="v-pills-tabContent">
-          <div class="tab-pane fade show active" id="aba_dados" role="tabpanel" aria-labelledby="aba_dados-tab">
+        <div
+          class="tab-content text-muted mt-4 mt-md-0"
+          id="v-pills-tabContent"
+        >
+          <div
+            class="tab-pane fade show active"
+            id="aba_dados"
+            role="tabpanel"
+            aria-labelledby="aba_dados-tab"
+          >
             <form autocomplete="off">
               <div class="row">
                 <div class="col-md-4">
@@ -13,90 +24,125 @@
                       <option value="A">Ativo</option>
                       <option value="I">Inativo</option>
                     </select>
+                    <small class="text-muted" v-if="modalFunction === 'ADD'">
+                      Novos usuários são criados como "Ativo" por padrão
+                    </small>
                   </div>
                 </div>
                 <div class="col-md-4">
                   <div class="mb-3">
-                    <label class="form-label" for="Matricula">Matricula</label>
-                    <input type="text" class="form-control text-uppercase" placeholder="" v-model="modalData.matricula">
+                    <label class="form-label" for="Matricula">Matrícula</label>
+                    <input
+                      type="text"
+                      class="form-control text-uppercase"
+                      placeholder=""
+                      v-model="modalData.matricula"
+                    />
                   </div>
                 </div>
-                <!-- Perfis do usuário -->
+                <!-- Tipo de vínculo -->
                 <div class="col-md-4">
                   <div class="mb-3">
-                    <label class="form-label" for="UserPerfil">Perfil</label>
-                    <select class="form-select" v-model="modalData.perfil">
-                      <option v-for="perfil in listPerfisStore" :key="perfil.id" :value="perfil.id">
-                        {{ perfil.nome }}
-                      </option>
-                    </select>
-                  </div>
-                </div>
-                <!-- Tipos de vínculo -->
-                <div class="col-md-4">
-                  <div class="mb-3">
-                    <label class="form-label" for="UserTipoVinculo">Tipo de Vínculo</label>
-                    <select class="form-select" v-model="modalData.tipo_vinculo">
-                      <option v-for="tipo in listTiposVinculoStore" :key="tipo.id" :value="tipo.id">
+                    <label class="form-label" for="UserTipoVinculo"
+                      >Tipo de Vínculo *</label
+                    >
+                    <select
+                      class="form-select"
+                      v-model="modalData.tipo_vinculo"
+                      required
+                    >
+                      <option value="">Selecione um tipo</option>
+                      <option
+                        v-for="tipo in listTiposVinculoStore"
+                        :key="tipo.id"
+                        :value="tipo.id"
+                      >
                         {{ tipo.nome }}
                       </option>
                     </select>
                   </div>
                 </div>
-                <!-- Setor do usuário -->
-                <div class="col-md-4">
+              </div>
+              <div class="row">
+                <div class="col-md-8">
                   <div class="mb-3">
-                    <label class="form-label" for="UserSetor">Setor</label>
-                    <select class="form-select" v-model="modalData.setor">
-                      <option v-for="setor in listSetoresStore" :key="setor.id" :value="setor.id">
-                        {{ setor.nome }}
-                      </option>
-                    </select>
+                    <label class="form-label" for="UserNome">Nome *</label>
+                    <input
+                      type="text"
+                      class="form-control"
+                      placeholder=""
+                      v-model="modalData.name"
+                      required
+                    />
                   </div>
                 </div>
                 <div class="col-md-4">
                   <div class="mb-3">
-                    <label class="form-label" for="UserCpf">CPF</label>
-                    <input type="text" class="form-control text-uppercase" placeholder="" v-model="modalData.cpf"
-                      v-mask="'###.###.###-##'">
+                    <label class="form-label" for="UserCpf">CPF *</label>
+                    <input
+                      type="text"
+                      class="form-control"
+                      placeholder=""
+                      v-model="modalData.cpf"
+                      v-mask="'###.###.###-##'"
+                      required
+                    />
                   </div>
                 </div>
               </div>
               <div class="row">
                 <div class="col-md-12">
                   <div class="mb-3">
-                    <label class="form-label" for="UserNome">Nome</label>
-                    <input type="text" class="form-control text-uppercase" placeholder="" v-model="modalData.name">
+                    <label class="form-label" for="UserEmail">E-mail *</label>
+                    <input
+                      type="email"
+                      class="form-control"
+                      placeholder=""
+                      v-model="modalData.email"
+                      required
+                    />
                   </div>
                 </div>
               </div>
               <div class="row">
-                <div class="col-md-12">
-                  <div class="mb-3">
-                    <label class="form-label" for="UserEmail">E-mail</label>
-                    <input type="text" class="form-control text-lowercase" placeholder="" v-model="modalData.email">
-                  </div>
-                </div>
-              </div>
-              <div class="row">
                 <div class="col-md-4">
                   <div class="mb-3">
-                    <label class="form-label" for="UserTelefone">Telefone</label>
-                    <input type="text" class="form-control" placeholder="(99) 99999-9999" v-model="modalData.telefone"
-                      v-mask="'(##) #####-####'">
-                  </div>
-                </div>
-                <div class="col-md-4">
-                  <div class="mb-3">
-                    <label class="form-label" for="UserNascimento">Data de Nascimento</label>
-                    <input type="text" class="form-control" placeholder="dd/mm/aaaa" v-model="modalData.nascimento"
-                      v-mask="'##/##/####'">
+                    <label class="form-label" for="UserTelefone"
+                      >Telefone</label
+                    >
+                    <input
+                      type="text"
+                      class="form-control"
+                      placeholder="(99) 99999-9999"
+                      v-model="modalData.telefone"
+                      v-mask="'(##) #####-####'"
+                    />
                   </div>
                 </div>
                 <div class="col-md-4">
                   <div class="mb-3">
-                    <label class="form-label" for="UserPassword">Senha</label>
-                    <input type="password" class="form-control" placeholder="" v-model="modalData.password">
+                    <label class="form-label" for="UserNascimento"
+                      >Data de Nascimento</label
+                    >
+                    <input
+                      type="date"
+                      class="form-control"
+                      v-model="modalData.data_nascimento"
+                    />
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <div class="mb-3">
+                    <label class="form-label" for="UserPassword"
+                      >Senha {{ modalFunction === "ADD" ? "*" : "" }}</label
+                    >
+                    <input
+                      type="password"
+                      class="form-control"
+                      placeholder=""
+                      v-model="modalData.password"
+                      :required="modalFunction === 'ADD'"
+                    />
                   </div>
                 </div>
               </div>
@@ -106,11 +152,25 @@
       </div>
       <div class="row mt-2">
         <div class="col-12 text-end">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-            <i class="mdi mdi-close-thick font-size-15"></i> Fechar</button>
-          <button type="submit" class="btn btn-success" data-bs-target="#success-btn" id="btn-save-event"
-            v-on:click="add_UP_User()"><i class="mdi mdi-check-bold font-size-15"></i> {{
-              modalFunction === 'ADD' ? 'Salvar' : 'Atualizar' }}</button>
+          <div class="d-flex gap-2 justify-content-end">
+            <button
+              type="button"
+              class="btn btn-secondary btn-modal"
+              data-bs-dismiss="modal"
+            >
+              <i class="mdi mdi-close-thick me-2"></i>Fechar
+            </button>
+            <button
+              type="submit"
+              class="btn btn-success btn-modal"
+              data-bs-target="#success-btn"
+              id="btn-save-event"
+              v-on:click="add_UP_User()"
+            >
+              <i class="mdi mdi-check-bold me-2"></i>
+              {{ modalFunction === "ADD" ? "Salvar" : "Atualizar" }}
+            </button>
+          </div>
         </div>
       </div>
     </ModalBase01>
@@ -118,48 +178,46 @@
 </template>
 
 <script>
-import ModalBase01 from '@/components/layouts/ModalBase01.vue';
-import Funcoes from '@/functions/cad_usuarios.js';
+import ModalBase01 from "@/components/layouts/ModalBase01.vue";
+import Funcoes from "@/functions/cad_usuarios.js";
 
 export default {
-  name: 'ModalUser01',
+  name: "ModalUser01",
   components: {
     ModalBase01,
-    Funcoes
+    Funcoes,
   },
-  props: ['idModal', 'functions'],
+  props: ["idModal", "functions"],
   data() {
-    return {
-    };
+    return {};
   },
   mounted() {
-    this.listPerfis();
+    // Carrega apenas os tipos de vínculo que são obrigatórios
     this.listTiposVinculo();
-    this.listSetores();
   },
   methods: {
     add_UP_User() {
-      const content = {
-        $axios: this.$axios,
-        $store: this.$store,
-        $toastr: this.$toastr,
-        modalData: {
-          ...this.modalData,
-          perfil: this.modalData.perfil,
-          tipo_vinculo: this.modalData.tipo_vinculo,
-          setor: this.modalData.setor,
-        }
-      };
+      // Validação simples antes de enviar
+      if (
+        !this.modalData.name ||
+        !this.modalData.email ||
+        !this.modalData.cpf ||
+        !this.modalData.matricula ||
+        !this.modalData.tipo_vinculo
+      ) {
+        alert("Por favor, preencha todos os campos obrigatórios (*)");
+        return;
+      }
+
+      if (this.modalFunction === "ADD" && !this.modalData.password) {
+        alert("Senha é obrigatória para novos usuários");
+        return;
+      }
+
       this.functions.ADD_UP(this, this.modalFunction);
-    },
-    listPerfis() {
-      Funcoes.listPerfis(this);
     },
     listTiposVinculo() {
       Funcoes.listTiposVinculo(this);
-    },
-    listSetores() {
-      Funcoes.listSetores(this);
     },
   },
   computed: {
@@ -172,34 +230,36 @@ export default {
     modalFunction() {
       return this.$store.state.modalData.modalFunction;
     },
-    listPerfisStore() {
-      return this.$store.state.listPerfis || [];
-    },
     listTiposVinculoStore() {
       return this.$store.state.listTiposVinculo || [];
     },
-    listSetoresStore() {
-      return this.$store.state.listSetores;
+  },
+  watch: {
+    modalFunction(newValue) {
+      // Quando é um novo usuário, garante que o status seja 'A'
+      if (
+        newValue === "ADD" &&
+        (!this.modalData.status || this.modalData.status === "")
+      ) {
+        this.$store.commit("setModalData", { ...this.modalData, status: "A" });
+      }
     },
   },
   state: {
-    modalData: {
-    },
+    modalData: {},
   },
   mutations: {
     setModalData(state, payload) {
       state.modalData = {
-        ...state.modalData, 
-        ...payload     
+        ...state.modalData,
+        ...payload,
       };
     },
 
     resetModalData(state) {
-      state.modalData = {
-
-      };
-    }
-  }
+      state.modalData = {};
+    },
+  },
 };
 </script>
 
@@ -258,5 +318,41 @@ export default {
   .user-form {
     grid-template-columns: 1fr;
   }
+}
+
+/* Estilos para botões dos modais */
+.btn-modal {
+  font-weight: 600;
+  font-size: 0.9rem;
+  padding: 0.6rem 1.25rem;
+  border-radius: 0.4rem;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  border: none;
+  min-width: 100px;
+}
+
+.btn-modal.btn-secondary {
+  background-color: #6c757d;
+  color: white;
+}
+
+.btn-modal.btn-secondary:hover {
+  background-color: #5a6268;
+  color: white;
+}
+
+.btn-modal.btn-success {
+  background-color: #28a745;
+  color: white;
+}
+
+.btn-modal.btn-success:hover {
+  background-color: #218838;
+  color: white;
+}
+
+.btn-modal i {
+  font-size: 0.9rem;
 }
 </style>

@@ -13,10 +13,10 @@
                                     <div class="mt-5">
                                         <TBLBASE01
                                             v-if="listSetores"
-                                            :list="listSetores" :titles="['#', 'Nome', 'Código', 'Descrição', 'Status']"
+                                            :list="listSetores" :titles="['#', 'Nome', 'Código', 'Descrição', 'Status', 'Estoque']"
                                             :align="['text-center', 'text-left']" :indexLink="1"
                                             :idModalUP="'#addUPSetor'" :functions="functions" classColTable="12"
-                                            deleteRoute="/setores/delete" />
+                                            deleteRoute="/setor/delete" />
                                     </div>
                                 </div>
                             </div>

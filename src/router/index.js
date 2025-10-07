@@ -10,6 +10,7 @@ import About from '@/views/About.vue';
 import Users from '../views/cadastros/Users.vue';
 import TiposUsuario from '../views/cadastros/TiposUsuario.vue';
 import Setores from '../views/cadastros/Setores.vue';
+import Perfis from '../views/cadastros/Perfis.vue';
 import Produtos from '../views/cadastros/Produtos.vue';
 import CategoriasProdutos from '../views/cadastros/CategoriasProdutos.vue';
 import UnidadesMedida from '../views/cadastros/UnidadesMedida.vue';
@@ -64,7 +65,13 @@ const router = createRouter({
       name: 'setores',
       component: Setores,
       meta: { requiresAuth: true },
-    },    
+    }, 
+    {
+      path: '/perfis',
+      name: 'perfis', 
+      component: Perfis,
+      meta: { requiresAuth: true }, 
+    } ,  
     {
       path: '/produtos',
       name: 'produtos',

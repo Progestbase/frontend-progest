@@ -77,6 +77,11 @@
         <span class="text">Setores</span>
       </router-link>
 
+      <router-link class="button" to="/perfis" title="Perfis">
+        <span class="material-icons">security</span>
+        <span class="text">Perfis</span>
+      </router-link>
+
       <!-- Produtos -->
       <router-link class="button" to="/produtos" title="Produtos">
         <span class="material-icons">inventory_2</span>

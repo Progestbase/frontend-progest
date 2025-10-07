@@ -6,7 +6,7 @@
           <div class="tab-pane fade show active" id="aba_dados" role="tabanel" aria-labelledby="aba_dados-tab">
             <form autocomplete="off">
               <div class="row">
-                <div class="col-md-3">
+                <div class="col-md-4">
                   <div class="mb-3">
                     <div class="form-label">Status</div>
                     <select class="form-select" v-model="modalData.status">
@@ -15,14 +15,23 @@
                     </select>
                   </div>
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-4">
                   <div class="mb-3">
                     <label class="form-label" for="SetorCodigo">Código da Setor</label>
                     <input type="text" class="form-control" id="SetorCodigo" placeholder=""
                       v-model="modalData.codigo_setor">
                   </div>
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-4">
+                  <div class="mb-3">
+                    <label class="form-label" for="SetorCodigo">Estoque</label>
+                    <select class="form-select" v-model="modalData.estoque">
+                      <option value="S">Sim</option>
+                      <option value="N">Não</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="col-md-12">
                   <div class="mb-3">
                     <label class="form-label" for="SetorNome">Nome</label>
                     <input type="text" class="form-control text-uppercase" id="SetorNome" placeholder=""

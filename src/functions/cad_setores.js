@@ -6,7 +6,7 @@ var ADD_UP = (content, funcao) => {
 
   content.$axios
     .post(
-      funcao == "ADD" ? "/setores/add" : "/setores/update",
+      funcao == "ADD" ? "/setor/add" : "/setor/update",
       payload,
       {
         headers: {
@@ -56,7 +56,7 @@ var listAll = (content, url = null) => {
     content.$store.commit("setisSearching", true);
     content.$axios
         .post(
-            url == null ? "/setores/list" : url,
+            url == null ? "/setor/list" : url,
             {
                 filters: content.$store.state.searchFilters
             },
@@ -82,7 +82,7 @@ var listData = content => {
     if (abaDados) abaDados.click();
     content.$axios
       .post(
-        "/setores/listData",
+        "/setor/listData",
         { id: content.idData },
         {
           headers: {

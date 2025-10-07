@@ -31,10 +31,7 @@
             </span>
           </h5>
           <p class="text-muted mb-0">
-            <small
-              >Código: {{ unidadeEstoque.codigo_unidade }} | Tipo:
-              {{ unidadeEstoque.tipo }}</small
-            >
+            <small>Tipo: {{ unidadeEstoque.tipo }}</small>
           </p>
         </div>
         <div class="col-md-4 text-end">

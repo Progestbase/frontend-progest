@@ -71,8 +71,6 @@ export default {
           return "Unidades de Medida";
         case "polos":
           return "Polos";
-        case "setores":
-          return "Setores";
         case "estoques":
           return "Estoques";
         case "fornecedores":

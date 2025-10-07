@@ -30,6 +30,7 @@
                   <div class="mb-3">
                     <div class="form-label">Tipo</div>
                     <select class="form-select" v-model="modalData.tipo">
+                      <option :value="null">Selecionar tipo</option>
                       <option value="Material">Material</option>
                       <option value="Medicamento">Medicamento</option>
                     </select>
@@ -37,39 +38,42 @@
                 </div>
                 <div class="col-md-3">
                   <div class="mb-3">
-                    <div class="form-label">Controla Estoque</div>
+                    <div class="form-label">Controla estoque</div>
                     <select class="form-select" v-model="modalData.estoque">
-                      <option :value="false">Não</option>
-                      <option :value="true">Sim</option>
+                      <option :value="null">
+                        Selecionar controle de estoque
+                      </option>
+                      <option :value="true">Com controle</option>
+                      <option :value="false">Sem controle</option>
                     </select>
                   </div>
                 </div>
                 <div class="col-md-3">
                   <div class="mb-3">
-                    <label class="form-label" for="UnidadeCodigo"
-                      >Código da Unidade</label
+                    <label class="form-label">Polo</label>
+                    <select
+                      class="form-select"
+                      v-model="modalData.polo_id"
+                      :class="{ 'is-invalid': errors.polo_id }"
                     >
-                    <input
-                      type="text"
-                      class="form-control"
-                      id="UnidadeCodigo"
-                      placeholder=""
-                      v-model="modalData.codigo_unidade"
-                      :class="{ 'is-invalid': errors.codigo_unidade }"
-                    />
-                    <div v-if="errors.codigo_unidade" class="invalid-feedback">
-                      {{ errors.codigo_unidade[0] }}
+                      <option value="">Selecionar Polo</option>
+                      <option v-for="p in polosList" :key="p.id" :value="p.id">
+                        {{ p.nome }}
+                      </option>
+                    </select>
+                    <div v-if="errors.polo_id" class="invalid-feedback">
+                      {{ errors.polo_id[0] }}
                     </div>
                   </div>
                 </div>
-                <div class="col-md-12">
+                <div class="col-md-12 col-12">
                   <div class="mb-3">
                     <label class="form-label" for="UnidadeNome">Nome</label>
                     <input
                       type="text"
-                      class="form-control text-uppercase"
+                      class="form-control"
                       id="UnidadeNome"
-                      placeholder=""
+                      placeholder="Digite o nome"
                       v-model="modalData.nome"
                       :class="{ 'is-invalid': errors.nome }"
                     />
@@ -78,6 +82,8 @@
                     </div>
                   </div>
                 </div>
+
+                <!-- duplicata de 'Polo' removida; campo mantido na primeira linha -->
                 <div class="col-md-12">
                   <div class="mb-3">
                     <label class="form-label" for="UnidadeDescricao"
@@ -87,7 +93,7 @@
                       class="form-control"
                       id="UnidadeDescricao"
                       rows="3"
-                      placeholder=""
+                      placeholder="Digite a descrição"
                       v-model="modalData.descricao"
                     ></textarea>
                   </div>
@@ -128,6 +134,7 @@
 <script>
 import ModalBase01 from "@/components/layouts/ModalBase01.vue";
 import Funcoes from "@/functions/cad_unidades.js";
+import cadPolos from "@/functions/cad_polos.js";
 
 export default {
   name: "ModalUnidades",
@@ -138,12 +145,27 @@ export default {
   props: ["idModal", "functions"],
   data() {
     return {
-      errors: {},
       loading: false,
     };
   },
-  mounted() {},
+  mounted() {
+    this.ensurePolosLoaded();
+  },
   methods: {
+    async ensurePolosLoaded() {
+      const storePolos = this.$store.state.listPolos || {};
+      const arr = Array.isArray(storePolos.data) ? storePolos.data : [];
+      if (arr.length === 0) {
+        try {
+          // Tenta acionar o listAll do módulo polos passando o componente
+          if (cadPolos && cadPolos.listAll) {
+            cadPolos.listAll(this);
+          }
+        } catch (e) {
+          console.warn("Não foi possível carregar polos automaticamente:", e);
+        }
+      }
+    },
     showNotification(message, type = "success") {
       if (this.$toastr) {
         if (type === "success") {
@@ -162,8 +184,8 @@ export default {
       console.log("modalFunction:", this.modalFunction);
       console.log("functions:", this.functions);
 
-      // Limpar erros anteriores
-      this.errors = {};
+      // Limpar erros anteriores no store
+      this.$store.commit("setModalErrors", {});
       this.loading = true;
 
       const self = this;
@@ -179,17 +201,11 @@ export default {
           error: (msg) => {
             self.showNotification(msg, "error");
             self.loading = false;
-
-            // Tentar extrair erros específicos para mostrar nos campos
-            if (content.lastValidationErrors) {
-              self.errors = content.lastValidationErrors;
-            }
           },
         },
       };
 
       console.log("content criado:", content);
-
       this.functions.ADD_UP(content, this.modalFunction);
     },
   },
@@ -202,6 +218,13 @@ export default {
     },
     modalFunction() {
       return this.$store.state.modalData.modalFunction;
+    },
+    errors() {
+      return this.$store.state.modalErrors || {};
+    },
+    polosList() {
+      const storePolos = this.$store.state.listPolos || {};
+      return Array.isArray(storePolos.data) ? storePolos.data : [];
     },
   },
 };

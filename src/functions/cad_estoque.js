@@ -142,7 +142,6 @@ var listEstoqueUnidade = (content, unidadeId) => {
             unidade: {
               id: parseInt(unidadeId),
               nome: "Unidade Exemplo",
-              codigo_unidade: "UN001",
               tipo: "Medicamento",
             },
             estoque: [

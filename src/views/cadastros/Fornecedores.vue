@@ -33,13 +33,7 @@
                         formattedFornecedores.length > 0
                       "
                       :list="formattedFornecedores"
-                      :titles="[
-                        '#',
-                        'Código',
-                        'CPF/CNPJ',
-                        'Razão Social',
-                        'Status',
-                      ]"
+                      :titles="['#', 'CPF/CNPJ', 'Razão Social', 'Status']"
                       :align="[
                         'text-center',
                         'text-left',
@@ -103,7 +97,7 @@ export default {
       titleModal: "Cadastro de Fornecedor",
       varsModalData: {
         status: "A",
-        codigo: "",
+        // codigo removido conforme solicitação
         cnpj: "",
         razao_social_nome: "",
         tipo_pessoa: "J",
@@ -139,7 +133,7 @@ export default {
     formattedFornecedores() {
       return this.listFornecedores.map((f) => ({
         id: f.id,
-        codigo: f.codigo,
+        // campo 'codigo' removido do frontend para Fornecedores
         cnpj: f.cnpj || f.cpf || "",
         razao_social: f.razao_social_nome || f.razao_social || f.nome || "",
         status: f.statusFormatted || (f.status === "A" ? "Ativo" : "Inativo"),

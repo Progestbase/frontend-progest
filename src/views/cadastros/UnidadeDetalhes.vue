@@ -33,19 +33,6 @@
                         <span class="d-none d-sm-block">Overview</span>
                       </a>
                     </li>
-                    <li class="nav-item">
-                      <a
-                        class="nav-link"
-                        :class="{ active: activeTab === 'setores' }"
-                        @click="changeTab('setores')"
-                        href="#"
-                      >
-                        <span class="d-block d-sm-none"
-                          ><i class="fas fa-building"></i
-                        ></span>
-                        <span class="d-none d-sm-block">Setores</span>
-                      </a>
-                    </li>
                     <li class="nav-item" v-if="unidade.estoque">
                       <a
                         class="nav-link"
@@ -81,14 +68,6 @@
                                     <label class="form-label">Nome:</label>
                                     <p class="form-control-plaintext">
                                       {{ unidade.nome }}
-                                    </p>
-                                  </div>
-                                </div>
-                                <div class="col-md-6">
-                                  <div class="mb-3">
-                                    <label class="form-label">Código:</label>
-                                    <p class="form-control-plaintext">
-                                      {{ unidade.codigo_unidade }}
                                     </p>
                                   </div>
                                 </div>
@@ -210,17 +189,6 @@
                       </div>
                     </div>
 
-                    <!-- Setores Tab -->
-                    <div v-show="activeTab === 'setores'">
-                      <div class="text-center py-5">
-                        <i class="mdi mdi-wrench display-4 text-muted mb-3"></i>
-                        <h5>Setores da Unidade</h5>
-                        <p class="text-muted">
-                          Esta funcionalidade será implementada em breve.
-                        </p>
-                      </div>
-                    </div>
-
                     <!-- Estoque Tab -->
                     <div v-show="activeTab === 'estoque'">
                       <EstoqueUnidade
@@ -287,7 +255,7 @@ export default {
   watch: {
     "$route.query.tab": {
       handler(newTab) {
-        if (newTab && ["overview", "setores", "estoque"].includes(newTab)) {
+        if (newTab && ["overview", "estoque"].includes(newTab)) {
           this.activeTab = newTab;
         } else {
           this.activeTab = "overview";

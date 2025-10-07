@@ -70,6 +70,11 @@
         <!-- transition para suavizar -->
         <transition name="submenu">
           <div v-show="submenuOpen" class="submenu-items">
+            <router-link class="button" to="/polos" title="Polos">
+              <span class="material-icons">map</span>
+              <span class="text">Polos</span>
+            </router-link>
+
             <router-link
               class="button"
               to="/grupoProduto"
@@ -87,53 +92,9 @@
               <span class="material-icons">straighten</span>
               <span class="text">Unidades de Medida</span>
             </router-link>
-
-            <router-link class="button" to="/polos" title="Polos">
-              <span class="material-icons">map</span>
-              <span class="text">Polos</span>
-            </router-link>
           </div>
         </transition>
       </div>
-
-      <!-- Usuários -->
-      <router-link class="button" to="/users" title="Usuários">
-        <span class="material-icons">person</span>
-        <span class="text">Usuários</span>
-      </router-link>
-
-      <!-- Setores -->
-      <router-link class="button" to="/setores" title="Setores">
-        <span class="material-icons">apartment</span>
-        <span class="text">Setores</span>
-      </router-link>
-
-      <router-link class="button" to="/perfis" title="Perfis">
-        <span class="material-icons">security</span>
-        <span class="text">Perfis</span>
-      </router-link>
-
-      <!-- Produtos -->
-      <router-link class="button" to="/produtos" title="Produtos">
-        <span class="material-icons">inventory_2</span>
-        <span class="text">Produtos</span>
-      </router-link>
-
-      <!-- Estoque -->
-      <router-link class="button" to="/estoque" title="Estoque">
-        <span class="material-icons">warehouse</span>
-        <span class="text">Estoque</span>
-      </router-link>
-
-      <!-- Fornecedores -->
-      <router-link class="button" to="/fornecedores" title="Fornecedores">
-        <span class="material-icons">local_shipping</span>
-        <span class="text">Fornecedores</span>
-      </router-link>
-      <router-link class="button" to="/estoque" title="Estoque">
-        <span class="material-icons">inventory_2</span>
-        <span class="text">Estoque</span>
-      </router-link>
     </div>
   </aside>
 </template>

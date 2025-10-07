@@ -26,7 +26,7 @@
                       type="text"
                       class="form-control text-uppercase"
                       id="unidadeMedidaNome"
-                      placeholder=""
+                      placeholder="Digite o nome"
                       v-model="modalData.nome"
                     />
                   </div>
@@ -74,7 +74,7 @@
                       type="text"
                       class="form-control"
                       id="unidadeMedidaDescricao"
-                      placeholder=""
+                      placeholder="Digite a descrição"
                       v-model="modalData.descricao"
                     />
                   </div>

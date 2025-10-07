@@ -34,8 +34,8 @@
                     <label class="form-label" for="Matricula">Matrícula</label>
                     <input
                       type="text"
-                      class="form-control text-uppercase"
-                      placeholder=""
+                      class="form-control"
+                      placeholder="Digite a matrícula"
                       v-model="modalData.matricula"
                     />
                   </div>
@@ -70,7 +70,7 @@
                     <input
                       type="text"
                       class="form-control"
-                      placeholder=""
+                      placeholder="Digite o nome"
                       v-model="modalData.name"
                       required
                     />
@@ -82,7 +82,7 @@
                     <input
                       type="text"
                       class="form-control"
-                      placeholder=""
+                      placeholder="Digite o CPF"
                       v-model="modalData.cpf"
                       v-mask="'###.###.###-##'"
                       required
@@ -97,7 +97,7 @@
                     <input
                       type="email"
                       class="form-control"
-                      placeholder=""
+                      placeholder="Digite o e-mail"
                       v-model="modalData.email"
                       required
                     />
@@ -139,7 +139,7 @@
                     <input
                       type="password"
                       class="form-control"
-                      placeholder=""
+                      placeholder="Digite a senha"
                       v-model="modalData.password"
                       :required="modalFunction === 'ADD'"
                     />

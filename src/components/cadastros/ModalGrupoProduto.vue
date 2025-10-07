@@ -17,19 +17,20 @@
           >
             <form autocomplete="off">
               <div class="row">
-                <div class="col-md-8">
+                <div class="col-md-12">
                   <div class="mb-3">
                     <label class="form-label" for="grupoNome">Nome</label>
                     <input
                       type="text"
                       class="form-control text-uppercase"
                       id="grupoNome"
-                      placeholder=""
+                      placeholder="Digite o nome"
                       v-model="modalData.nome"
                     />
                   </div>
                 </div>
-                <div class="col-md-4">
+
+                <div class="col-md-6 col-12">
                   <div class="mb-3">
                     <label class="form-label" for="grupoTipo">Tipo</label>
                     <select
@@ -42,7 +43,8 @@
                     </select>
                   </div>
                 </div>
-                <div class="col-md-4">
+
+                <div class="col-md-6 col-12">
                   <div class="mb-3">
                     <label class="form-label" for="GrupoStatus">Status</label>
                     <select

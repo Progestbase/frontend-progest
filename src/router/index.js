@@ -15,11 +15,10 @@ import UnidadesMedida from "../views/cadastros/UnidadesMedida.vue";
 import Fornecedores from "../views/cadastros/Fornecedores.vue";
 import GrupoProduto from "../views/cadastros/GrupoProduto.vue";
 import Polos from "../views/cadastros/Polos.vue";
-import Setores from '../views/cadastros/Setores.vue';
-import Perfis from '../views/cadastros/Perfis.vue';
-import CategoriasProdutos from '../views/cadastros/CategoriasProdutos.vue';
-import Estoque from '@/views/cadastros/Estoque.vue';
-import EstoqueUnidade from '@/views/cadastros/EstoqueUnidade.vue';
+import Perfis from "../views/cadastros/Perfis.vue";
+import CategoriasProdutos from "../views/cadastros/CategoriasProdutos.vue";
+import Estoque from "@/views/cadastros/Estoque.vue";
+import EstoqueUnidade from "@/views/cadastros/EstoqueUnidade.vue";
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -70,11 +69,11 @@ const router = createRouter({
       props: true,
     },
     {
-      path: '/perfis',
-      name: 'perfis', 
+      path: "/perfis",
+      name: "perfis",
       component: Perfis,
-      meta: { requiresAuth: true }, 
-    } ,  
+      meta: { requiresAuth: true },
+    },
     {
       path: "/produtos",
       name: "produtos",

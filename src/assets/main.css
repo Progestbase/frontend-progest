@@ -3,5 +3,42 @@
 @tailwind utilities;
 
 .modal-container {
-    width: 1000px;
+  width: 1000px;
+}
+
+/* Placeholder styling: tom claro para parecer placeholder */
+input::placeholder,
+textarea::placeholder {
+  color: #bfc7cc; /* cinza claro */
+  opacity: 1; /* garantir consistência entre navegadores */
+  text-transform: none; /* evitar que placeholders sejam exibidos em maiúsculas */
+}
+
+/* Compatibilidade cross-browser */
+input::-webkit-input-placeholder,
+textarea::-webkit-input-placeholder {
+  color: #bfc7cc;
+}
+input::-moz-placeholder,
+textarea::-moz-placeholder {
+  color: #bfc7cc;
+}
+input:-ms-input-placeholder,
+textarea:-ms-input-placeholder {
+  color: #bfc7cc;
+}
+input:-moz-placeholder,
+textarea:-moz-placeholder {
+  color: #bfc7cc;
+}
+
+/* Garantir que placeholders NÃO sejam transformados para maiúsculas
+   mesmo quando o elemento possui a classe `text-uppercase`. Usamos
+   seletores mais específicos e !important para sobrepor regras locais. */
+input.text-uppercase::placeholder,
+textarea.text-uppercase::placeholder,
+.text-uppercase::placeholder {
+  color: #bfc7cc !important;
+  opacity: 1 !important;
+  text-transform: none !important;
 }

@@ -36,16 +36,7 @@
               </div>
 
               <div class="row">
-                <div class="col-md-3">
-                  <div class="mb-3">
-                    <label class="form-label">Código</label>
-                    <input
-                      type="text"
-                      class="form-control text-uppercase"
-                      v-model="modalData.codigo"
-                    />
-                  </div>
-                </div>
+                <!-- campo 'codigo' removido do formulário de Fornecedores -->
 
                 <div class="col-md-3">
                   <div class="mb-3">

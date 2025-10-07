@@ -67,12 +67,20 @@ var ADD_UP = (content, funcao) => {
           erros += erro + "\n";
         }
         content.$toastr.error(erros);
+        // Commitar erros no Vuex para exibição inline nos modais
+        try {
+          content.$store.commit("setModalErrors", response.data.errors || {});
+        } catch (e) {}
       } else if (response.data.validacao && response.data.erros) {
         let erros = "";
         for (let erro of Object.values(response.data.erros)) {
           erros += erro + "\n";
         }
         content.$toastr.error(erros);
+        // Commitar erros no Vuex para exibição inline nos modais
+        try {
+          content.$store.commit("setModalErrors", response.data.erros || {});
+        } catch (e) {}
       } else if (response.data.message) {
         content.$toastr.error(response.data.message);
       } else {
@@ -102,7 +110,6 @@ var ADD_UP = (content, funcao) => {
           mensagemErro = "Erros de validação encontrados:\n\n";
           for (let campo in error.response.data.erros) {
             const nomeAmigavel = {
-              codigo_unidade: "Código da Unidade",
               nome: "Nome",
               descricao: "Descrição",
               status: "Status",
@@ -119,8 +126,8 @@ var ADD_UP = (content, funcao) => {
             for (let erro of erros) {
               let mensagemTraduzida = erro;
               if (erro.includes("has already been taken")) {
-                mensagemTraduzida =
-                  "Este código já está sendo usado. Escolha outro.";
+                // Mensagem genérica de campo já usado
+                mensagemTraduzida = "Valor já está em uso. Escolha outro.";
               } else if (erro.includes("is required")) {
                 mensagemTraduzida = "Este campo é obrigatório.";
               }
@@ -144,6 +151,14 @@ var ADD_UP = (content, funcao) => {
         }
 
         console.log("Mensagem de erro formatada:", mensagemErro);
+
+        // Commitar erros no Vuex para exibição inline nos modais
+        try {
+          content.$store.commit(
+            "setModalErrors",
+            content.lastValidationErrors || {}
+          );
+        } catch (e) {}
 
         if (content.$toastr) {
           content.$toastr.error(mensagemErro);
@@ -178,8 +193,39 @@ var listAll = (content, url = null) => {
       }
     )
     .then((response) => {
-      content.$store.commit("setListUnidadesGerais", response.data);
-      console.log("setListUnidadesGerais", response.data.data);
+      console.log("Resposta da API unidades listAll:", response.data);
+
+      if (response.data.status && response.data.data) {
+        // Suporta dois formatos: array direto ou paginação do Laravel
+        if (Array.isArray(response.data.data)) {
+          // Lista simples
+          const enriched = response.data.data.map((u) => ({
+            ...u,
+            statusFormatted: u.status === "A" ? "Ativo" : "Inativo",
+          }));
+          content.$store.commit("setListUnidadesGerais", { data: enriched });
+        } else if (
+          response.data.data.data &&
+          Array.isArray(response.data.data.data)
+        ) {
+          // Paginação (laravel)
+          const unidadesArray = response.data.data.data || [];
+          const enriched = unidadesArray.map((u) => ({
+            ...u,
+            statusFormatted: u.status === "A" ? "Ativo" : "Inativo",
+          }));
+          content.$store.commit("setListUnidadesGerais", {
+            ...response.data.data, // mantém meta de paginação
+            data: enriched,
+          });
+        } else {
+          // Caso inesperado, armazenar como vazio
+          content.$store.commit("setListUnidadesGerais", { data: [] });
+        }
+      } else {
+        console.error("Resposta da API sem dados válidos:", response.data);
+        content.$store.commit("setListUnidadesGerais", { data: [] });
+      }
       content.$store.commit("setisSearching", false);
     })
     .catch((error) => {
@@ -365,45 +411,63 @@ export const atualizarUnidade = async (dadosUnidade) => {
 
 // Função para excluir unidade (seguindo o padrão das funções antigas)
 var deleteUnidade = (content, id) => {
-  content.$axios
-    .post(`/unidades/delete/${id}`, {
-      headers: {
-        Authorization: "Bearer " + content.$store.getters.getUserToken,
-      },
-    })
+  // Retorna uma Promise para uso em chamadas async
+  return content.$axios
+    .post(
+      `/unidades/delete/${id}`,
+      {},
+      {
+        headers: {
+          Authorization: "Bearer " + content.$store.getters.getUserToken,
+        },
+      }
+    )
     .then(function (response) {
       if (response.data.status) {
-        if (content.$toastr) {
-          content.$toastr.success("Unidade excluída com sucesso!");
-        } else {
-          alert("Unidade excluída com sucesso!");
-        }
-        // Redirecionar ou recarregar lista conforme necessário
-        if (content.$router) {
-          content.$router.push("/unidades");
-        }
+        // Recarregar lista
+        try {
+          listAll(content);
+        } catch (e) {}
+        return { success: true };
       } else {
-        const mensagem = response.data.message || "Erro ao excluir unidade";
-        if (content.$toastr) {
-          content.$toastr.error(mensagem);
-        } else {
-          alert(mensagem);
-        }
-
-        // Se houver referências, mostrar informações específicas
-        if (response.data.references) {
-          console.log("Referências encontradas:", response.data.references);
-        }
+        return {
+          success: false,
+          message: response.data.message || "Erro ao excluir unidade",
+          references: response.data.references || null,
+        };
       }
     })
     .catch(function (error) {
       console.error("Erro na requisição de exclusão:", error);
+      return { success: false, message: "Erro de conexão com o servidor" };
+    });
+};
 
-      if (content.$toastr) {
-        content.$toastr.error("Erro de conexão com o servidor");
-      } else {
-        alert("Erro de conexão com o servidor");
+// Toggle status via API (A <-> I)
+var toggleStatus = (content, unidadeId) => {
+  return content.$axios
+    .post(
+      "/unidades/toggleStatus",
+      { id: unidadeId },
+      {
+        headers: {
+          Authorization: "Bearer " + content.$store.getters.getUserToken,
+        },
       }
+    )
+    .then((response) => {
+      if (response.data.status) {
+        try {
+          listAll(content);
+        } catch (e) {}
+        return { success: true, data: response.data.data };
+      } else {
+        return { success: false, message: response.data.message };
+      }
+    })
+    .catch((error) => {
+      console.error("Erro ao alternar status:", error);
+      return { success: false, message: "Erro de conexão" };
     });
 };
 

@@ -50,6 +50,22 @@
                         <option value="false">Sem Controle</option>
                       </select>
                     </div>
+                    <div class="col-md-3">
+                      <select
+                        class="form-select"
+                        v-model="filtroPolo"
+                        @change="aplicarFiltros"
+                      >
+                        <option value="">Todos os Polos</option>
+                        <option
+                          v-for="p in polosList"
+                          :key="p.id"
+                          :value="p.id"
+                        >
+                          {{ p.nome }}
+                        </option>
+                      </select>
+                    </div>
                   </div>
 
                   <!-- Grid de Unidades -->
@@ -68,6 +84,15 @@
                           $router.push(`/unidade/${unidade.id}?tab=overview`)
                         "
                       >
+                        <!-- Status dot (top-left) -->
+                        <span
+                          class="status-dot"
+                          :class="
+                            unidade.status === 'A'
+                              ? 'bg-success'
+                              : 'bg-secondary'
+                          "
+                        ></span>
                         <!-- Menu de ações -->
                         <div class="position-absolute top-0 end-0 p-2">
                           <div class="dropdown">
@@ -107,29 +132,32 @@
                         <div
                           class="card-body text-center d-flex flex-column align-items-center justify-content-center"
                         >
-                          <!-- Código -->
-                          <div class="mb-2">
-                            <small class="text-muted">{{
-                              unidade.codigo_unidade
-                            }}</small>
-                          </div>
+                          <!-- código_unidade removido (campo excluído no backend) -->
 
                           <!-- Nome -->
                           <h5 class="card-title mb-3">{{ unidade.nome }}</h5>
 
                           <!-- Infos -->
                           <div class="d-flex flex-column gap-2">
-                            <!-- Status -->
+                            <!-- Polo badge: usa objeto `polo` quando disponível, senão busca por `polo_id` -->
                             <span
-                              class="badge"
-                              :class="
-                                unidade.status === 'A'
-                                  ? 'bg-success'
-                                  : 'bg-secondary'
+                              v-if="
+                                (unidade.polo && unidade.polo.nome) ||
+                                unidade.polo_id
                               "
+                              class="badge bg-secondary"
                             >
-                              {{ unidade.status === "A" ? "Ativo" : "Inativo" }}
+                              {{
+                                unidade.polo && unidade.polo.nome
+                                  ? unidade.polo.nome
+                                  : (
+                                      polosList.find(
+                                        (p) => p.id == unidade.polo_id
+                                      ) || {}
+                                    ).nome
+                              }}
                             </span>
+                            <!-- textual status removed; using status dot in top-left -->
 
                             <!-- Tipo -->
                             <span
@@ -227,12 +255,14 @@ export default {
       varsModalData: {
         status: "A",
         nome: "",
-        codigo_unidade: "",
         descricao: "",
-        estoque: false,
-        tipo: "Material",
+        // deixar null para que os selects mostrem a opção placeholder
+        estoque: null,
+        tipo: null,
+        polo_id: "",
       },
       loading: false,
+      filtroPolo: "",
       filtroStatus: "",
       filtroTipo: "",
       filtroEstoque: "",
@@ -240,18 +270,28 @@ export default {
     };
   },
   computed: {
+    polosList() {
+      const storePolos = this.$store.state.listPolos || {};
+      return Array.isArray(storePolos.data) ? storePolos.data : [];
+    },
     unidadesFiltradas() {
-      if (!this.unidades) return [];
+      // Buscar lista centralizada no Vuex (pode ser paginada em .data)
+      const storeList = this.$store.state.listUnidadesGerais || {};
+      const arr = Array.isArray(storeList.data) ? storeList.data : [];
 
-      return this.unidades.filter((unidade) => {
+      return arr.filter((unidade) => {
         const statusMatch =
           !this.filtroStatus || unidade.status === this.filtroStatus;
         const tipoMatch = !this.filtroTipo || unidade.tipo === this.filtroTipo;
         const estoqueMatch =
           !this.filtroEstoque ||
           (this.filtroEstoque === "true") === unidade.estoque;
+        const poloMatch =
+          !this.filtroPolo ||
+          (unidade.polo && unidade.polo.id == this.filtroPolo) ||
+          (unidade.polo_id && unidade.polo_id == this.filtroPolo);
 
-        return statusMatch && tipoMatch && estoqueMatch;
+        return statusMatch && tipoMatch && estoqueMatch && poloMatch;
       });
     },
   },
@@ -259,40 +299,15 @@ export default {
     carregarUnidades() {
       console.log("=== carregarUnidades iniciado ===");
       this.loading = true;
+      // Delegar para a função compartilhada que popula o Vuex
+      try {
+        this.functions.listAll(this);
+      } catch (e) {
+        console.error("Erro ao chamar functions.listAll:", e);
+      }
 
-      this.$axios
-        .post(
-          "/unidades/list",
-          {
-            filters: [], // Sem filtros, pegar todas
-          },
-          {
-            headers: {
-              Authorization: "Bearer " + this.$store.getters.getUserToken,
-            },
-          }
-        )
-        .then((response) => {
-          console.log("Response recebido:", response.data);
-
-          if (response.data.status && response.data.data) {
-            this.unidades = response.data.data;
-            console.log("Unidades carregadas:", this.unidades);
-          } else {
-            console.error("Resposta da API sem dados válidos:", response.data);
-            this.unidades = [];
-          }
-        })
-        .catch((error) => {
-          console.error("Erro na chamada da API:", error);
-          console.error("Response error:", error.response);
-          this.unidades = [];
-          this.showNotification("Erro ao carregar unidades", "error");
-        })
-        .finally(() => {
-          this.loading = false;
-          console.log("=== carregarUnidades finalizado ===");
-        });
+      // O loading é controlado por isSearching no store; aqui apenas limpamos
+      this.loading = false;
     },
 
     showNotification(message, type = "success") {
@@ -330,12 +345,14 @@ export default {
         confirm(`Tem certeza que deseja excluir a unidade "${unidade.nome}"?`)
       ) {
         try {
-          const result = await functions.excluirUnidade(unidade.id);
-          if (result.success) {
+          const result = await functions.deleteUnidade(this, unidade.id);
+          if (result && result.success) {
             this.$toastr.success("Unidade excluída com sucesso!");
-            this.carregarUnidades(); // Recarregar lista
+            // Garantir atualização da lista
+            this.carregarUnidades();
           } else {
             this.$toastr.error(result.message || "Erro ao excluir unidade");
+            if (result && result.references) console.log(result.references);
           }
         } catch (error) {
           console.error("Erro ao excluir unidade:", error);
@@ -344,14 +361,7 @@ export default {
       }
     },
   },
-  created() {
-    // Sobrescrever a função listAll para recarregar nossa lista personalizada
-    this.functions.listAll = (content) => {
-      console.log("=== listAll chamado para recarregar unidades ===");
-      console.log("content:", content);
-      this.carregarUnidades();
-    };
-  },
+  // created() override removed: avoid infinite recursion by not replacing functions.listAll
   mounted() {
     this.carregarUnidades();
   },
@@ -384,5 +394,17 @@ export default {
 
 .dropdown-toggle::after {
   display: none;
+}
+
+/* Status dot on unit card */
+.status-dot {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2px solid white; /* separação do card */
+  z-index: 10;
 }
 </style>

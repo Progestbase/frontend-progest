@@ -23,14 +23,10 @@ export default createStore({
     isSearching: "",
     listPerfis: [],
     listTiposVinculo: [],
-    listSetores: [],
     listUnidadesGerais: [],
     unidadeAtual: null,
     gruposProdutos: [],
     unidadesMedidaAux: [],
-    listPerfis: [],
-    listTiposVinculo: [],
-    listSetores: [],
   },
   mutations: {
     setUserToken(state, token) {
@@ -90,9 +86,6 @@ export default createStore({
     setListTiposVinculo(state, tipos) {
       state.listTiposVinculo = tipos;
     },
-    setListSetores(state, setores) {
-      state.listSetores = setores;
-    },
     setListUnidadesGerais(state, unidades) {
       state.listUnidadesGerais = unidades;
     },
@@ -103,15 +96,6 @@ export default createStore({
       state.modalData.modalTitle = payload.modalTitle || "";
       state.modalData.modalData = payload.modalData || {};
       state.modalData.modalFunction = payload.modalFunction || "ADD";
-    },
-    setListPerfis(state, perfis) {
-      state.listPerfis = perfis;
-    },
-    setListTiposVinculo(state, tipos) {
-      state.listTiposVinculo = tipos;
-    },
-    setListSetores(state, setores) {
-      state.listSetores = setores;
     },
     setModalTitle(state, title) {
       state.modalData.modalTitle = title;
@@ -148,10 +132,6 @@ export default createStore({
     getListFornecedores: (state) => state.listFornecedores,
     getListPerfis: (state) => state.listPerfis,
     getListTiposVinculo: (state) => state.listTiposVinculo,
-    getListSetores: (state) => state.listSetores,
     getListUnidadesGerais: (state) => state.listUnidadesGerais,
-    getListPerfis: (state) => state.listPerfis,
-    getListTiposVinculo: (state) => state.listTiposVinculo,
-    getListSetores: (state) => state.listSetores,
   },
 });

@@ -18,7 +18,7 @@
     <div v-else-if="unidadeEstoque && estoqueItems.length >= 0">
       <!-- Header com resumo -->
       <div class="row mb-4">
-        <div class="col-md-8">
+        <div class="col-12">
           <h5 class="mb-3">
             <i class="mdi mdi-package-variant me-2"></i>
             Estoque - {{ unidadeEstoque.nome }}
@@ -33,16 +33,6 @@
           <p class="text-muted mb-0">
             <small>Tipo: {{ unidadeEstoque.tipo }}</small>
           </p>
-        </div>
-        <div class="col-md-4 text-end">
-          <button
-            class="btn btn-success"
-            @click="fazerEntrada"
-            :disabled="!unidadeEstoque.id"
-          >
-            <i class="mdi mdi-plus me-2"></i>
-            Fazer Entrada
-          </button>
         </div>
       </div>
 
@@ -268,12 +258,6 @@ export default {
     formatarStatusParaTabela(status, statusTexto) {
       return status === "D" ? "Disponível" : "Indisponível";
     },
-
-    fazerEntrada() {
-      // Placeholder para funcionalidade futura
-      alert("Funcionalidade de entrada em estoque será implementada em breve.");
-    },
-
     editarQuantidadeMinima(itemId, quantidadeAtual) {
       this.editandoQuantidade = itemId;
       this.novaQuantidadeMinima = quantidadeAtual;

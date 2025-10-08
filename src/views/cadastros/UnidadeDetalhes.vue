@@ -46,6 +46,45 @@
                         <span class="d-none d-sm-block">Estoque</span>
                       </a>
                     </li>
+                    <li class="nav-item">
+                      <a
+                        class="nav-link"
+                        :class="{ active: activeTab === 'movimentacoes' }"
+                        @click="changeTab('movimentacoes')"
+                        href="#"
+                      >
+                        <span class="d-block d-sm-none"
+                          ><i class="mdi mdi-swap-horizontal"></i
+                        ></span>
+                        <span class="d-none d-sm-block">Movimentações</span>
+                      </a>
+                    </li>
+                    <li class="nav-item">
+                      <a
+                        class="nav-link"
+                        :class="{ active: activeTab === 'entrada' }"
+                        @click="changeTab('entrada')"
+                        href="#"
+                      >
+                        <span class="d-block d-sm-none"
+                          ><i class="mdi mdi-tray-arrow-down"></i
+                        ></span>
+                        <span class="d-none d-sm-block">Entrada</span>
+                      </a>
+                    </li>
+                    <li class="nav-item">
+                      <a
+                        class="nav-link"
+                        :class="{ active: activeTab === 'usuarios' }"
+                        @click="changeTab('usuarios')"
+                        href="#"
+                      >
+                        <span class="d-block d-sm-none"
+                          ><i class="mdi mdi-account-multiple"></i
+                        ></span>
+                        <span class="d-none d-sm-block">Usuários</span>
+                      </a>
+                    </li>
                   </ul>
 
                   <!-- Tab Content -->
@@ -197,6 +236,98 @@
                         :key="unidade.id"
                       />
                     </div>
+
+                    <!-- Movimentações Tab -->
+                    <div v-show="activeTab === 'movimentacoes'">
+                      <div
+                        class="alert alert-warning d-flex align-items-center"
+                        role="alert"
+                      >
+                        <i class="mdi mdi-progress-clock me-2"></i>
+                        <span>Módulo de movimentações em desenvolvimento.</span>
+                      </div>
+                    </div>
+
+                    <!-- Entrada Tab -->
+                    <div v-show="activeTab === 'entrada'">
+                      <div
+                        class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3 mb-3"
+                      >
+                        <div>
+                          <h5 class="mb-1">
+                            <i class="mdi mdi-tray-arrow-down me-2"></i>
+                            Entradas de Estoque
+                          </h5>
+                          <p class="text-muted mb-0">
+                            Registros de entradas já lançadas para esta unidade.
+                          </p>
+                        </div>
+                        <button
+                          class="btn btn-success"
+                          @click="abrirModalEntrada"
+                          :disabled="!unidade.id"
+                        >
+                          <i class="mdi mdi-plus me-2"></i>
+                          Registrar Entrada
+                        </button>
+                      </div>
+
+                      <div
+                        v-if="entradasTabela.length > 0"
+                        class="table-responsive"
+                      >
+                        <table class="table table-striped align-middle mb-0">
+                          <thead>
+                            <tr>
+                              <th class="text-start">ID</th>
+                              <th class="text-start">Lançada em</th>
+                              <th class="text-start">Nota Fiscal</th>
+                              <th class="text-center">Itens diferentes</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            <tr
+                              v-for="entrada in entradasTabela"
+                              :key="entrada.id"
+                            >
+                              <td class="text-start">{{ entrada.id }}</td>
+                              <td class="text-start">{{ entrada.data }}</td>
+                              <td class="text-start">
+                                {{ entrada.notaFiscal }}
+                              </td>
+                              <td class="text-center">
+                                {{ entrada.itensDiferentes }}
+                              </td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+                      <div v-else class="text-center py-5">
+                        <div class="d-flex flex-column align-items-center">
+                          <i
+                            class="mdi mdi-tray-arrow-down-outline display-4 text-muted mb-3"
+                          ></i>
+                          <h5>Nenhuma entrada registrada</h5>
+                          <p class="text-muted mb-0">
+                            Ainda não há registros de entrada para esta unidade.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Usuários Tab -->
+                    <div v-show="activeTab === 'usuarios'">
+                      <div
+                        class="alert alert-warning d-flex align-items-center"
+                        role="alert"
+                      >
+                        <i class="mdi mdi-progress-clock me-2"></i>
+                        <span
+                          >Gestão de usuários da unidade em
+                          desenvolvimento.</span
+                        >
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -223,6 +354,11 @@
             idModal="editUnidade"
             :functions="functions"
           ></ModalUnidades>
+          <ModalEntradaEstoque
+            idModal="modalRegistrarEntrada"
+            :unidade="unidade"
+            @registrado="handleEntradaRegistrada"
+          />
         </div>
       </div>
     </div>
@@ -232,6 +368,7 @@
 <script>
 import TemplateAdmin from "@/views/roleAdmin/TemplateAdmin.vue";
 import ModalUnidades from "@/components/cadastros/ModalUnidades.vue";
+import ModalEntradaEstoque from "@/components/cadastros/ModalEntradaEstoque.vue";
 import EstoqueUnidade from "./EstoqueUnidade.vue";
 import functions from "../../functions/cad_unidades.js";
 import * as bootstrap from "bootstrap";
@@ -241,6 +378,7 @@ export default {
   components: {
     TemplateAdmin,
     ModalUnidades,
+    ModalEntradaEstoque,
     EstoqueUnidade,
   },
   props: ["id"],
@@ -249,14 +387,75 @@ export default {
       unidade: {},
       loading: false,
       activeTab: "overview",
+      validTabs: [
+        "overview",
+        "estoque",
+        "movimentacoes",
+        "entrada",
+        "usuarios",
+      ],
+      entradasMock: [
+        {
+          id: "ENT-0001",
+          unidade_id: 1,
+          created_at: "2025-10-02T10:30:00Z",
+          nota_fiscal: "NF-2025/001",
+          itens: [
+            {
+              produto_id: 101,
+              produto_nome: "Dipirona 500mg",
+              quantidade: 20,
+            },
+            {
+              produto_id: 202,
+              produto_nome: "Soro 0,9% 500ml",
+              quantidade: 10,
+            },
+          ],
+        },
+        {
+          id: "ENT-0002",
+          unidade_id: 1,
+          created_at: "2025-10-05T14:05:00Z",
+          nota_fiscal: null,
+          itens: [
+            {
+              produto_id: 303,
+              produto_nome: "Luvas Cirúrgicas M",
+              quantidade: 50,
+            },
+          ],
+        },
+      ],
       functions: functions,
     };
+  },
+  computed: {
+    entradasTabela() {
+      const unidadeId = this.unidade?.id;
+      const entradas = unidadeId
+        ? this.entradasMock.filter(
+            (entrada) => entrada.unidade_id === unidadeId
+          )
+        : this.entradasMock;
+
+      return entradas.map((entrada) => ({
+        id: entrada.id,
+        data: this.formatarData(entrada.created_at),
+        notaFiscal: entrada.nota_fiscal || "-",
+        itensDiferentes: this.contarItensDiferentes(entrada),
+      }));
+    },
   },
   watch: {
     "$route.query.tab": {
       handler(newTab) {
-        if (newTab && ["overview", "estoque"].includes(newTab)) {
-          this.activeTab = newTab;
+        if (newTab && this.validTabs.includes(newTab)) {
+          if (newTab === "estoque" && !this.unidade.estoque) {
+            this.activeTab = "overview";
+          } else {
+            this.activeTab = newTab;
+          }
         } else {
           this.activeTab = "overview";
         }
@@ -293,15 +492,6 @@ export default {
         this.loading = false;
       }
     },
-
-    changeTab(tab) {
-      this.activeTab = tab;
-      this.$router.push({
-        path: `/unidade/${this.id}`,
-        query: { tab },
-      });
-    },
-
     editarUnidade() {
       console.log("=== EDITANDO UNIDADE ===");
       console.log("Dados da unidade:", this.unidade);
@@ -348,12 +538,80 @@ export default {
     },
 
     changeTab(tab) {
-      this.activeTab = tab;
+      let targetTab = this.validTabs.includes(tab) ? tab : "overview";
+      if (targetTab === "estoque" && !this.unidade.estoque) {
+        targetTab = "overview";
+      }
+
+      this.activeTab = targetTab;
       // Atualizar URL para manter estado após refresh
       this.$router.push({
         path: this.$route.path,
-        query: { ...this.$route.query, tab: tab },
+        query: { ...this.$route.query, tab: targetTab },
       });
+    },
+
+    contarItensDiferentes(entrada) {
+      if (!entrada || !Array.isArray(entrada.itens)) {
+        return 0;
+      }
+
+      const chaves = entrada.itens.map(
+        (item, index) =>
+          item.produto_id ??
+          item.produto_nome ??
+          item.nome ??
+          item.descricao ??
+          index
+      );
+
+      return new Set(chaves).size;
+    },
+
+    abrirModalEntrada() {
+      const modalEl = document.getElementById("modalRegistrarEntrada");
+      if (!modalEl) {
+        this.showNotification(
+          "Não foi possível localizar o modal de entrada.",
+          "error"
+        );
+        return;
+      }
+
+      try {
+        const instance =
+          bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+        instance.show();
+      } catch (error) {
+        console.error("Erro ao abrir modal de entrada:", error);
+        this.showNotification(
+          "Não foi possível abrir o modal de entrada. Atualize a página e tente novamente.",
+          "error"
+        );
+      }
+    },
+
+    handleEntradaRegistrada(payload) {
+      const unidadeId = payload?.unidadeId || this.unidade?.id || null;
+      const timestamp = new Date().toISOString();
+      const novoId = `ENT-${(this.entradasMock.length + 1)
+        .toString()
+        .padStart(4, "0")}`;
+
+      const novaEntrada = {
+        id: novoId,
+        unidade_id: unidadeId,
+        created_at: timestamp,
+        nota_fiscal: payload?.notaFiscal || null,
+        fornecedor_id: payload?.fornecedorId || null,
+        itens: (payload?.itens || []).map((item) => ({
+          produto_id: item.produtoId,
+          quantidade: item.quantidade,
+        })),
+      };
+
+      this.entradasMock = [...this.entradasMock, novaEntrada];
+      this.showNotification("Entrada registrada localmente.", "success");
     },
 
     showNotification(message, type) {

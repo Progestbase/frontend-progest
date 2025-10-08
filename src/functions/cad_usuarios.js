@@ -244,6 +244,29 @@ var listTiposVinculo = (content, url = null) => {
     });
 };
 
+var listUnidades = (content, url = null) => {
+  return content.$axios
+    .post(
+      url == null ? "/unidades/list" : url,
+      {},
+      {
+        headers: {
+          Authorization: "Bearer " + content.$store.getters.getUserToken,
+        },
+      }
+    )
+    .then((response) => {
+      content.$store.commit("setListUnidades", response.data.data);
+      console.log("setListUnidades", response.data.data);
+      return response.data.data;
+    })
+    .catch((error) => {
+      console.error("Erro ao carregar unidades:", error);
+      content.$store.commit("setListUnidades", []);
+      throw error;
+    });
+};
+
 var exportFunctions = {
   ADD_UP: ADD_UP,
   listALL: listALL,
@@ -251,6 +274,7 @@ var exportFunctions = {
   toggleData: toggleData,
   EDIT_PERFIL: EDIT_PERFIL,
   listTiposVinculo: listTiposVinculo,
+  listUnidades: listUnidades,
 };
 
 export default exportFunctions;

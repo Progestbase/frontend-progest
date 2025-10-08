@@ -123,6 +123,7 @@ export default {
         data_nascimento: "",
         tipo_vinculo: "",
         password: "",
+        unidades: [],
       },
     };
   },
@@ -139,16 +140,18 @@ export default {
       this.closeCreateUserModal();
     },
     listAllUsers() {
-      // Primeiro carrega os tipos de vínculo, depois os usuários
-      functions
-        .listTiposVinculo(this)
-        .then(() => {
-          functions.listALL(this);
-        })
-        .catch(() => {
-          // Se falhar ao carregar tipos de vínculo, ainda assim carrega os usuários
-          functions.listALL(this);
-        });
+        // Carrega tipos de vínculo e unidades antes de listar usuários
+        Promise.all([
+          functions.listTiposVinculo(this),
+          functions.listUnidades(this)
+        ])
+          .then(() => {
+            functions.listALL(this);
+          })
+          .catch(() => {
+            // Se falhar ao carregar tipos de vínculo ou unidades, ainda assim carrega os usuários
+            functions.listALL(this);
+          });
     },
   },
   computed: {

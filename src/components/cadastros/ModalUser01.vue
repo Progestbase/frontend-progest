@@ -24,9 +24,9 @@
                       <option value="A">Ativo</option>
                       <option value="I">Inativo</option>
                     </select>
-                    <small class="text-muted" v-if="modalFunction === 'ADD'">
+                    <!-- <small class="text-muted" v-if="modalFunction === 'ADD'">
                       Novos usuários são criados como "Ativo" por padrão
-                    </small>
+                    </small> -->
                   </div>
                 </div>
                 <div class="col-md-4">
@@ -101,6 +101,25 @@
                       v-model="modalData.email"
                       required
                     />
+                  </div>
+                </div>
+              </div>
+              <div class="row">
+                <div class="col-md-12">
+                  <div class="mb-3">
+                    <label for="UserUnidades" class="form-label">Unidades *</label>
+                    <multiselect
+                      v-model="modalData.unidades"
+                      :options="listUnidadesStore"
+                      :multiple="true"
+                      :close-on-select="false"
+                      :clear-on-select="false"
+                      :preserve-search="true"
+                      placeholder="Selecione as unidades"
+                      label="nome"
+                      track-by="id"
+                    >
+                    </multiselect>
                   </div>
                 </div>
               </div>
@@ -180,12 +199,15 @@
 <script>
 import ModalBase01 from "@/components/layouts/ModalBase01.vue";
 import Funcoes from "@/functions/cad_usuarios.js";
+import Multiselect from 'vue-multiselect'
+import 'vue-multiselect/dist/vue-multiselect.min.css'
 
 export default {
   name: "ModalUser01",
   components: {
     ModalBase01,
     Funcoes,
+    Multiselect
   },
   props: ["idModal", "functions"],
   data() {
@@ -194,6 +216,7 @@ export default {
   mounted() {
     // Carrega apenas os tipos de vínculo que são obrigatórios
     this.listTiposVinculo();
+    this.listUnidades();
   },
   methods: {
     add_UP_User() {
@@ -219,6 +242,9 @@ export default {
     listTiposVinculo() {
       Funcoes.listTiposVinculo(this);
     },
+    listUnidades() {
+      Funcoes.listUnidades(this);
+    },
   },
   computed: {
     modalTitle() {
@@ -232,6 +258,9 @@ export default {
     },
     listTiposVinculoStore() {
       return this.$store.state.listTiposVinculo || [];
+    },
+    listUnidadesStore() {
+      return this.$store.state.listUnidades || [];
     },
   },
   watch: {

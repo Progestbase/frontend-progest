@@ -98,12 +98,18 @@
             </tr>
           </thead>
           <tbody>
-            <tr v-for="(item, index) in formattedEstoque.data" :key="item.id">
+            <tr
+              v-for="(item, index) in formattedEstoque.data"
+              :key="item.id"
+              @click="visualizarLotes(item)"
+              style="cursor: pointer"
+              class="hover-row"
+            >
               <td class="text-center">{{ index + 1 }}</td>
               <td class="text-left">{{ item.produto }}</td>
               <td class="text-left">{{ item.grupo }}</td>
               <td class="text-center">{{ item.quantidade_atual }}</td>
-              <td class="text-center">
+              <td class="text-center" @click.stop>
                 <div
                   v-if="editandoQuantidade === item.id"
                   class="d-flex align-items-center justify-content-center"
@@ -140,7 +146,7 @@
               </td>
               <td class="text-center" v-html="item.status"></td>
               <td class="text-center">{{ item.alerta }}</td>
-              <td class="text-center">
+              <td class="text-center" @click.stop>
                 <div class="d-flex justify-content-center">
                   <button
                     class="btn btn-outline-primary btn-sm d-flex align-items-center justify-content-center"
@@ -182,14 +188,30 @@
         "Controle de Estoque".
       </p>
     </div>
+
+    <!-- Modal de Visualização de Lotes -->
+    <ModalVisualizarLotesProduto
+      idModal="modalVisualizarLotesProduto"
+      :produto="produtoSelecionado"
+      :unidade="unidadeEstoque"
+      :estoqueId="estoqueIdSelecionado"
+      :quantidadeAtual="quantidadeAtualSelecionada"
+      :quantidadeMinima="quantidadeMinimaSelecionada"
+    />
   </div>
 </template>
 
 <script>
 import functions from "../../functions/cad_estoque.js";
+import cadEstoqueLote from "../../functions/cad_estoque_lote.js";
+import ModalVisualizarLotesProduto from "@/components/cadastros/ModalVisualizarLotesProduto.vue";
+import * as bootstrap from "bootstrap";
 
 export default {
   name: "EstoqueUnidade",
+  components: {
+    ModalVisualizarLotesProduto,
+  },
   props: {
     unidadeId: {
       type: [String, Number],
@@ -207,6 +229,10 @@ export default {
       functions: functions,
       editandoQuantidade: null,
       novaQuantidadeMinima: 0,
+      produtoSelecionado: {},
+      estoqueIdSelecionado: null,
+      quantidadeAtualSelecionada: 0,
+      quantidadeMinimaSelecionada: 0,
     };
   },
   computed: {
@@ -313,6 +339,53 @@ export default {
           alert("Erro ao atualizar quantidade mínima");
       }
     },
+
+    async visualizarLotes(item) {
+      // Buscar dados completos do item no estoqueItems
+      const itemCompleto = this.estoqueItems.find(
+        (e) => e.estoque_id === item.id
+      );
+
+      if (!itemCompleto) {
+        this.$toastr?.e("Item de estoque não encontrado") ||
+          alert("Item de estoque não encontrado");
+        return;
+      }
+
+      // Definir dados do produto selecionado
+      this.produtoSelecionado = itemCompleto.produto || {};
+      this.estoqueIdSelecionado = itemCompleto.estoque_id;
+      this.quantidadeAtualSelecionada = itemCompleto.quantidade_atual || 0;
+      this.quantidadeMinimaSelecionada = itemCompleto.quantidade_minima || 0;
+
+      // Carregar lotes via API e aguardar
+      if (this.estoqueIdSelecionado) {
+        try {
+          // Aguardar o carregamento dos lotes
+          await cadEstoqueLote.listByEstoque(this, this.estoqueIdSelecionado);
+
+          // Pequeno delay para garantir que o Vue atualizou os computed
+          await new Promise((resolve) => setTimeout(resolve, 100));
+        } catch (error) {
+          console.error("Erro ao carregar lotes:", error);
+        }
+      }
+
+      // Abrir modal APÓS carregar os lotes
+      try {
+        const modalElement = document.getElementById(
+          "modalVisualizarLotesProduto"
+        );
+        if (modalElement) {
+          const modal = new bootstrap.Modal(modalElement);
+          modal.show();
+        }
+      } catch (error) {
+        console.error("Erro ao abrir modal de lotes:", error);
+        this.$toastr?.e("Não foi possível abrir o modal. Tente novamente.") ||
+          alert("Erro ao abrir modal");
+      }
+    },
   },
 };
 </script>
@@ -393,5 +466,11 @@ export default {
   .card.bg-light .card-body h4 {
     font-size: 1.5rem;
   }
+}
+
+/* Hover nas linhas da tabela para indicar clicabilidade */
+.hover-row:hover {
+  background-color: #f8f9fa;
+  transition: background-color 0.2s ease;
 }
 </style>

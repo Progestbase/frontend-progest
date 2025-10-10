@@ -289,6 +289,9 @@
                             <tr
                               v-for="entrada in entradasTabela"
                               :key="entrada.id"
+                              @click="visualizarEntrada(entrada)"
+                              style="cursor: pointer"
+                              class="hover-row"
                             >
                               <td class="text-start">{{ entrada.id }}</td>
                               <td class="text-start">{{ entrada.data }}</td>
@@ -359,6 +362,10 @@
             :unidade="unidade"
             @registrado="handleEntradaRegistrada"
           />
+          <ModalVisualizarEntrada
+            idModal="modalVisualizarEntrada"
+            :entrada="entradaSelecionada"
+          />
         </div>
       </div>
     </div>
@@ -369,8 +376,10 @@
 import TemplateAdmin from "@/views/roleAdmin/TemplateAdmin.vue";
 import ModalUnidades from "@/components/cadastros/ModalUnidades.vue";
 import ModalEntradaEstoque from "@/components/cadastros/ModalEntradaEstoque.vue";
+import ModalVisualizarEntrada from "@/components/cadastros/ModalVisualizarEntrada.vue";
 import EstoqueUnidade from "./EstoqueUnidade.vue";
 import functions from "../../functions/cad_unidades.js";
+import cadEntradas from "../../functions/cad_entradas.js";
 import * as bootstrap from "bootstrap";
 
 export default {
@@ -379,6 +388,7 @@ export default {
     TemplateAdmin,
     ModalUnidades,
     ModalEntradaEstoque,
+    ModalVisualizarEntrada,
     EstoqueUnidade,
   },
   props: ["id"],
@@ -394,57 +404,49 @@ export default {
         "entrada",
         "usuarios",
       ],
-      entradasMock: [
-        {
-          id: "ENT-0001",
-          unidade_id: 1,
-          created_at: "2025-10-02T10:30:00Z",
-          nota_fiscal: "NF-2025/001",
-          itens: [
-            {
-              produto_id: 101,
-              produto_nome: "Dipirona 500mg",
-              quantidade: 20,
-            },
-            {
-              produto_id: 202,
-              produto_nome: "Soro 0,9% 500ml",
-              quantidade: 10,
-            },
-          ],
-        },
-        {
-          id: "ENT-0002",
-          unidade_id: 1,
-          created_at: "2025-10-05T14:05:00Z",
-          nota_fiscal: null,
-          itens: [
-            {
-              produto_id: 303,
-              produto_nome: "Luvas Cirúrgicas M",
-              quantidade: 50,
-            },
-          ],
-        },
-      ],
       functions: functions,
+      entradaSelecionada: {},
     };
   },
   computed: {
     entradasTabela() {
       const unidadeId = this.unidade?.id;
-      const entradas = unidadeId
-        ? this.entradasMock.filter(
-            (entrada) => entrada.unidade_id === unidadeId
-          )
-        : this.entradasMock;
 
-      return entradas.map((entrada) => ({
+      // Usar dados do Vuex store
+      const entradasStore = this.$store.state.listEntradas || [];
+
+      console.log("🔍 [entradasTabela] entradasStore:", entradasStore);
+      console.log("🔍 [entradasTabela] unidadeId:", unidadeId);
+      console.log("🔍 [entradasTabela] Primeiro item:", entradasStore[0]);
+
+      // Filtrar por unidade se necessário
+      // Backend retorna entrada.unidade.id, não entrada.unidade_id
+      const entradas = unidadeId
+        ? entradasStore.filter((entrada) => {
+            const entradaUnidadeId = entrada.unidade?.id || entrada.unidade_id;
+            console.log("🔍 Comparando:", {
+              entrada_unidade_id: entradaUnidadeId,
+              unidadeId: unidadeId,
+              sao_iguais: entradaUnidadeId === unidadeId,
+              tipos: typeof entradaUnidadeId + " vs " + typeof unidadeId,
+            });
+            return entradaUnidadeId === unidadeId;
+          })
+        : entradasStore;
+
+      console.log("🔍 [entradasTabela] entradas filtradas:", entradas);
+
+      const resultado = entradas.map((entrada) => ({
         id: entrada.id,
         data: this.formatarData(entrada.created_at),
         notaFiscal: entrada.nota_fiscal || "-",
         itensDiferentes: this.contarItensDiferentes(entrada),
+        _raw: entrada, // Manter referência ao objeto completo
       }));
+
+      console.log("🔍 [entradasTabela] resultado final:", resultado);
+
+      return resultado;
     },
   },
   watch: {
@@ -591,27 +593,53 @@ export default {
       }
     },
 
-    handleEntradaRegistrada(payload) {
-      const unidadeId = payload?.unidadeId || this.unidade?.id || null;
-      const timestamp = new Date().toISOString();
-      const novoId = `ENT-${(this.entradasMock.length + 1)
-        .toString()
-        .padStart(4, "0")}`;
+    handleEntradaRegistrada(dadosEntrada) {
+      console.log("✅ Entrada registrada recebida:", dadosEntrada);
 
-      const novaEntrada = {
-        id: novoId,
-        unidade_id: unidadeId,
-        created_at: timestamp,
-        nota_fiscal: payload?.notaFiscal || null,
-        fornecedor_id: payload?.fornecedorId || null,
-        itens: (payload?.itens || []).map((item) => ({
-          produto_id: item.produtoId,
-          quantidade: item.quantidade,
-        })),
-      };
+      // Recarregar lista de entradas da API
+      if (this.unidade?.id) {
+        cadEntradas.listByUnidade(this, this.unidade.id);
+      } else {
+        cadEntradas.listAll(this);
+      }
 
-      this.entradasMock = [...this.entradasMock, novaEntrada];
-      this.showNotification("Entrada registrada localmente.", "success");
+      this.showNotification(
+        "Entrada registrada e estoque atualizado com sucesso!",
+        "success"
+      );
+
+      // Mudar para aba de entrada para visualizar
+      this.activeTab = "entrada";
+    },
+
+    visualizarEntrada(entrada) {
+      console.log("🔍 Visualizando entrada:", entrada);
+
+      // Usar o objeto completo da entrada
+      const entradaCompleta = entrada._raw || entrada;
+
+      if (!entradaCompleta) {
+        this.showNotification("Entrada não encontrada", "error");
+        return;
+      }
+
+      this.entradaSelecionada = entradaCompleta;
+      console.log("📋 Entrada selecionada completa:", this.entradaSelecionada);
+
+      // Abrir modal
+      try {
+        const modalElement = document.getElementById("modalVisualizarEntrada");
+        if (modalElement) {
+          const modal = new bootstrap.Modal(modalElement);
+          modal.show();
+        }
+      } catch (error) {
+        console.error("Erro ao abrir modal de visualização:", error);
+        this.showNotification(
+          "Não foi possível abrir o modal. Tente novamente.",
+          "error"
+        );
+      }
     },
 
     showNotification(message, type) {
@@ -675,6 +703,16 @@ export default {
   },
   mounted() {
     this.carregarUnidade();
+    // Carregar entradas da unidade específica
+    // Envolvido em try-catch para não quebrar se backend retornar erro
+    if (this.id) {
+      try {
+        cadEntradas.listByUnidade(this, this.id);
+      } catch (error) {
+        console.warn("Não foi possível carregar entradas:", error);
+        // Continuar mesmo com erro - lista ficará vazia
+      }
+    }
   },
 };
 </script>
@@ -703,5 +741,10 @@ export default {
 
 .badge {
   font-size: 0.8rem;
+}
+
+.hover-row:hover {
+  background-color: #f8f9fa;
+  transition: background-color 0.2s ease;
 }
 </style>

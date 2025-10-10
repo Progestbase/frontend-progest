@@ -27,6 +27,7 @@ export default createStore({
     unidadeAtual: null,
     gruposProdutos: [],
     unidadesMedidaAux: [],
+    listEntradas: [],
   },
   mutations: {
     setUserToken(state, token) {
@@ -117,6 +118,10 @@ export default createStore({
     },
     setUnidadesMedidaAux(state, unidades) {
       state.unidadesMedidaAux = unidades;
+    },
+    setListEntradas(state, entradas) {
+      console.log("setListEntradas - dados carregados:", entradas?.length || 0);
+      state.listEntradas = entradas || [];
     },
   },
   actions: {

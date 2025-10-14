@@ -108,7 +108,7 @@ var listEstoqueUnidade = (content, unidadeId) => {
   content.estoqueLoading = true;
 
   return content.$axios
-    .get(`/estoque/unidade/${unidadeId}`, {
+    .get(`/estoque/setor/${unidadeId}`, {
       headers: {
         Authorization: "Bearer " + content.$store.getters.getUserToken,
       },
@@ -118,7 +118,7 @@ var listEstoqueUnidade = (content, unidadeId) => {
         content.estoqueData = response.data.data;
         content.estoqueItems = response.data.data.estoque || [];
         content.resumoEstoque = response.data.data.resumo || {};
-        content.unidadeEstoque = response.data.data.unidade || {};
+        content.setorEstoque = response.data.data.unidade || {};
       } else {
         throw new Error(response.data.message || "Erro ao carregar estoque");
       }
@@ -141,7 +141,7 @@ var listEstoqueUnidade = (content, unidadeId) => {
           data: {
             unidade: {
               id: parseInt(unidadeId),
-              nome: "Unidade Exemplo",
+              nome: "Setor Exemplo",
               tipo: "Medicamento",
             },
             estoque: [
@@ -238,7 +238,7 @@ var listEstoqueUnidade = (content, unidadeId) => {
         content.estoqueData = dadosExemplo.data;
         content.estoqueItems = dadosExemplo.data.estoque;
         content.resumoEstoque = dadosExemplo.data.resumo;
-        content.unidadeEstoque = dadosExemplo.data.unidade;
+        content.setorEstoque = dadosExemplo.data.unidade;
         content.$store.commit("setisSearching", false);
         content.estoqueLoading = false;
 

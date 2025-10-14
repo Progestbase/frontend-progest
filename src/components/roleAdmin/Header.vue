@@ -11,9 +11,9 @@
       </button>
 
       <h2 class="text-xl font-semibold text-azul-eclipse">
-        <span v-if="$route.name === 'unidadeDetalhes'">
-          <router-link to="/unidades" class="text-muted">
-            <i class="mdi mdi-arrow-left me-1"></i>Unidades
+        <span v-if="$route.name === 'setorDetalhes'">
+          <router-link to="/setores" class="text-muted">
+            <i class="mdi mdi-arrow-left me-1"></i>Setores
           </router-link>
           <span class="mx-2">/</span>
           {{ unidadeNomeAtual }}
@@ -59,10 +59,10 @@ export default {
           return "Usuários";
         case "tiposUsuario":
           return "Tipos de Usuário";
-        case "unidades":
-          return "Unidades";
-        case "unidadeDetalhes":
-          return "Detalhes da Unidade";
+        case "setores":
+          return "Setores";
+        case "setorDetalhes":
+          return "Detalhes do Setor";
         case "produtos":
           return "Produtos";
         case "grupoProduto":
@@ -82,7 +82,7 @@ export default {
     },
     unidadeNomeAtual() {
       // Tenta buscar do store primeiro, senão usa um valor padrão
-      return this.$store.state.unidadeAtual?.nome || "Carregando...";
+      return this.$store.state.setorAtual?.nome || "Carregando...";
     },
   },
 };

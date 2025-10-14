@@ -13,7 +13,7 @@
               </div>
 
               <!-- Conteúdo -->
-              <div v-else-if="unidade.id" class="card">
+              <div v-else-if="setor.id" class="card">
                 <div class="card-body">
                   <!-- Tabs Navigation -->
                   <ul
@@ -33,7 +33,7 @@
                         <span class="d-none d-sm-block">Overview</span>
                       </a>
                     </li>
-                    <li class="nav-item" v-if="unidade.estoque">
+                    <li class="nav-item" v-if="setor.estoque">
                       <a
                         class="nav-link"
                         :class="{ active: activeTab === 'estoque' }"
@@ -97,7 +97,7 @@
                             <div class="card-header">
                               <h5 class="card-title mb-0">
                                 <i class="mdi mdi-information-outline me-2"></i>
-                                Informações da Unidade
+                                Informações do Setor
                               </h5>
                             </div>
                             <div class="card-body">
@@ -106,7 +106,7 @@
                                   <div class="mb-3">
                                     <label class="form-label">Nome:</label>
                                     <p class="form-control-plaintext">
-                                      {{ unidade.nome }}
+                                      {{ setor.nome }}
                                     </p>
                                   </div>
                                 </div>
@@ -116,12 +116,12 @@
                                     <span
                                       class="badge"
                                       :class="
-                                        unidade.tipo === 'Medicamento'
+                                        setor.tipo === 'Medicamento'
                                           ? 'bg-info'
                                           : 'bg-primary'
                                       "
                                     >
-                                      {{ unidade.tipo }}
+                                      {{ setor.tipo }}
                                     </span>
                                   </div>
                                 </div>
@@ -131,13 +131,13 @@
                                     <span
                                       class="badge"
                                       :class="
-                                        unidade.status === 'A'
+                                        setor.status === 'A'
                                           ? 'bg-success'
                                           : 'bg-secondary'
                                       "
                                     >
                                       {{
-                                        unidade.status === "A"
+                                        setor.status === "A"
                                           ? "Ativo"
                                           : "Inativo"
                                       }}
@@ -152,20 +152,20 @@
                                     <span
                                       class="badge"
                                       :class="
-                                        unidade.estoque
+                                        setor.estoque
                                           ? 'bg-warning'
                                           : 'bg-light text-dark'
                                       "
                                     >
-                                      {{ unidade.estoque ? "Sim" : "Não" }}
+                                      {{ setor.estoque ? "Sim" : "Não" }}
                                     </span>
                                   </div>
                                 </div>
-                                <div class="col-12" v-if="unidade.descricao">
+                                <div class="col-12" v-if="setor.descricao">
                                   <div class="mb-3">
                                     <label class="form-label">Descrição:</label>
                                     <p class="form-control-plaintext">
-                                      {{ unidade.descricao }}
+                                      {{ setor.descricao }}
                                     </p>
                                   </div>
                                 </div>
@@ -185,17 +185,17 @@
                               <div class="d-grid gap-2">
                                 <button
                                   class="btn btn-primary"
-                                  @click="editarUnidade"
+                                  @click="editarSetor"
                                 >
                                   <i class="mdi mdi-pencil me-2"></i>
-                                  Editar Unidade
+                                  Editar Setor
                                 </button>
                                 <button
                                   class="btn btn-danger"
                                   @click="confirmarExclusao"
                                 >
                                   <i class="mdi mdi-delete me-2"></i>
-                                  Excluir Unidade
+                                  Excluir Setor
                                 </button>
                               </div>
                             </div>
@@ -213,13 +213,13 @@
                               <div class="mb-2">
                                 <small class="text-muted">Criado em:</small>
                                 <p class="mb-1">
-                                  {{ formatarData(unidade.created_at) }}
+                                  {{ formatarData(setor.created_at) }}
                                 </p>
                               </div>
                               <div class="mb-0">
                                 <small class="text-muted">Atualizado em:</small>
                                 <p class="mb-0">
-                                  {{ formatarData(unidade.updated_at) }}
+                                  {{ formatarData(setor.updated_at) }}
                                 </p>
                               </div>
                             </div>
@@ -230,10 +230,10 @@
 
                     <!-- Estoque Tab -->
                     <div v-show="activeTab === 'estoque'">
-                      <EstoqueUnidade
-                        v-if="unidade.id"
-                        :unidadeId="unidade.id"
-                        :key="unidade.id"
+                      <EstoqueSetor
+                        v-if="setor.id"
+                        :setorId="setor.id"
+                        :key="setor.id"
                       />
                     </div>
 
@@ -259,13 +259,13 @@
                             Entradas de Estoque
                           </h5>
                           <p class="text-muted mb-0">
-                            Registros de entradas já lançadas para esta unidade.
+                            Registros de entradas já lançadas para este setor.
                           </p>
                         </div>
                         <button
                           class="btn btn-success"
                           @click="abrirModalEntrada"
-                          :disabled="!unidade.id"
+                          :disabled="!setor.id"
                         >
                           <i class="mdi mdi-plus me-2"></i>
                           Registrar Entrada
@@ -273,7 +273,7 @@
                       </div>
 
                       <div
-                        v-if="entradasTabela.length > 0"
+                        v-if="listEntradas.length > 0"
                         class="table-responsive"
                       >
                         <table class="table table-striped align-middle mb-0">
@@ -287,19 +287,21 @@
                           </thead>
                           <tbody>
                             <tr
-                              v-for="entrada in entradasTabela"
+                              v-for="entrada in listEntradas"
                               :key="entrada.id"
                               @click="visualizarEntrada(entrada)"
                               style="cursor: pointer"
                               class="hover-row"
                             >
                               <td class="text-start">{{ entrada.id }}</td>
-                              <td class="text-start">{{ entrada.data }}</td>
                               <td class="text-start">
-                                {{ entrada.notaFiscal }}
+                                {{ formatarData(entrada.created_at) }}
+                              </td>
+                              <td class="text-start">
+                                {{ entrada.nota_fiscal }}
                               </td>
                               <td class="text-center">
-                                {{ entrada.itensDiferentes }}
+                                {{ entrada.itens?.length || 0 }}
                               </td>
                             </tr>
                           </tbody>
@@ -340,411 +342,120 @@
                 <i
                   class="mdi mdi-alert-circle-outline display-4 text-danger mb-3"
                 ></i>
-                <h5>Unidade não encontrada</h5>
-                <p class="text-muted">
-                  A unidade solicitada não foi encontrada.
-                </p>
-                <router-link to="/unidades" class="btn btn-primary">
-                  <i class="mdi mdi-arrow-left me-2"></i>
-                  Voltar para Unidades
-                </router-link>
+                <h5>Setor n</h5>
               </div>
             </div>
           </div>
-
-          <!-- Modal de Edição -->
-          <ModalUnidades
-            idModal="editUnidade"
-            :functions="functions"
-          ></ModalUnidades>
-          <ModalEntradaEstoque
-            idModal="modalRegistrarEntrada"
-            :unidade="unidade"
-            @registrado="handleEntradaRegistrada"
-          />
-          <ModalVisualizarEntrada
-            idModal="modalVisualizarEntrada"
-            :entrada="entradaSelecionada"
-          />
         </div>
       </div>
     </div>
+
+    <!-- Modal de Entrada de Estoque -->
+    <ModalEntradaEstoque idModal="modalEntradaEstoque" :unidade="setor" />
+
+    <!-- Modal de Visualização de Entrada -->
+    <ModalVisualizarEntrada
+      idModal="modalVisualizarEntrada"
+      :entrada="entradaSelecionada"
+    />
   </TemplateAdmin>
 </template>
 
 <script>
 import TemplateAdmin from "@/views/roleAdmin/TemplateAdmin.vue";
-import ModalUnidades from "@/components/cadastros/ModalUnidades.vue";
+import EstoqueSetor from "./EstoqueSetor.vue";
 import ModalEntradaEstoque from "@/components/cadastros/ModalEntradaEstoque.vue";
 import ModalVisualizarEntrada from "@/components/cadastros/ModalVisualizarEntrada.vue";
-import EstoqueUnidade from "./EstoqueUnidade.vue";
-import functions from "../../functions/cad_unidades.js";
-import cadEntradas from "../../functions/cad_entradas.js";
 import * as bootstrap from "bootstrap";
+import functionsEntradas from "@/functions/cad_entradas.js";
 
 export default {
-  name: "UnidadeDetalhes",
+  name: "SetorDetalhesView",
   components: {
     TemplateAdmin,
-    ModalUnidades,
+    EstoqueSetor,
     ModalEntradaEstoque,
     ModalVisualizarEntrada,
-    EstoqueUnidade,
   },
-  props: ["id"],
   data() {
     return {
-      unidade: {},
-      loading: false,
+      setor: {},
+      loading: true,
+      error: null,
       activeTab: "overview",
-      validTabs: [
-        "overview",
-        "estoque",
-        "movimentacoes",
-        "entrada",
-        "usuarios",
-      ],
-      functions: functions,
-      entradaSelecionada: {},
+      entradaSelecionada: null,
     };
   },
   computed: {
-    entradasTabela() {
-      const unidadeId = this.unidade?.id;
-
-      // Usar dados do Vuex store
-      const entradasStore = this.$store.state.listEntradas || [];
-
-      console.log("🔍 [entradasTabela] entradasStore:", entradasStore);
-      console.log("🔍 [entradasTabela] unidadeId:", unidadeId);
-      console.log("🔍 [entradasTabela] Primeiro item:", entradasStore[0]);
-
-      // Filtrar por unidade se necessário
-      // Backend retorna entrada.unidade.id, não entrada.unidade_id
-      const entradas = unidadeId
-        ? entradasStore.filter((entrada) => {
-            const entradaUnidadeId = entrada.unidade?.id || entrada.unidade_id;
-            console.log("🔍 Comparando:", {
-              entrada_unidade_id: entradaUnidadeId,
-              unidadeId: unidadeId,
-              sao_iguais: entradaUnidadeId === unidadeId,
-              tipos: typeof entradaUnidadeId + " vs " + typeof unidadeId,
-            });
-            return entradaUnidadeId === unidadeId;
-          })
-        : entradasStore;
-
-      console.log("🔍 [entradasTabela] entradas filtradas:", entradas);
-
-      const resultado = entradas.map((entrada) => ({
-        id: entrada.id,
-        data: this.formatarData(entrada.created_at),
-        notaFiscal: entrada.nota_fiscal || "-",
-        itensDiferentes: this.contarItensDiferentes(entrada),
-        _raw: entrada, // Manter referência ao objeto completo
-      }));
-
-      console.log("🔍 [entradasTabela] resultado final:", resultado);
-
-      return resultado;
+    setorNomeAtual() {
+      return this.setor?.nome || "Carregando...";
+    },
+    listEntradas() {
+      const entradas = this.$store.getters.getListEntradas;
+      console.log("listEntradas computed:", entradas);
+      return entradas;
     },
   },
-  watch: {
-    "$route.query.tab": {
-      handler(newTab) {
-        if (newTab && this.validTabs.includes(newTab)) {
-          if (newTab === "estoque" && !this.unidade.estoque) {
-            this.activeTab = "overview";
-          } else {
-            this.activeTab = newTab;
-          }
-        } else {
-          this.activeTab = "overview";
-        }
-      },
-      immediate: true,
-    },
-    "unidade.estoque": {
-      handler() {
-        // Reprocessar aba ativa quando dados da unidade carregarem
-        const currentTab = this.$route.query.tab;
-        if (currentTab === "estoque" && !this.unidade.estoque) {
-          this.changeTab("overview");
-        }
-      },
-    },
+  mounted() {
+    this.carregarSetor();
   },
   methods: {
-    async carregarUnidade() {
-      this.loading = true;
+    async carregarSetor() {
       try {
-        const result = await functions.buscarUnidadePorId(this.id);
-        if (result.success) {
-          this.unidade = result.data;
-          // Atualizar no store para o header se existir
-          if (this.$store.commit) {
-            this.$store.commit("setUnidadeAtual", result.data);
+        this.loading = true;
+        const setorId = this.$route.params.id;
+        const response = await this.$axios.post(
+          `/setores/listData`,
+          {
+            id: setorId,
+          },
+          {
+            headers: {
+              Authorization: "Bearer " + this.$store.getters.getUserToken,
+            },
           }
-        } else {
-          console.error("Erro:", result.message || "Erro ao carregar unidade");
-        }
+        );
+        this.setor = response.data.data;
+        this.$store.commit("setSetorAtual", this.setor);
+
+        // Carregar entradas do setor
+        await this.carregarEntradas();
       } catch (error) {
-        console.error("Erro ao carregar unidade:", error);
+        console.error("Erro ao carregar setor:", error);
+        this.error = "Erro ao carregar dados do setor";
       } finally {
         this.loading = false;
       }
     },
-    editarUnidade() {
-      console.log("=== EDITANDO UNIDADE ===");
-      console.log("Dados da unidade:", this.unidade);
-
-      this.$store.commit("SET_MODAL_DATA", {
-        modalTitle: "Editar Unidade",
-        modalData: { ...this.unidade },
-        modalFunction: "UP",
-      });
-
-      console.log("Dados salvos no store:", this.$store.state.modalData);
-
-      const modalElement = document.getElementById("editUnidade");
-      console.log("Elemento modal encontrado:", modalElement);
-
-      if (modalElement) {
-        const modal = new bootstrap.Modal(modalElement);
-        console.log("Modal criado:", modal);
-        modal.show();
-      } else {
-        console.error("Modal editUnidade não encontrado!");
-      }
-    },
-
-    confirmarExclusao() {
-      if (
-        confirm(
-          `Tem certeza que deseja excluir a unidade "${this.unidade.nome}"?`
-        )
-      ) {
-        // Usar a nova função que segue o padrão do sistema
-        functions.deleteUnidade(this, this.unidade.id);
-      }
-    },
-
-    formatarData(dataString) {
-      if (!dataString) return "-";
-      const data = new Date(dataString);
-      return (
-        data.toLocaleDateString("pt-BR") +
-        " às " +
-        data.toLocaleTimeString("pt-BR")
-      );
-    },
-
-    changeTab(tab) {
-      let targetTab = this.validTabs.includes(tab) ? tab : "overview";
-      if (targetTab === "estoque" && !this.unidade.estoque) {
-        targetTab = "overview";
-      }
-
-      this.activeTab = targetTab;
-      // Atualizar URL para manter estado após refresh
-      this.$router.push({
-        path: this.$route.path,
-        query: { ...this.$route.query, tab: targetTab },
-      });
-    },
-
-    contarItensDiferentes(entrada) {
-      if (!entrada || !Array.isArray(entrada.itens)) {
-        return 0;
-      }
-
-      const chaves = entrada.itens.map(
-        (item, index) =>
-          item.produto_id ??
-          item.produto_nome ??
-          item.nome ??
-          item.descricao ??
-          index
-      );
-
-      return new Set(chaves).size;
-    },
-
     abrirModalEntrada() {
-      const modalEl = document.getElementById("modalRegistrarEntrada");
-      if (!modalEl) {
-        this.showNotification(
-          "Não foi possível localizar o modal de entrada.",
-          "error"
-        );
-        return;
-      }
-
-      try {
-        const instance =
-          bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
-        instance.show();
-      } catch (error) {
-        console.error("Erro ao abrir modal de entrada:", error);
-        this.showNotification(
-          "Não foi possível abrir o modal de entrada. Atualize a página e tente novamente.",
-          "error"
-        );
-      }
-    },
-
-    handleEntradaRegistrada(dadosEntrada) {
-      console.log("✅ Entrada registrada recebida:", dadosEntrada);
-
-      // Recarregar lista de entradas da API
-      if (this.unidade?.id) {
-        cadEntradas.listByUnidade(this, this.unidade.id);
-      } else {
-        cadEntradas.listAll(this);
-      }
-
-      this.showNotification(
-        "Entrada registrada e estoque atualizado com sucesso!",
-        "success"
+      // Abrir modal de entrada de estoque
+      const modal = new bootstrap.Modal(
+        document.getElementById("modalEntradaEstoque")
       );
-
-      // Mudar para aba de entrada para visualizar
-      this.activeTab = "entrada";
+      modal.show();
     },
-
+    async carregarEntradas() {
+      if (this.setor?.id) {
+        await functionsEntradas.listByUnidade(this, this.setor.id);
+      }
+    },
     visualizarEntrada(entrada) {
-      console.log("🔍 Visualizando entrada:", entrada);
-
-      // Usar o objeto completo da entrada
-      const entradaCompleta = entrada._raw || entrada;
-
-      if (!entradaCompleta) {
-        this.showNotification("Entrada não encontrada", "error");
-        return;
-      }
-
-      this.entradaSelecionada = entradaCompleta;
-      console.log("📋 Entrada selecionada completa:", this.entradaSelecionada);
-
-      // Abrir modal
-      try {
-        const modalElement = document.getElementById("modalVisualizarEntrada");
-        if (modalElement) {
-          const modal = new bootstrap.Modal(modalElement);
-          modal.show();
-        }
-      } catch (error) {
-        console.error("Erro ao abrir modal de visualização:", error);
-        this.showNotification(
-          "Não foi possível abrir o modal. Tente novamente.",
-          "error"
-        );
-      }
+      console.log("Visualizar entrada:", entrada);
+      this.entradaSelecionada = entrada;
+      // Abrir modal de visualização
+      const modal = new bootstrap.Modal(
+        document.getElementById("modalVisualizarEntrada")
+      );
+      modal.show();
     },
-
-    showNotification(message, type) {
-      if (this.$toastr) {
-        if (type === "success") {
-          this.$toastr.success(message);
-        } else {
-          this.$toastr.error(message);
-        }
-      } else {
-        console.log(`[${type.toUpperCase()}] ${message}`);
-        alert(message);
-      }
+    formatarData(data) {
+      if (!data) return null;
+      const [ano, mes, dia] = data.split("-");
+      return `${dia}/${mes}/${ano}`;
     },
-  },
-  created() {
-    // Configurar função personalizada para o modal
-    this.functions.ADD_UP = async (content, modalFunction) => {
-      try {
-        const result = await functions.atualizarUnidade(content.modalData);
-
-        if (result.success) {
-          this.showNotification("Unidade atualizada com sucesso!", "success");
-
-          // Fechar modal
-          try {
-            const modalEl = document.getElementById("editUnidade");
-            if (
-              modalEl &&
-              window &&
-              window.bootstrap &&
-              window.bootstrap.Modal
-            ) {
-              const modal = window.bootstrap.Modal.getInstance(modalEl);
-              if (modal) modal.hide();
-            }
-          } catch (e) {
-            console.warn(
-              "Não foi possível fechar editUnidade automaticamente:",
-              e
-            );
-          }
-
-          // Recarregar dados da unidade
-          this.carregarUnidade();
-        } else {
-          if (result.errors) {
-            return result;
-          } else {
-            this.showNotification(
-              result.message || "Erro ao atualizar unidade",
-              "error"
-            );
-          }
-        }
-      } catch (error) {
-        console.error("Erro ao atualizar unidade:", error);
-        this.showNotification("Erro ao atualizar unidade", "error");
-      }
-    };
-  },
-  mounted() {
-    this.carregarUnidade();
-    // Carregar entradas da unidade específica
-    // Envolvido em try-catch para não quebrar se backend retornar erro
-    if (this.id) {
-      try {
-        cadEntradas.listByUnidade(this, this.id);
-      } catch (error) {
-        console.warn("Não foi possível carregar entradas:", error);
-        // Continuar mesmo com erro - lista ficará vazia
-      }
-    }
+    changeTab(tab) {
+      this.activeTab = tab;
+    },
   },
 };
 </script>
-
-<style scoped>
-.nav-tabs-custom .nav-link {
-  position: relative;
-  border: none;
-  border-bottom: 2px solid transparent;
-}
-
-.nav-tabs-custom .nav-link.active {
-  background-color: transparent;
-  border-bottom-color: #007bff;
-  color: #007bff;
-}
-
-.form-control-plaintext {
-  padding-left: 0;
-  font-weight: 500;
-}
-
-.card-title {
-  font-size: 1.1rem;
-}
-
-.badge {
-  font-size: 0.8rem;
-}
-
-.hover-row:hover {
-  background-color: #f8f9fa;
-  transition: background-color 0.2s ease;
-}
-</style>

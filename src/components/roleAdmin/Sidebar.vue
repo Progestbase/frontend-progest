@@ -31,10 +31,10 @@
 
     <h3>Menu</h3>
     <div class="menu">
-      <!-- Unidades -->
-      <router-link class="button" to="/unidades" title="Unidades">
+      <!-- Setores -->
+      <router-link class="button" to="/setores" title="Setores">
         <span class="material-icons">apartment</span>
-        <span class="text">Unidades</span>
+        <span class="text">Setores</span>
       </router-link>
 
       <!-- Usuários -->

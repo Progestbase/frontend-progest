@@ -12,7 +12,7 @@ export default createStore({
     modalErrors: {},
     listUsers: [],
     listTiposUsuarios: [],
-    listUnidades: [],
+    listSetores: [],
     listProdutos: [],
     listUnidadesMedida: [],
     listGrupoProdutos: [],
@@ -23,8 +23,8 @@ export default createStore({
     isSearching: "",
     listPerfis: [],
     listTiposVinculo: [],
-    listUnidadesGerais: [],
-    unidadeAtual: null,
+    listSetoresGerais: [],
+    setorAtual: null,
     gruposProdutos: [],
     unidadesMedidaAux: [],
     listEntradas: [],
@@ -61,8 +61,8 @@ export default createStore({
     setListTiposUsuario(state, users) {
       state.listTiposUsuario = users;
     },
-    setListUnidades(state, unidades) {
-      state.listUnidades = unidades;
+    setListSetores(state, setores) {
+      state.listSetores = setores;
     },
     setListProdutos(state, produtos) {
       state.listProdutos = produtos;
@@ -88,11 +88,11 @@ export default createStore({
     setListTiposVinculo(state, tipos) {
       state.listTiposVinculo = tipos;
     },
-    setListUnidadesGerais(state, unidades) {
-      state.listUnidadesGerais = unidades;
+    setListSetoresGerais(state, setores) {
+      state.listSetoresGerais = setores;
     },
-    setUnidadeAtual(state, unidade) {
-      state.unidadeAtual = unidade;
+    setSetorAtual(state, setor) {
+      state.setorAtual = setor;
     },
     SET_MODAL_DATA(state, payload) {
       state.modalData.modalTitle = payload.modalTitle || "";
@@ -135,11 +135,10 @@ export default createStore({
     getModalData: (state) => state.modalData.modalData,
     getListUsers: (state) => state.listUsers,
     getListTiposUsuario: (state) => state.listTiposUsuario,
-    getListUnidades: (state) => state.listUnidades,
     getListGrupoProdutos: (state) => state.listGrupoProdutos,
     getListFornecedores: (state) => state.listFornecedores,
     getListPerfis: (state) => state.listPerfis,
     getListTiposVinculo: (state) => state.listTiposVinculo,
-    getListUnidadesGerais: (state) => state.listUnidadesGerais,
+    getListEntradas: (state) => state.listEntradas,
   },
 });

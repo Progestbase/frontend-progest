@@ -8,8 +8,8 @@ import HistoricoDePedidosView from "@/views/roleSolicitante/HistoricoDePedidosVi
 import Home from "@/views/Home.vue";
 import About from "@/views/About.vue";
 import Users from "../views/cadastros/Users.vue";
-import Unidades from "../views/cadastros/Unidades.vue";
-import UnidadeDetalhes from "../views/cadastros/UnidadeDetalhes.vue";
+import Setores from "../views/cadastros/Setores.vue";
+import SetorDetalhes from "../views/cadastros/SetorDetalhes.vue";
 import Produtos from "../views/cadastros/Produtos.vue";
 import UnidadesMedida from "../views/cadastros/UnidadesMedida.vue";
 import Fornecedores from "../views/cadastros/Fornecedores.vue";
@@ -18,7 +18,6 @@ import Polos from "../views/cadastros/Polos.vue";
 import Perfis from "../views/cadastros/Perfis.vue";
 import CategoriasProdutos from "../views/cadastros/CategoriasProdutos.vue";
 import Estoque from "@/views/cadastros/Estoque.vue";
-import EstoqueUnidade from "@/views/cadastros/EstoqueUnidade.vue";
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -56,15 +55,15 @@ const router = createRouter({
       meta: { requiresAuth: true },
     },
     {
-      path: "/unidades",
-      name: "unidades",
-      component: Unidades,
+      path: "/setores",
+      name: "setores",
+      component: Setores,
       meta: { requiresAuth: true },
     },
     {
-      path: "/unidade/:id",
-      name: "unidadeDetalhes",
-      component: UnidadeDetalhes,
+      path: "/setor/:id",
+      name: "setorDetalhes",
+      component: SetorDetalhes,
       meta: { requiresAuth: true },
       props: true,
     },

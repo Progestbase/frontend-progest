@@ -36,6 +36,8 @@
 </template>
 
 <script>
+import * as bootstrap from "bootstrap";
+
 export default {
   name: "ModalBase01",
   props: {
@@ -55,11 +57,10 @@ export default {
   methods: {
     handleInternalClose() {
       const modalEl = document.getElementById(this.idModal);
-      console.log("modalEl:", modalEl, "bootstrap:", window.bootstrap);
+      console.log("modalEl:", modalEl, "bootstrap:", bootstrap);
       if (modalEl) {
         const modalInstance =
-          window.bootstrap.Modal.getInstance(modalEl) ||
-          new window.bootstrap.Modal(modalEl);
+          bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
         modalInstance.hide();
       }
       this.$emit("closed");

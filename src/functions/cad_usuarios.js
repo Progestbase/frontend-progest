@@ -247,7 +247,7 @@ var listTiposVinculo = (content, url = null) => {
 var listUnidades = (content, url = null) => {
   return content.$axios
     .post(
-      url == null ? "/unidades/list" : url,
+      url == null ? "/setores/list" : url,
       {},
       {
         headers: {
@@ -256,8 +256,8 @@ var listUnidades = (content, url = null) => {
       }
     )
     .then((response) => {
-      content.$store.commit("setListUnidades", response.data.data);
-      console.log("setListUnidades", response.data.data);
+      content.$store.commit("setListSetoresGerais", response.data.data);
+      console.log("setListSetoresGerais", response.data.data);
       return response.data.data;
     })
     .catch((error) => {

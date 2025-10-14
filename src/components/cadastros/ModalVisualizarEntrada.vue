@@ -8,7 +8,7 @@
         <div class="col-12">
           <h4 class="mb-3 d-flex align-items-center gap-2">
             <i class="mdi mdi-file-document-outline text-primary"></i>
-            Detalhes da Entrada #{{ entrada.id }}
+            Detalhes da Entrada #{{ entrada?.id || "N/A" }}
           </h4>
           <p class="text-muted mb-4">
             Visualização completa dos dados da entrada de estoque.
@@ -19,27 +19,27 @@
       <div class="row g-3 mb-4">
         <div class="col-md-3">
           <label class="form-label text-muted small">Nota Fiscal</label>
-          <p class="mb-0 fw-semibold">{{ entrada.nota_fiscal || "-" }}</p>
+          <p class="mb-0 fw-semibold">{{ entrada?.nota_fiscal || "-" }}</p>
         </div>
 
         <div class="col-md-3">
           <label class="form-label text-muted small">Unidade</label>
           <p class="mb-0 fw-semibold">
-            {{ entrada.unidade?.nome || "-" }}
+            {{ entrada?.unidade?.nome || "-" }}
           </p>
         </div>
 
         <div class="col-md-3">
           <label class="form-label text-muted small">Fornecedor</label>
           <p class="mb-0 fw-semibold">
-            {{ entrada.fornecedor?.razao_social_nome || "-" }}
+            {{ entrada?.fornecedor?.razao_social_nome || "-" }}
           </p>
         </div>
 
         <div class="col-md-3">
           <label class="form-label text-muted small">Data de Registro</label>
           <p class="mb-0 fw-semibold">
-            {{ formatarDataHora(entrada.created_at) }}
+            {{ formatarDataHora(entrada?.created_at) }}
           </p>
         </div>
       </div>
@@ -53,7 +53,7 @@
         </h5>
 
         <div
-          v-if="entrada.itens && entrada.itens.length > 0"
+          v-if="entrada?.itens && entrada.itens.length > 0"
           class="table-responsive"
         >
           <table class="table table-striped table-hover align-middle">
@@ -68,7 +68,7 @@
               </tr>
             </thead>
             <tbody>
-              <tr v-for="item in entrada.itens" :key="item.id">
+              <tr v-for="item in entrada?.itens || []" :key="item.id">
                 <td class="text-start">
                   <strong>{{
                     item.produto?.nome || "Produto não encontrado"
@@ -110,7 +110,7 @@
                   {{ totalQuantidade }}
                 </td>
                 <td colspan="4" class="text-muted small">
-                  {{ entrada.itens.length }} produto(s) diferente(s)
+                  {{ entrada?.itens?.length || 0 }} produto(s) diferente(s)
                 </td>
               </tr>
             </tfoot>
@@ -163,7 +163,7 @@ export default {
   },
   computed: {
     totalQuantidade() {
-      if (!this.entrada.itens || this.entrada.itens.length === 0) {
+      if (!this.entrada?.itens || this.entrada.itens.length === 0) {
         return 0;
       }
       return this.entrada.itens.reduce(

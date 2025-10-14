@@ -182,9 +182,9 @@
     <!-- Mensagem quando setor não tem estoque -->
     <div v-else class="text-center py-5">
       <i class="mdi mdi-information-outline display-4 text-info mb-3"></i>
-      <h5>Este setor não possui controle de estoque</h5>
+      <h5>Esta setor não possui controle de estoque</h5>
       <p class="text-muted">
-        Para habilitar o controle de estoque, edite o setor e marque a opção
+        Para habilitar o controle de estoque, edite a setor e marque a opção
         "Controle de Estoque".
       </p>
     </div>
@@ -208,7 +208,7 @@ import ModalVisualizarLotesProduto from "@/components/cadastros/ModalVisualizarL
 import * as bootstrap from "bootstrap";
 
 export default {
-  name: "EstoqueSetor",
+  name: "EstoqueUnidade",
   components: {
     ModalVisualizarLotesProduto,
   },

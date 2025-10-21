@@ -202,6 +202,65 @@
                           </div>
 
                           <!-- Informações adicionais -->
+                          <!-- Fornecedores relacionados (novo card) -->
+                          <div
+                            v-if="
+                              setor.fornecedores_relacionados &&
+                              setor.fornecedores_relacionados.length > 0
+                            "
+                            class="card border mt-3"
+                          >
+                            <div class="card-header">
+                              <h5 class="card-title mb-0">
+                                <i
+                                  class="mdi mdi-truck-delivery-outline me-2"
+                                ></i>
+                                Fornecedores Relacionados
+                              </h5>
+                            </div>
+                            <div class="card-body">
+                              <div
+                                v-for="rel of setor.fornecedores_relacionados"
+                                :key="rel.id"
+                                class="mb-3 border rounded p-2"
+                              >
+                                <div
+                                  class="d-flex justify-content-between align-items-start"
+                                >
+                                  <div>
+                                    <div class="fw-bold">
+                                      {{
+                                        rel.fornecedor?.nome ||
+                                        rel.fornecedor?.razao_social_nome ||
+                                        rel.fornecedor?.razao_social ||
+                                        "Fornecedor desconhecido"
+                                      }}
+                                    </div>
+                                    <div class="text-muted small">
+                                      {{ rel.fornecedor?.descricao || "" }}
+                                    </div>
+                                  </div>
+                                  <div class="text-end">
+                                    <span
+                                      class="badge"
+                                      :class="
+                                        rel.tipo_produto === 'Medicamento'
+                                          ? 'bg-info'
+                                          : 'bg-primary'
+                                      "
+                                    >
+                                      {{
+                                        rel.tipo_produto ||
+                                        rel.fornecedor?.tipo ||
+                                        "-"
+                                      }}
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+
                           <div class="card border mt-3">
                             <div class="card-header">
                               <h5 class="card-title mb-0">
@@ -358,6 +417,8 @@
       idModal="modalVisualizarEntrada"
       :entrada="entradaSelecionada"
     />
+    <!-- Modal de Edição/Cadastro de Setor (instância local para este view) -->
+    <ModalSetor idModal="addUPSetor" :functions="functions" />
   </TemplateAdmin>
 </template>
 
@@ -366,6 +427,8 @@ import TemplateAdmin from "@/views/roleAdmin/TemplateAdmin.vue";
 import EstoqueSetor from "./EstoqueSetor.vue";
 import ModalEntradaEstoque from "@/components/cadastros/ModalEntradaEstoque.vue";
 import ModalVisualizarEntrada from "@/components/cadastros/ModalVisualizarEntrada.vue";
+import ModalSetor from "@/components/cadastros/ModalSetor.vue";
+import functions from "@/functions/cad_setores.js";
 import * as bootstrap from "bootstrap";
 import functionsEntradas from "@/functions/cad_entradas.js";
 
@@ -376,6 +439,7 @@ export default {
     EstoqueSetor,
     ModalEntradaEstoque,
     ModalVisualizarEntrada,
+    ModalSetor,
   },
   data() {
     return {
@@ -384,6 +448,7 @@ export default {
       error: null,
       activeTab: "overview",
       entradaSelecionada: null,
+      functions: functions,
     };
   },
   computed: {
@@ -397,6 +462,16 @@ export default {
     },
   },
   mounted() {
+    this.initTabFromRoute();
+    // Observar mudanças na query 'tab' (back/forward do browser)
+    this.$watch(
+      () => this.$route.query.tab,
+      (newTab) => {
+        const tab = this.normalizeTab(newTab);
+        this.activeTab = tab;
+      }
+    );
+
     this.carregarSetor();
   },
   methods: {
@@ -416,6 +491,19 @@ export default {
           }
         );
         this.setor = response.data.data;
+        // DEBUG: inspeciona o payload retornado do backend para este setor
+        console.log("carregarSetor response.data:", response.data);
+        console.log("carregarSetor setor (data):", this.setor);
+        // se existir fornecedores relacionados no payload, logar especificamente
+        if (this.setor.fornecedores_relacionados) {
+          console.log(
+            "fornecedores_relacionados:",
+            this.setor.fornecedores_relacionados
+          );
+        }
+        if (this.setor.fornecedores) {
+          console.log("fornecedores:", this.setor.fornecedores);
+        }
         this.$store.commit("setSetorAtual", this.setor);
 
         // Carregar entradas do setor
@@ -450,11 +538,77 @@ export default {
     },
     formatarData(data) {
       if (!data) return null;
-      const [ano, mes, dia] = data.split("-");
+
+      // Se o backend retornar um timestamp com 'T', pegar apenas a parte da data
+      let dataStr = String(data);
+      if (dataStr.includes("T")) {
+        dataStr = dataStr.split("T")[0];
+      }
+
+      const parts = dataStr.split("-");
+      if (parts.length < 3) return null;
+      const [ano, mes, dia] = parts;
+      // Retornar no formato dd/mm/yyyy
       return `${dia}/${mes}/${ano}`;
     },
     changeTab(tab) {
-      this.activeTab = tab;
+      const normalized = this.normalizeTab(tab);
+      this.activeTab = normalized;
+
+      // Atualizar URL mantendo outros query params
+      try {
+        const newQuery = Object.assign({}, this.$route.query || {});
+        newQuery.tab = normalized;
+        // usar replace para não poluir histórico quando a mudança for automática
+        this.$router
+          .push({ path: this.$route.path, query: newQuery })
+          .catch(() => {});
+      } catch (e) {
+        console.warn("Não foi possível atualizar a URL com a tab:", e);
+      }
+    },
+    // Garante valores válidos e fallback para 'overview'
+    normalizeTab(tab) {
+      const allowed = [
+        "overview",
+        "estoque",
+        "movimentacoes",
+        "entrada",
+        "usuarios",
+      ];
+      if (!tab || typeof tab !== "string") return "overview";
+      return allowed.includes(tab) ? tab : "overview";
+    },
+    initTabFromRoute() {
+      const queryTab = this.$route.query?.tab;
+      this.activeTab = this.normalizeTab(queryTab);
+      // garantir que a URL contenha o param (substitui sem adicionar entrada no histórico)
+      try {
+        const newQuery = Object.assign({}, this.$route.query || {});
+        newQuery.tab = this.activeTab;
+        this.$router
+          .replace({ path: this.$route.path, query: newQuery })
+          .catch(() => {});
+      } catch (e) {
+        /* ignore */
+      }
+    },
+    editarSetor() {
+      // Prepara e abre o modal de edição do setor atual
+      this.$store.commit("SET_MODAL_DATA", {
+        modalTitle: "Editar Setor",
+        modalData: { ...this.setor },
+        modalFunction: "UP",
+      });
+
+      // Mostrar o modal (id usado pelo componente ModalSetor)
+      const modalEl = document.getElementById("addUPSetor");
+      if (modalEl) {
+        const modal = new bootstrap.Modal(modalEl);
+        modal.show();
+      } else {
+        console.warn("Modal addUPSetor não encontrado no DOM");
+      }
     },
   },
 };

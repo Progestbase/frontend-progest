@@ -3,20 +3,49 @@ import { API_URL } from "@/config";
 
 // Função para adicionar ou atualizar setor (compatível com o sistema existente)
 var ADD_UP = (content, funcao) => {
-  const payload = {
-    setores:
-      funcao == "ADD" || funcao == "UP"
-        ? content.modalData
-        : content.setor_data,
-  };
+  // Construir payload principal
+  const setoresPayload =
+    funcao == "ADD" || funcao == "UP" ? content.modalData : content.setor_data;
 
-  console.log("=== ADD_UP SETORES ===");
-  console.log("funcao:", funcao);
-  console.log("payload:", payload);
-  console.log("URL:", funcao == "ADD" ? "/setores/add" : "/setores/update");
-  console.log("headers:", {
-    Authorization: "Bearer " + content.$store.getters.getUserToken,
-  });
+  const payload = { setores: setoresPayload };
+
+  // Incluir fornecedores quando fornecidos pelo modal
+  try {
+    const fornecedoresLocal =
+      content.modalData.fornecedores || content.fornecedores || [];
+    if (Array.isArray(fornecedoresLocal) && fornecedoresLocal.length > 0) {
+      if (funcao == "ADD") {
+        // Para compatibilidade com endpoints que aceitam um único objeto 'fornecedor',
+        // se houver apenas um item, enviar como 'fornecedor', senão enviar 'fornecedores' (API deve aceitar ambos ou ignorar)
+        if (fornecedoresLocal.length === 1) {
+          payload.fornecedor = {
+            setor_id: fornecedoresLocal[0].setor_fornecedor_id,
+            tipo_produto: fornecedoresLocal[0].tipo_produto,
+          };
+        } else {
+          payload.fornecedores = fornecedoresLocal.map((f) => ({
+            setor_fornecedor_id: f.setor_fornecedor_id,
+            tipo_produto: f.tipo_produto,
+            id: f.id || undefined,
+          }));
+        }
+      } else if (funcao == "UP") {
+        // Para update, API espera 'fornecedores' array (sincronização)
+        payload.fornecedores = fornecedoresLocal.map((f) => {
+          const item = {
+            setor_fornecedor_id: f.setor_fornecedor_id,
+            tipo_produto: f.tipo_produto,
+          };
+          if (f.id) item.id = f.id;
+          return item;
+        });
+      }
+    }
+  } catch (e) {
+    /* ignore */
+  }
+
+  // Execução ADD_UP setores (logs de depuração removidos)
 
   content.$axios
     .post(funcao == "ADD" ? "/setores/add" : "/setores/update", payload, {
@@ -25,8 +54,6 @@ var ADD_UP = (content, funcao) => {
       },
     })
     .then(function (response) {
-      console.log("response received:", response.data);
-
       if (response.data.status === "success" || response.data.status === true) {
         listAll(content);
         content.$toastr.success(
@@ -39,7 +66,7 @@ var ADD_UP = (content, funcao) => {
         }
         content.$store.commit("setModalTitle", response.data.data.nome);
         content.$store.commit("setModalFunction", "UP");
-        console.log(response.data.data);
+        // dados retornados processados
 
         // Fechar modal após sucesso (proteção contra bootstrap não disponível)
         setTimeout(() => {
@@ -193,7 +220,6 @@ var listAll = (content, url = null) => {
       }
     )
     .then((response) => {
-      console.log("Resposta da API setores listAll:", response.data);
 
       if (response.data.status && response.data.data) {
         // Suporta dois formatos: array direto ou paginação do Laravel
@@ -364,7 +390,7 @@ export const buscarSetorPorId = async (id) => {
       }
     );
 
-    console.log("Response recebido:", response.data);
+    // response recebido
 
     if (response.data.status) {
       console.log("Setor encontrado:", response.data.data);

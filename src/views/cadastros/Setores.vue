@@ -289,7 +289,6 @@ export default {
   },
   methods: {
     carregarSetores() {
-      console.log("=== carregarSetores iniciado ===");
       this.loading = true;
       // Delegar para a função compartilhada que popula o Vuex
       try {

@@ -98,6 +98,99 @@
                     ></textarea>
                   </div>
                 </div>
+                <!-- Fornecedores relacionados - NOVO LAYOUT -->
+                <div class="col-12 mt-3">
+                  <div class="card border p-3">
+                    <div class="mb-2">
+                      <h6 class="mb-0">Fornecedores Relacionados</h6>
+                    </div>
+                    <div class="row g-2 align-items-end mb-2">
+                      <div class="col-md-8">
+                        <label class="form-label small"
+                          >Selecionar setor fornecedor</label
+                        >
+                        <select
+                          class="form-select form-select-sm"
+                          v-model="selectedSetorId"
+                        >
+                          <option value="">
+                            Selecione um setor fornecedor
+                          </option>
+                          <option
+                            v-for="s in setoresDisponiveis"
+                            :key="s.id"
+                            :value="s.id"
+                          >
+                            {{ s.nome }} ({{ s.tipo }})
+                          </option>
+                        </select>
+                      </div>
+                      <div class="col-md-4 d-flex align-items-end">
+                        <button
+                          class="btn btn-sm btn-outline-primary w-100"
+                          type="button"
+                          @click="adicionarFornecedorSelecionado"
+                          :disabled="!selectedSetorId"
+                        >
+                          <i class="mdi mdi-plus"></i> Adicionar
+                        </button>
+                      </div>
+                    </div>
+                    <div
+                      v-if="fornecedores.length === 0"
+                      class="text-muted small"
+                    >
+                      Nenhum fornecedor adicionado. Você pode adicionar até 1
+                      fornecedor por tipo (Medicamento/Material).
+                    </div>
+                    <div
+                      v-for="(f, idx) in fornecedores"
+                      :key="f._localId"
+                      class="d-flex align-items-center justify-content-between border rounded p-2 mb-2"
+                    >
+                      <div>
+                        <!-- Preferir nome vindo do relacionamento 'fornecedor' quando disponível -->
+                        <span class="fw-bold">
+                          {{
+                            (f.fornecedor &&
+                              (f.fornecedor.nome ||
+                                f.fornecedor.razao_social_nome ||
+                                f.fornecedor.razao_social)) ||
+                            getSetorById(f.setor_fornecedor_id)?.nome ||
+                            "Setor não encontrado"
+                          }}
+                        </span>
+
+                        <!-- Tipo do produto: primeiro tenta tipo_produto do relacionamento, depois tipo do fornecedor, depois tipo do setor -->
+                        <span
+                          class="badge ms-2"
+                          :class="
+                            badgeClassForTipo(
+                              f.tipo_produto ||
+                                f.fornecedor?.tipo ||
+                                getSetorById(f.setor_fornecedor_id)?.tipo
+                            )
+                          "
+                        >
+                          {{
+                            f.tipo_produto ||
+                            f.fornecedor?.tipo ||
+                            getSetorById(f.setor_fornecedor_id)?.tipo ||
+                            "-"
+                          }}
+                        </span>
+                      </div>
+
+                      <button
+                        class="btn btn-sm btn-danger"
+                        type="button"
+                        @click="removeFornecedor(idx)"
+                      >
+                        <i class="mdi mdi-trash-can-outline"></i>
+                      </button>
+                    </div>
+                  </div>
+                </div>
               </div>
             </form>
           </div>
@@ -146,12 +239,31 @@ export default {
   data() {
     return {
       loading: false,
+      fornecedores: [],
+      selectedSetorId: "",
     };
   },
   mounted() {
     this.ensurePolosLoaded();
+    this.ensureSetoresLoaded();
   },
+
   methods: {
+    async ensureSetoresLoaded() {
+      const storeSetores = this.$store.state.listSetores || {};
+      const arr = Array.isArray(storeSetores.data) ? storeSetores.data : [];
+      if (arr.length === 0) {
+        try {
+          // Usar listAll do módulo de setores se disponível
+          const mod = this.functions || null;
+          if (mod && mod.listAll) {
+            mod.listAll(this);
+          }
+        } catch (e) {
+          console.warn("Não foi possível carregar setores automaticamente:", e);
+        }
+      }
+    },
     async ensurePolosLoaded() {
       const storePolos = this.$store.state.listPolos || {};
       const arr = Array.isArray(storePolos.data) ? storePolos.data : [];
@@ -179,20 +291,28 @@ export default {
     },
 
     add_UP_Unidades() {
-      console.log("=== INICIANDO SALVAMENTO ===");
-      console.log("modalData:", this.modalData);
-      console.log("modalFunction:", this.modalFunction);
-      console.log("functions:", this.functions);
+      // Início do salvamento (logs de depuração removidos em produção)
 
       // Limpar erros anteriores no store
       this.$store.commit("setModalErrors", {});
       this.loading = true;
 
       const self = this;
+      // Antes de criar conteúdo, anexar fornecedores ao modalData copiado
+      const modalCopy = JSON.parse(JSON.stringify(this.modalData || {}));
+      // Normalizar fornecedores: remover entradas vazias
+      modalCopy.fornecedores = (this.fornecedores || [])
+        .filter((f) => f.setor_fornecedor_id && f.tipo_produto)
+        .map((f) => ({
+          id: f.id || undefined,
+          setor_fornecedor_id: f.setor_fornecedor_id,
+          tipo_produto: f.tipo_produto,
+        }));
+
       const content = {
         $axios: this.$axios,
         $store: this.$store,
-        modalData: JSON.parse(JSON.stringify(this.modalData)),
+        modalData: modalCopy,
         $toastr: {
           success: (msg) => {
             self.showNotification(msg, "success");
@@ -205,8 +325,69 @@ export default {
         },
       };
 
-      console.log("content criado:", content);
       this.functions.ADD_UP(content, this.modalFunction);
+    },
+    // Fornecedores methods
+    addFornecedor() {
+      // Evitar adicionar se já tiver 2 (um por tipo)
+      if (!this.canAddFornecedor) return;
+      this.fornecedores.push({
+        _localId: Date.now() + Math.random(),
+        setor_fornecedor_id: null,
+        tipo_produto: null,
+      });
+    },
+    removeFornecedor(idx) {
+      this.fornecedores.splice(idx, 1);
+    },
+    onTipoChange(f) {
+      // mantido para compatibilidade, não usado na nova UI
+    },
+    getSetorById(id) {
+      if (!id) return null;
+      return this.allSetores.find((s) => s.id === id) || null;
+    },
+    badgeClassForTipo(tipo) {
+      if (!tipo) return "badge-secondary";
+      return tipo === "Medicamento" ? "bg-info" : "bg-primary";
+    },
+    onSetorSelect(f, idx) {
+      const setor = this.getSetorById(f.setor_fornecedor_id);
+      if (!setor) return;
+      // atribuir tipo automaticamente
+      f.tipo_produto = setor.tipo || null;
+
+      // se já existir outro fornecedor com o mesmo tipo (diferente índice), substituir
+      const duplicateIndex = this.fornecedores.findIndex(
+        (x, i) => i !== idx && x.tipo_produto === f.tipo_produto
+      );
+      if (duplicateIndex !== -1) {
+        // substituir o fornecedor existente por este novo
+        this.fornecedores.splice(duplicateIndex, 1);
+      }
+      // garantir limite de 2 (um por tipo)
+      if (this.fornecedores.length > 2) {
+        // remover extras do final
+        this.fornecedores = this.fornecedores.slice(0, 2);
+      }
+    },
+    adicionarFornecedorSelecionado() {
+      const setor = this.getSetorById(this.selectedSetorId);
+      if (!setor) return;
+      // Remover fornecedor existente do mesmo tipo, se houver
+      const idxExistente = this.fornecedores.findIndex(
+        (f) => this.getSetorById(f.setor_fornecedor_id)?.tipo === setor.tipo
+      );
+      if (idxExistente !== -1) {
+        this.fornecedores.splice(idxExistente, 1);
+      }
+      // Adicionar novo fornecedor
+      this.fornecedores.push({
+        _localId: Date.now() + Math.random(),
+        setor_fornecedor_id: setor.id,
+        tipo_produto: setor.tipo,
+      });
+      this.selectedSetorId = "";
     },
   },
   computed: {
@@ -225,6 +406,71 @@ export default {
     polosList() {
       const storePolos = this.$store.state.listPolos || {};
       return Array.isArray(storePolos.data) ? storePolos.data : [];
+    },
+    allSetores() {
+      // Corrige: usa listSetoresGerais.data, que é onde o listAll popula!
+      const store = this.$store.state.listSetoresGerais || {};
+      const arr = Array.isArray(store.data) ? store.data : [];
+      // Listar apenas setores com estoque=true (fornecedores devem ser setores fornecedores)
+      return arr.filter(
+        (s) => s.estoque === true || s.estoque === 1 || s.estoque === "1"
+      );
+    },
+    setoresDisponiveis() {
+      // Setores com estoque, que ainda não foram selecionados para o tipo correspondente
+      const usados = (this.fornecedores || [])
+        .map((f) => this.getSetorById(f.setor_fornecedor_id)?.tipo)
+        .filter(Boolean);
+      return this.allSetores.filter((s) => !usados.includes(s.tipo));
+    },
+    canAddFornecedor() {
+      // Pode adicionar enquanto houver tipos não usados (Medicamento/Material)
+      const tiposUsados = (this.fornecedores || [])
+        .map((f) => f.tipo_produto)
+        .filter(Boolean);
+      const allowed = ["Medicamento", "Material"];
+      return allowed.some((t) => !tiposUsados.includes(t));
+    },
+  },
+  watch: {
+    modalData: {
+      immediate: true,
+      handler(newVal) {
+        // Popular fornecedores a partir do objeto retornado (fornecedores_relacionados)
+        try {
+          const rel =
+            newVal?.fornecedores_relacionados || newVal?.fornecedores || [];
+
+          if (Array.isArray(rel) && rel.length > 0) {
+            this.fornecedores = rel.map((r) => {
+              // r pode ser um objeto de relacionamento (com fornecedor embutido)
+              const fornecedorObj =
+                r.fornecedor || r.fornecedor_relacionado || null;
+              return {
+                _localId: r.id || Date.now() + Math.random(),
+                id: r.id || undefined,
+                setor_fornecedor_id:
+                  r.setor_fornecedor_id ||
+                  fornecedorObj?.id ||
+                  r.fornecedor?.id ||
+                  null,
+                tipo_produto:
+                  r.tipo_produto ||
+                  fornecedorObj?.tipo ||
+                  r.fornecedor?.tipo ||
+                  null,
+                fornecedor: fornecedorObj || r.fornecedor || null,
+              };
+            });
+          } else {
+            // resetar quando modalData não traz fornecedores
+            this.fornecedores = [];
+          }
+        } catch (e) {
+          // ignore erros de parsing
+          this.fornecedores = [];
+        }
+      },
     },
   },
 };

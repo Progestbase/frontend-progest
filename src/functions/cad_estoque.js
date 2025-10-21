@@ -115,10 +115,19 @@ var listEstoqueUnidade = (content, unidadeId) => {
     })
     .then((response) => {
       if (response.data.success) {
-        content.estoqueData = response.data.data;
-        content.estoqueItems = response.data.data.estoque || [];
-        content.resumoEstoque = response.data.data.resumo || {};
-        content.setorEstoque = response.data.data.unidade || {};
+        // Log para depuração: inspecionar o payload retornado pelo backend
+        try {
+          console.debug("listEstoqueUnidade response.data:", response.data);
+        } catch (e) {
+          /* ignore */
+        }
+        const respData = response.data.data || {};
+        content.estoqueData = respData;
+        content.estoqueItems = respData.estoque || [];
+        content.resumoEstoque = respData.resumo || {};
+        // Compatibilidade: tentar várias chaves possíveis para o objeto do setor/unidade
+        content.setorEstoque =
+          respData.unidade || respData.setor || respData.setorEstoque || {};
       } else {
         throw new Error(response.data.message || "Erro ao carregar estoque");
       }
@@ -238,7 +247,8 @@ var listEstoqueUnidade = (content, unidadeId) => {
         content.estoqueData = dadosExemplo.data;
         content.estoqueItems = dadosExemplo.data.estoque;
         content.resumoEstoque = dadosExemplo.data.resumo;
-        content.setorEstoque = dadosExemplo.data.unidade;
+        content.setorEstoque =
+          dadosExemplo.data.unidade || dadosExemplo.data.setor || {};
         content.$store.commit("setisSearching", false);
         content.estoqueLoading = false;
 

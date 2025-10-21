@@ -24,22 +24,22 @@
                 </div>
                 <div class="mb-2">
                   <strong>Grupo:</strong>
-                  <span class="ms-2">{{
-                    produto.grupoProduto?.nome || "-"
-                  }}</span>
+                  <span class="ms-2">{{ produtoGrupoNome || "-" }}</span>
                 </div>
                 <div class="mb-2">
                   <strong>Unidade de Medida:</strong>
                   <span class="ms-2">
-                    {{ produto.unidadeMedida?.nome }}
-                    ({{ produto.unidadeMedida?.abreviacao }})
+                    {{ produtoUnidadeNome || "-" }}
+                    <span v-if="unidadeAbreviacao"
+                      >({{ unidadeAbreviacao }})</span
+                    >
                   </span>
                 </div>
               </div>
               <div class="col-md-6">
                 <div class="mb-2">
-                  <strong>Unidade:</strong>
-                  <span class="ms-2">{{ unidade?.nome || "-" }}</span>
+                  <strong>Setor:</strong>
+                  <span class="ms-2">{{ displaySetor?.nome || "-" }}</span>
                 </div>
                 <div class="mb-2">
                   <strong>Estoque ID:</strong>
@@ -49,14 +49,14 @@
                   <strong>Quantidade Atual:</strong>
                   <span class="ms-2">
                     {{ quantidadeAtual }}
-                    {{ produto.unidadeMedida?.abreviacao }}
+                    {{ unidadeAbreviacao }}
                   </span>
                 </div>
                 <div class="mb-2">
                   <strong>Quantidade Mínima:</strong>
                   <span class="ms-2">
                     {{ quantidadeMinima }}
-                    {{ produto.unidadeMedida?.abreviacao }}
+                    {{ unidadeAbreviacao }}
                   </span>
                 </div>
               </div>
@@ -98,7 +98,7 @@
                   </td>
                   <td class="text-center">
                     {{ formatarQuantidade(lote.quantidade_disponivel) }}
-                    {{ produto.unidadeMedida?.abreviacao }}
+                    {{ unidadeAbreviacao }}
                   </td>
                   <td class="text-center">
                     {{ formatarData(lote.data_fabricacao) }}
@@ -123,7 +123,7 @@
                   <td class="text-center">
                     <strong class="text-primary">
                       {{ totalQuantidade }}
-                      {{ produto.unidadeMedida?.abreviacao }}
+                      {{ unidadeAbreviacao }}
                     </strong>
                   </td>
                   <td colspan="3"></td>
@@ -184,6 +184,11 @@ export default {
       type: Object,
       default: () => ({}),
     },
+    // Novo prop para compatibilidade com refatoração: setor (substitui "unidade" em algumas views)
+    setor: {
+      type: Object,
+      default: () => ({}),
+    },
     estoqueId: {
       type: [Number, String],
       default: null,
@@ -221,6 +226,38 @@ export default {
     },
     temProduto() {
       return !!(this.produto && this.produto.id);
+    },
+    produtoGrupoNome() {
+      return (
+        this.produto?.grupo_produto?.nome ||
+        this.produto?.grupoProduto?.nome ||
+        this.produto?.grupo?.nome ||
+        ""
+      );
+    },
+    produtoUnidadeNome() {
+      return (
+        this.produto?.unidade_medida?.nome ||
+        this.produto?.unidadeMedida?.nome ||
+        this.produto?.unidade?.nome ||
+        ""
+      );
+    },
+    // Exibe o setor — usa `setor` se fornecido, senão `unidade` para compatibilidade
+    displaySetor() {
+      return this.setor && Object.keys(this.setor).length > 0
+        ? this.setor
+        : this.unidade || null;
+    },
+    // Abreviação da unidade de medida do produto — tenta nomes diferentes conforme fetched payload
+    unidadeAbreviacao() {
+      return (
+        this.produto?.unidade_medida?.abreviacao ||
+        this.produto?.unidadeMedida?.abreviacao ||
+        this.produto?.unidade_medida?.abreviatura ||
+        this.produto?.unidadeMedida?.abreviatura ||
+        ""
+      );
     },
   },
   methods: {

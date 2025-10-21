@@ -2,9 +2,7 @@
 // Implementação seguindo a documentação oficial da API
 
 var ADD_UP = (content, funcao) => {
-  console.log(
-    "Executando " + (funcao == "ADD" ? "cadastro" : "atualização") + " de polo"
-  );
+  // Execução de ADD/UP de polo
 
   // Preparar dados conforme documentação da API
   const poloData = {
@@ -25,8 +23,6 @@ var ADD_UP = (content, funcao) => {
       },
     })
     .then(function (response) {
-      console.log("Resposta da API:", response.data);
-
       if (response.data.status) {
         listAll(content);
 
@@ -139,13 +135,9 @@ var listAll = (content, url = null) => {
       }
     )
     .then((response) => {
-      console.log("Resposta da API listAll polos:", response.data);
-
       if (response.data.status && response.data.data) {
         // A API retorna paginação do Laravel: response.data.data.data
         const polosData = response.data.data.data || [];
-
-        console.log("Polos encontrados:", polosData.length);
 
         // Enriquecer dados com formatação para exibição
         const enrichedPolos = polosData.map((polo) => {
@@ -159,8 +151,6 @@ var listAll = (content, url = null) => {
           ...response.data.data, // Mantém info de paginação
           data: enrichedPolos,
         });
-
-        console.log("setListPolos - dados carregados:", enrichedPolos.length);
       } else {
         console.error("Resposta da API sem dados válidos:", response.data);
         content.$store.commit("setListPolos", {

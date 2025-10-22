@@ -110,10 +110,9 @@ export default {
 
         // Verifique se a resposta contém os dados necessários
         if (response.data && response.data.token && response.data.user) {
-          // Salvar no localStorage
-          localStorage.setItem("token", response.data.token);
-          localStorage.setItem("name", response.data.user.name);
-          localStorage.setItem("role", response.data.user.role);
+          // Salvar token e user no store/localStorage via mutations
+          this.$store.commit("setUserToken", response.data.token);
+          this.$store.commit("setUser", response.data.user);
 
           // Redireciona para o dashboard
           this.$router.push("/dashboard");

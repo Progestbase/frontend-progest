@@ -3,6 +3,8 @@ import { createStore } from "vuex";
 export default createStore({
   state: {
     userToken: localStorage.getItem("token") || null,
+    // usuário autenticado (objeto básico com id, name, role, ...)
+    user: JSON.parse(localStorage.getItem("user") || "null"),
     modalData: {
       modalTitle: "",
       modalFunction: "ADD",
@@ -29,11 +31,21 @@ export default createStore({
     unidadesMedidaAux: [],
     listEntradas: [],
     listEstoqueLote: [],
+    listMovimentacoes: [],
   },
   mutations: {
     setUserToken(state, token) {
       state.userToken = token;
       localStorage.setItem("token", token);
+    },
+    setUser(state, user) {
+      state.user = user || null;
+      try {
+        if (user) localStorage.setItem("user", JSON.stringify(user));
+        else localStorage.removeItem("user");
+      } catch (e) {
+        console.warn("Não foi possível persistir usuário no localStorage", e);
+      }
     },
     clearUserToken(state) {
       state.userToken = null;
@@ -123,6 +135,9 @@ export default createStore({
     setListEntradas(state, entradas) {
       state.listEntradas = entradas || [];
     },
+    setListMovimentacoes(state, movimentacoes) {
+      state.listMovimentacoes = movimentacoes || [];
+    },
     setListEstoqueLote(state, lotes) {
       state.listEstoqueLote = lotes || [];
     },
@@ -140,5 +155,6 @@ export default createStore({
     getListPerfis: (state) => state.listPerfis,
     getListTiposVinculo: (state) => state.listTiposVinculo,
     getListEntradas: (state) => state.listEntradas,
+    getListMovimentacoes: (state) => state.listMovimentacoes,
   },
 });

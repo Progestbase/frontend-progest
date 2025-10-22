@@ -299,11 +299,94 @@
                     <!-- Movimentações Tab -->
                     <div v-show="activeTab === 'movimentacoes'">
                       <div
-                        class="alert alert-warning d-flex align-items-center"
-                        role="alert"
+                        class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3 mb-3"
                       >
-                        <i class="mdi mdi-progress-clock me-2"></i>
-                        <span>Módulo de movimentações em desenvolvimento.</span>
+                        <div>
+                          <h5 class="mb-1">
+                            <i class="mdi mdi-swap-horizontal me-2"></i>
+                            Movimentações
+                          </h5>
+                          <p class="text-muted mb-0">
+                            Solicitações, saídas e devoluções relacionadas a
+                            esta unidade.
+                          </p>
+                        </div>
+                        <div class="d-flex gap-2">
+                          <button
+                            class="btn btn-outline-primary"
+                            title="Fazer requisição"
+                            @click.prevent="abrirSolicitacao"
+                          >
+                            <i class="mdi mdi-file-plus me-2"></i>
+                            Fazer requisição
+                          </button>
+                          <button
+                            class="btn btn-outline-danger"
+                            title="Registrar saída"
+                            @click.prevent
+                          >
+                            <i class="mdi mdi-truck-delivery me-2"></i>
+                            Registrar saída
+                          </button>
+                          <button
+                            class="btn btn-outline-secondary"
+                            title="Devolução"
+                            @click.prevent
+                          >
+                            <i class="mdi mdi-archive-arrow-up me-2"></i>
+                            Devolução
+                          </button>
+                        </div>
+                      </div>
+
+                      <div
+                        v-if="listMovimentacoes.length > 0"
+                        class="table-responsive"
+                      >
+                        <table class="table table-striped align-middle mb-0">
+                          <thead>
+                            <tr>
+                              <th class="text-start">ID</th>
+                              <th class="text-start">Criada em</th>
+                              <th class="text-start">Tipo</th>
+                              <th class="text-start">Status</th>
+                              <th class="text-center">Itens</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            <tr
+                              v-for="mov in listMovimentacoes"
+                              :key="mov.id"
+                              style="cursor: pointer"
+                              class="hover-row"
+                            >
+                              <td class="text-start">{{ mov.id }}</td>
+                              <td class="text-start">
+                                {{ formatarData(mov.created_at) }}
+                              </td>
+                              <td class="text-start">
+                                {{ formatarTipo(mov.tipo) }}
+                              </td>
+                              <td class="text-start">
+                                {{ traduzStatus(mov.status_solicitacao) }}
+                              </td>
+                              <td class="text-center">
+                                {{ mov.itens?.length || 0 }}
+                              </td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+                      <div v-else class="text-center py-5">
+                        <div class="d-flex flex-column align-items-center">
+                          <i
+                            class="mdi mdi-swap-horizontal display-4 text-muted mb-3"
+                          ></i>
+                          <h5>Nenhuma movimentação registrada</h5>
+                          <p class="text-muted mb-0">
+                            Ainda não há movimentações para esta unidade.
+                          </p>
+                        </div>
                       </div>
                     </div>
 
@@ -417,6 +500,14 @@
       idModal="modalVisualizarEntrada"
       :entrada="entradaSelecionada"
     />
+    <!-- Modal de Solicitação de Movimentação -->
+    <ModalSolicitacaoMovimentacao
+      ref="modalSolicitacaoMovimentacao"
+      idModal="modalSolicitacaoMovimentacao"
+      :unidade-atual="setor"
+      :fornecedores-relacionados="setor.fornecedores_relacionados || []"
+      :produtos="produtosDisponiveis"
+    />
     <!-- Modal de Edição/Cadastro de Setor (instância local para este view) -->
     <ModalSetor idModal="addUPSetor" :functions="functions" />
   </TemplateAdmin>
@@ -428,7 +519,9 @@ import EstoqueSetor from "./EstoqueSetor.vue";
 import ModalEntradaEstoque from "@/components/cadastros/ModalEntradaEstoque.vue";
 import ModalVisualizarEntrada from "@/components/cadastros/ModalVisualizarEntrada.vue";
 import ModalSetor from "@/components/cadastros/ModalSetor.vue";
+import ModalSolicitacaoMovimentacao from "@/components/cadastros/ModalSolicitacaoMovimentacao.vue";
 import functions from "@/functions/cad_setores.js";
+import functionsMovimentacao from "@/functions/cad_movimentacao.js";
 import * as bootstrap from "bootstrap";
 import functionsEntradas from "@/functions/cad_entradas.js";
 
@@ -440,6 +533,7 @@ export default {
     ModalEntradaEstoque,
     ModalVisualizarEntrada,
     ModalSetor,
+    ModalSolicitacaoMovimentacao,
   },
   data() {
     return {
@@ -459,6 +553,15 @@ export default {
       const entradas = this.$store.getters.getListEntradas;
       console.log("listEntradas computed:", entradas);
       return entradas;
+    },
+    listMovimentacoes() {
+      return this.$store.getters.getListMovimentacoes || [];
+    },
+    unidades() {
+      return this.$store.getters.getListSetores || [];
+    },
+    produtosDisponiveis() {
+      return this.$store.getters.getListProdutos || [];
     },
   },
   mounted() {
@@ -525,6 +628,60 @@ export default {
     async carregarEntradas() {
       if (this.setor?.id) {
         await functionsEntradas.listByUnidade(this, this.setor.id);
+        // Carregar também movimentações da unidade
+        await functionsMovimentacao.listBySetor(this, this.setor.id);
+      }
+    },
+    abrirSolicitacao() {
+      // prefer to call the child component's abrirModal if available
+      const comp = this.$refs.modalSolicitacaoMovimentacao;
+      if (comp && typeof comp.abrirModal === "function") {
+        // before opening, set default origin based on fornecedores_relacionados in setor
+        if (this.setor && this.setor.fornecedores_relacionados) {
+          // pass current fornecedor relationships to the modal via a public prop or method
+          try {
+            comp.setFornecedoresRelacionados(
+              this.setor.fornecedores_relacionados || [],
+              this.setor
+            );
+          } catch (e) {
+            /* ignore */
+          }
+        }
+        comp.abrirModal();
+        return;
+      }
+
+      const modalEl = document.getElementById("modalSolicitacaoMovimentacao");
+      if (modalEl) {
+        const modal = new bootstrap.Modal(modalEl);
+        modal.show();
+      }
+    },
+    formatarTipo(tipo) {
+      switch (tipo) {
+        case "T":
+          return "Transferência";
+        case "D":
+          return "Devolução";
+        case "S":
+          return "Saída";
+        default:
+          return tipo || "-";
+      }
+    },
+    traduzStatus(status) {
+      switch (status) {
+        case "A":
+          return "Aprovado";
+        case "R":
+          return "Reprovado";
+        case "P":
+          return "Pendente";
+        case "C":
+          return "Rascunho";
+        default:
+          return status || "-";
       }
     },
     visualizarEntrada(entrada) {

@@ -23,13 +23,13 @@
                       <div class="spinner-border text-primary" role="status">
                         <span class="visually-hidden">Carregando...</span>
                       </div>
-                      <p class="mt-2">Carregando polos...</p>
+                      <p class="mt-2">Carregando unidades...</p>
                     </div>
 
                     <!-- Tabela com dados -->
                     <TBLBASE01
-                      v-else-if="listPolos && listPolos.length > 0"
-                      :list="formattedPolos"
+                      v-else-if="listUnidades && listUnidades.length > 0"
+                      :list="formattedUnidades"
                       :titles="['#', 'Nome', 'Status']"
                       :align="['text-center', 'text-left', 'text-center']"
                       :indexLink="1"
@@ -48,9 +48,9 @@
                         <i
                           class="mdi mdi-map-marker-multiple display-4 text-muted mb-3"
                         ></i>
-                        <h5>Nenhum polo encontrado</h5>
+                        <h5>Nenhuma unidade encontrada</h5>
                         <p class="text-muted">
-                          Crie seu primeiro polo clicando no botão "NOVO"
+                          Crie sua primeira unidade clicando no botão "NOVO"
                         </p>
                       </div>
                     </div>
@@ -76,7 +76,7 @@ import TBLBASE01 from "@/components/layouts/TableBase01.vue";
 import functions from "../../functions/cad_polos.js";
 
 export default {
-  name: "PolosView",
+  name: "UnidadesView",
   components: {
     LinkModal01,
     TemplateAdmin,
@@ -86,7 +86,7 @@ export default {
   data() {
     return {
       functions: functions,
-      titleModal: "Polos",
+        titleModal: "Unidades",
       varsModalData: {
         status: "A",
         nome: "",
@@ -99,16 +99,16 @@ export default {
     },
   },
   computed: {
-    listPolos() {
-      return this.$store.state.listPolos?.data || [];
+    listUnidades() {
+      return this.$store.state.listUnidades?.data || [];
     },
-    formattedPolos() {
-      if (!this.listPolos || this.listPolos.length === 0) return [];
+    formattedUnidades() {
+      if (!this.listUnidades || this.listUnidades.length === 0) return [];
 
-      return this.listPolos.map((polo) => ({
-        id: polo.id,
-        nome: polo.nome,
-        status: polo.status === "A" ? "Ativo" : "Inativo",
+      return this.listUnidades.map((unidade) => ({
+        id: unidade.id,
+        nome: unidade.nome,
+        status: unidade.status === "A" ? "Ativo" : "Inativo",
       }));
     },
   },

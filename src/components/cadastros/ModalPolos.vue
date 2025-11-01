@@ -20,15 +20,15 @@
                 <!-- Nome do Polo (Obrigatório) -->
                 <div class="col-md-8">
                   <div class="mb-3">
-                    <label class="form-label" for="poloNome">
+                    <label class="form-label" for="unidadeNome">
                       Nome <span class="text-danger">*</span>
                     </label>
                     <input
                       type="text"
                       class="form-control text-uppercase"
                       :class="{ 'is-invalid': modalErrors.nome }"
-                      id="poloNome"
-                      placeholder="Digite o nome do polo"
+                      id="unidadeNome"
+                      placeholder="Digite o nome da unidade"
                       v-model="modalData.nome"
                     />
                     <div v-if="modalErrors.nome" class="invalid-feedback">
@@ -40,10 +40,10 @@
                 <!-- Status -->
                 <div class="col-md-4">
                   <div class="mb-3">
-                    <label class="form-label" for="poloStatus">Status</label>
+                    <label class="form-label" for="unidadeStatus">Status</label>
                     <select
                       class="form-select"
-                      id="poloStatus"
+                      id="unidadeStatus"
                       v-model="modalData.status"
                     >
                       <option value="A">Ativo</option>
@@ -71,7 +71,7 @@
               class="btn btn-success btn-modal"
               data-bs-target="#success-btn"
               id="btn-save-event"
-              v-on:click="add_UP_Polo()"
+              v-on:click="add_UP_Unidade()"
             >
               <i class="mdi mdi-check-bold me-2"></i>
               {{ modalFunction == "ADD" ? "Salvar" : "Atualizar" }}
@@ -107,7 +107,7 @@ export default {
     },
   },
   methods: {
-    add_UP_Polo() {
+    add_UP_Unidade() {
       const content = {
         $axios: this.$axios,
         $store: this.$store,

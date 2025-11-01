@@ -19,7 +19,9 @@ export default createStore({
     listUnidadesMedida: [],
     listGrupoProdutos: [],
     listFornecedores: [],
-    listPolos: [],
+  listPolos: [],
+  // Renomeação: suportar 'unidades' (antes 'polos') — manter compatibilidade
+  listUnidades: [],
     searchFilters: [],
     idDataLoaded: "",
     isSearching: "",
@@ -85,11 +87,16 @@ export default createStore({
     setListUnidadesMedida(state, unidadesMedida) {
       state.listUnidadesMedida = unidadesMedida;
     },
+    setListUnidades(state, unidades) {
+      state.listUnidades = unidades || [];
+    },
     setListFornecedores(state, fornecedores) {
       state.listFornecedores = fornecedores;
     },
     setListPolos(state, polos) {
       state.listPolos = polos;
+      // também atualizar listUnidades para manter compatibilidade com código novo
+      state.listUnidades = polos;
     },
     setListEstoque(state, estoque) {
       state.listEstoque = estoque;

@@ -53,12 +53,12 @@
                     <div class="col-md-3">
                       <select
                         class="form-select"
-                        v-model="filtroPolo"
+                        v-model="filtroUnidade"
                         @change="aplicarFiltros"
                       >
-                        <option value="">Todos os Polos</option>
+                        <option value="">Todas as Unidades</option>
                         <option
-                          v-for="p in polosList"
+                          v-for="p in unidadesList"
                           :key="p.id"
                           :value="p.id"
                         >
@@ -136,16 +136,16 @@
                             <!-- Polo badge: usa objeto `polo` quando disponível, senão busca por `polo_id` -->
                             <span
                               v-if="
-                                (setor.polo && setor.polo.nome) || setor.polo_id
+                                (setor.unidade && setor.unidade.nome) || setor.unidade_id
                               "
                               class="badge bg-secondary"
                             >
                               {{
-                                setor.polo && setor.polo.nome
-                                  ? setor.polo.nome
+                                setor.unidade && setor.unidade.nome
+                                  ? setor.unidade.nome
                                   : (
-                                      polosList.find(
-                                        (p) => p.id == setor.polo_id
+                                      unidadesList.find(
+                                        (p) => p.id == setor.unidade_id
                                       ) || {}
                                     ).nome
                               }}
@@ -251,10 +251,10 @@ export default {
         // deixar null para que os selects mostrem a opção placeholder
         estoque: null,
         tipo: null,
-        polo_id: "",
+        unidade_id: "",
       },
       loading: false,
-      filtroPolo: "",
+  filtroUnidade: "",
       filtroStatus: "",
       filtroTipo: "",
       filtroEstoque: "",
@@ -262,9 +262,9 @@ export default {
     };
   },
   computed: {
-    polosList() {
-      const storePolos = this.$store.state.listPolos || {};
-      return Array.isArray(storePolos.data) ? storePolos.data : [];
+    unidadesList() {
+      const storeUnidades = this.$store.state.listUnidades || {};
+      return Array.isArray(storeUnidades.data) ? storeUnidades.data : [];
     },
     setoresFiltradas() {
       // Buscar lista centralizada no Vuex (pode ser paginada em .data)
@@ -278,12 +278,12 @@ export default {
         const estoqueMatch =
           !this.filtroEstoque ||
           (this.filtroEstoque === "true") === setor.estoque;
-        const poloMatch =
-          !this.filtroPolo ||
-          (setor.polo && setor.polo.id == this.filtroPolo) ||
-          (setor.polo_id && setor.polo_id == this.filtroPolo);
+        const unidadeMatch =
+          !this.filtroUnidade ||
+          (setor.unidade && setor.unidade.id == this.filtroUnidade) ||
+          (setor.unidade_id && setor.unidade_id == this.filtroUnidade);
 
-        return statusMatch && tipoMatch && estoqueMatch && poloMatch;
+        return statusMatch && tipoMatch && estoqueMatch && unidadeMatch;
       });
     },
   },

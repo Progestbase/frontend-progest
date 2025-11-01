@@ -70,9 +70,9 @@
         <!-- transition para suavizar -->
         <transition name="submenu">
           <div v-show="submenuOpen" class="submenu-items">
-            <router-link class="button" to="/polos" title="Polos">
+            <router-link class="button" to="/unidades" title="Unidades">
               <span class="material-icons">map</span>
-              <span class="text">Polos</span>
+              <span class="text">Unidades</span>
             </router-link>
 
             <router-link

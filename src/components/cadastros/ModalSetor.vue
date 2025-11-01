@@ -50,19 +50,23 @@
                 </div>
                 <div class="col-md-3">
                   <div class="mb-3">
-                    <label class="form-label">Polo</label>
+                    <label class="form-label">Unidade</label>
                     <select
                       class="form-select"
-                      v-model="modalData.polo_id"
-                      :class="{ 'is-invalid': errors.polo_id }"
+                      v-model="modalData.unidade_id"
+                      :class="{ 'is-invalid': errors.unidade_id }"
                     >
-                      <option value="">Selecionar Polo</option>
-                      <option v-for="p in polosList" :key="p.id" :value="p.id">
+                      <option value="">Selecionar Unidade</option>
+                      <option
+                        v-for="p in unidadesList"
+                        :key="p.id"
+                        :value="p.id"
+                      >
                         {{ p.nome }}
                       </option>
                     </select>
-                    <div v-if="errors.polo_id" class="invalid-feedback">
-                      {{ errors.polo_id[0] }}
+                    <div v-if="errors.unidade_id" class="invalid-feedback">
+                      {{ errors.unidade_id[0] }}
                     </div>
                   </div>
                 </div>
@@ -265,16 +269,21 @@ export default {
       }
     },
     async ensurePolosLoaded() {
-      const storePolos = this.$store.state.listPolos || {};
+      // Garante que a lista de unidades (antigo polos) esteja carregada no store
+      const storePolos =
+        this.$store.state.listUnidades || this.$store.state.listPolos || {};
       const arr = Array.isArray(storePolos.data) ? storePolos.data : [];
       if (arr.length === 0) {
         try {
-          // Tenta acionar o listAll do módulo polos passando o componente
+          // Tenta acionar o listAll do módulo polos (endpoints compatíveis)
           if (cadPolos && cadPolos.listAll) {
             cadPolos.listAll(this);
           }
         } catch (e) {
-          console.warn("Não foi possível carregar polos automaticamente:", e);
+          console.warn(
+            "Não foi possível carregar unidades automaticamente:",
+            e
+          );
         }
       }
     },
@@ -403,9 +412,10 @@ export default {
     errors() {
       return this.$store.state.modalErrors || {};
     },
-    polosList() {
-      const storePolos = this.$store.state.listPolos || {};
-      return Array.isArray(storePolos.data) ? storePolos.data : [];
+    unidadesList() {
+      const storeUnidades =
+        this.$store.state.listUnidades || this.$store.state.listPolos || {};
+      return Array.isArray(storeUnidades.data) ? storeUnidades.data : [];
     },
     allSetores() {
       // Corrige: usa listSetoresGerais.data, que é onde o listAll popula!

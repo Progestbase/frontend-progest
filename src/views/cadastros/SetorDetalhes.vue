@@ -582,6 +582,7 @@ export default {
       try {
         this.loading = true;
         const setorId = this.$route.params.id;
+        console.log("carregarSetor: solicitando setor id=", setorId);
         const response = await this.$axios.post(
           `/setores/listData`,
           {
@@ -612,8 +613,31 @@ export default {
         // Carregar entradas do setor
         await this.carregarEntradas();
       } catch (error) {
+        // Log detalhado para ajudar diagnóstico (inclui response.data quando disponível)
         console.error("Erro ao carregar setor:", error);
-        this.error = "Erro ao carregar dados do setor";
+        if (error && error.response) {
+          console.error("Erro response status:", error.response.status);
+          try {
+            console.error("Erro response data:", error.response.data);
+          } catch (e) {}
+          // Detecção específica de problema conhecido: backend ainda referenciando relação 'polo'
+          const respData = error.response.data || {};
+          const serverMsg = respData.message || "";
+          const serverException = respData.exception || "";
+          if (
+            typeof serverException === "string" &&
+            serverException.includes("RelationNotFoundException") &&
+            typeof serverMsg === "string" &&
+            serverMsg.toLowerCase().includes("polo")
+          ) {
+            this.error =
+              "Incompatibilidade no backend: relação 'polo' não encontrada. Atualize o backend para expor 'unidade' ou adicione um alias 'polo' (compatibilidade).";
+          } else {
+            this.error = `Erro ao carregar dados do setor (status ${error.response.status})`;
+          }
+        } else {
+          this.error = "Erro ao carregar dados do setor";
+        }
       } finally {
         this.loading = false;
       }

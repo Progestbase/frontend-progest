@@ -99,8 +99,8 @@ const router = createRouter({
       meta: { requiresAuth: true },
     },
     {
-      path: "/polos",
-      name: "polos",
+      path: "/unidades",
+      name: "unidades",
       component: Polos,
       meta: { requiresAuth: true },
     },

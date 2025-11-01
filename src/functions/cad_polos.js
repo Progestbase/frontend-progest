@@ -4,19 +4,19 @@
 var ADD_UP = (content, funcao) => {
   // Execução de ADD/UP de polo
 
-  // Preparar dados conforme documentação da API
-  const poloData = {
+  // Preparar dados conforme documentação da API (agora tratado como Unidade)
+  const unidadeData = {
     nome: content.modalData.nome,
     status: content.modalData.status || "A",
   };
 
   // Se for atualização, incluir ID
   if (funcao == "UP") {
-    poloData.id = content.modalData.id;
+    unidadeData.id = content.modalData.id;
   }
 
   content.$axios
-    .post(funcao == "ADD" ? "/polo/add" : "/polo/update", poloData, {
+    .post(funcao == "ADD" ? "/polo/add" : "/polo/update", unidadeData, {
       headers: {
         Authorization: "Bearer " + content.$store.getters.getUserToken,
         "Content-Type": "application/json",
@@ -28,8 +28,8 @@ var ADD_UP = (content, funcao) => {
 
         const mensagem =
           funcao == "ADD"
-            ? "Polo cadastrado com sucesso!"
-            : "Polo atualizado com sucesso!";
+            ? "Unidade cadastrada com sucesso!"
+            : "Unidade atualizada com sucesso!";
 
         // Tratamento defensivo para toastr
         try {
@@ -43,12 +43,32 @@ var ADD_UP = (content, funcao) => {
           alert(mensagem);
         }
 
+        // response.data.data pode conter a estrutura antiga (polo) ou nova (unidade)
+        const returned =
+          response.data.data &&
+          (response.data.data.unidade ||
+            response.data.data.polo ||
+            response.data.data);
         if (funcao == "ADD") {
-          content.modalData.id = response.data.data.id;
-          content.$store.commit("setIdDataLoaded", response.data.data.id);
+          content.modalData.id = returned.id;
+          content.$store.commit("setIdDataLoaded", returned.id);
         }
-        content.$store.commit("setModalTitle", response.data.data.nome);
+        content.$store.commit("setModalTitle", returned.nome);
         content.$store.commit("setModalFunction", "UP");
+
+        // Atualiza store de unidades também (compatibilidade)
+        if (response.data.data) {
+          const raw = response.data.data.data || [response.data.data];
+          const arr = Array.isArray(raw) ? raw : [raw];
+          const enriched = arr.map((u) => ({
+            ...u,
+            statusFormatted: u.status === "A" ? "Ativo" : "Inativo",
+          }));
+          content.$store.commit("setListUnidades", {
+            ...(response.data.data || {}),
+            data: enriched,
+          });
+        }
 
         // Fechar modal (proteção para casos onde bootstrap não esteja disponível)
         try {
@@ -92,7 +112,9 @@ var ADD_UP = (content, funcao) => {
           response
         );
         const msgErro =
-          "Erro ao " + (funcao == "ADD" ? "cadastrar" : "atualizar") + " polo";
+          "Erro ao " +
+          (funcao == "ADD" ? "cadastrar" : "atualizar") +
+          " unidade";
         try {
           if (content.$toastr && content.$toastr.e) {
             content.$toastr.e(msgErro);
@@ -122,58 +144,80 @@ var ADD_UP = (content, funcao) => {
 
 var listAll = (content, url = null) => {
   content.$store.commit("setisSearching", true);
-  content.$axios
-    .post(
-      url == null ? "/polo/list" : url,
-      {
-        filters: content.$store.state.searchFilters,
-      },
+
+  const attempt = (endpoint) =>
+    content.$axios.post(
+      endpoint,
+      { filters: content.$store.state.searchFilters },
       {
         headers: {
           Authorization: "Bearer " + content.$store.getters.getUserToken,
         },
       }
-    )
-    .then((response) => {
-      if (response.data.status && response.data.data) {
-        // A API retorna paginação do Laravel: response.data.data.data
-        const polosData = response.data.data.data || [];
+    );
 
-        // Enriquecer dados com formatação para exibição
-        const enrichedPolos = polosData.map((polo) => {
-          return {
-            ...polo,
-            statusFormatted: polo.status === "A" ? "Ativo" : "Inativo",
-          };
-        });
+  // Se url foi passada, usa direto
+  const primary = url == null ? "/unidade/list" : url;
 
-        content.$store.commit("setListPolos", {
-          ...response.data.data, // Mantém info de paginação
-          data: enrichedPolos,
-        });
-      } else {
-        console.error("Resposta da API sem dados válidos:", response.data);
-        content.$store.commit("setListPolos", {
-          status: false,
-          data: [],
-        });
-      }
+  const handleResponse = (response) => {
+    if (response.data.status && response.data.data) {
+      // A API retorna paginação do Laravel: response.data.data.data
+      const unidadesData = response.data.data.data || [];
 
-      content.$store.commit("setisSearching", false);
-    })
-    .catch((error) => {
-      console.error("Erro ao listar polos:", error);
-      console.error("Response error:", error.response);
-
-      content.$store.commit("setisSearching", false);
-      content.$store.commit("setListPolos", {
-        status: false,
-        data: [],
+      // Enriquecer dados com formatação para exibição
+      const enrichedUnidades = unidadesData.map((u) => {
+        const base = u.unidade || u.polo || u;
+        return {
+          ...base,
+          statusFormatted: base.status === "A" ? "Ativo" : "Inativo",
+        };
       });
 
-      const msgErro =
-        "OPS! \nEstamos com algum problema, tente novamente mais tarde.";
-      alert(msgErro);
+      content.$store.commit("setListPolos", {
+        ...response.data.data,
+        data: enrichedUnidades,
+      });
+      content.$store.commit("setListUnidades", {
+        ...response.data.data,
+        data: enrichedUnidades,
+      });
+    } else {
+      console.error("Resposta da API sem dados válidos:", response.data);
+      content.$store.commit("setListPolos", { status: false, data: [] });
+      content.$store.commit("setListUnidades", { status: false, data: [] });
+    }
+    content.$store.commit("setisSearching", false);
+  };
+
+  attempt(primary)
+    .then(handleResponse)
+    .catch((error) => {
+      // se recebeu 404/405 e usamos /unidade como primary, tenta /polo/list
+      const status = error && error.response && error.response.status;
+      if (!url && (status === 404 || status === 405)) {
+        // fallback para endpoint antigo
+        attempt("/polo/list")
+          .then(handleResponse)
+          .catch((err2) => {
+            console.error("Erro ao listar unidades (fallback):", err2);
+            content.$store.commit("setisSearching", false);
+            content.$store.commit("setListPolos", { status: false, data: [] });
+            content.$store.commit("setListUnidades", {
+              status: false,
+              data: [],
+            });
+            alert(
+              "OPS! \nEstamos com algum problema, tente novamente mais tarde."
+            );
+          });
+      } else {
+        console.error("Erro ao listar unidades:", error);
+        console.error("Response error:", error && error.response);
+        content.$store.commit("setisSearching", false);
+        content.$store.commit("setListPolos", { status: false, data: [] });
+        content.$store.commit("setListUnidades", { status: false, data: [] });
+        alert("OPS! \nEstamos com algum problema, tente novamente mais tarde.");
+      }
     });
 };
 
@@ -192,7 +236,12 @@ var listData = (content) => {
     )
     .then((response) => {
       content.$store.commit("setIdDataLoaded", content.idData);
-      content.$store.commit("setModalData", response.data.data);
+      // Suporta resposta com 'unidade' ou 'polo' ou direta
+      const payload =
+        response.data.data.unidade ||
+        response.data.data.polo ||
+        response.data.data;
+      content.$store.commit("setModalData", payload);
       if (content.callback) content.callback(); // Chama o callback após carregar os dados
     })
     .catch((error) => {
@@ -282,7 +331,7 @@ var deletar = (content, poloId) => {
     .then((response) => {
       if (response.data.status) {
         listAll(content);
-        const mensagem = "Polo deletado com sucesso!";
+        const mensagem = "Unidade deletada com sucesso!";
         try {
           if (content.$toastr && content.$toastr.s) {
             content.$toastr.s(mensagem);
@@ -295,7 +344,7 @@ var deletar = (content, poloId) => {
       } else {
         const msgErro =
           response.data.message ||
-          "Erro ao deletar polo. Pode haver unidades vinculadas.";
+          "Erro ao deletar unidade. Pode haver registros vinculados.";
         try {
           if (content.$toastr && content.$toastr.e) {
             content.$toastr.e(msgErro);
@@ -308,9 +357,9 @@ var deletar = (content, poloId) => {
       }
     })
     .catch((error) => {
-      console.error("Erro ao deletar polo:", error);
+      console.error("Erro ao deletar unidade:", error);
       const msgErro =
-        "Erro ao deletar polo. Pode haver unidades vinculadas a este polo.";
+        "Erro ao deletar unidade. Pode haver registros vinculados a esta unidade.";
       try {
         if (content.$toastr && content.$toastr.e) {
           content.$toastr.e(msgErro);

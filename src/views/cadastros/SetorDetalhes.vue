@@ -465,15 +465,91 @@
                     <!-- Usuários Tab -->
                     <div v-show="activeTab === 'usuarios'">
                       <div
-                        class="alert alert-warning d-flex align-items-center"
-                        role="alert"
+                        class="d-flex justify-content-between align-items-center mb-3"
                       >
-                        <i class="mdi mdi-progress-clock me-2"></i>
-                        <span
-                          >Gestão de usuários da unidade em
-                          desenvolvimento.</span
-                        >
+                        <div>
+                          <h5 class="mb-1">
+                            <i class="mdi mdi-account-multiple me-2"></i
+                            >Usuários do Setor
+                          </h5>
+                          <p class="text-muted mb-0">
+                            Lista de usuários vinculados a este setor (pivot
+                            usuario_setor).
+                          </p>
+                        </div>
+                        <div>
+                          <button
+                            class="btn btn-success"
+                            @click.prevent="abrirModalAdicionarUsuario"
+                            :disabled="!setor.id"
+                          >
+                            <i class="mdi mdi-plus me-2"></i>Adicionar usuário
+                          </button>
+                        </div>
                       </div>
+
+                      <div
+                        v-if="listUsuariosSetor.length > 0"
+                        class="table-responsive"
+                      >
+                        <table class="table table-striped align-middle mb-0">
+                          <thead>
+                            <tr>
+                              <th class="text-start">#</th>
+                              <th class="text-start">Nome</th>
+                              <th class="text-start">E-mail</th>
+                              <th class="text-center">Perfil</th>
+                              <th class="text-center">Ações</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            <tr v-for="u in listUsuariosSetor" :key="u.id">
+                              <td class="text-start">{{ u.id }}</td>
+                              <td class="text-start">{{ u.name }}</td>
+                              <td class="text-start">{{ u.email }}</td>
+                              <td class="text-center">
+                                {{
+                                  u.perfil || (u.pivot && u.pivot.perfil) || "-"
+                                }}
+                              </td>
+                              <td class="text-center">
+                                <button
+                                  class="btn btn-sm btn-primary me-2"
+                                  @click.prevent="abrirModalEditarUsuario(u)"
+                                >
+                                  Editar
+                                </button>
+                                <button
+                                  class="btn btn-sm btn-danger"
+                                  @click.prevent="confirmarRemoverUsuario(u)"
+                                >
+                                  Remover
+                                </button>
+                              </td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+                      <div v-else class="text-center py-5">
+                        <div class="d-flex flex-column align-items-center">
+                          <i
+                            class="mdi mdi-account-multiple display-4 text-muted mb-3"
+                          ></i>
+                          <h5>Nenhum usuário vinculado</h5>
+                          <p class="text-muted mb-0">
+                            Clique em "Adicionar usuário" para criar o vínculo.
+                          </p>
+                        </div>
+                      </div>
+
+                      <!-- Modal gerenciar vínculo usuário-setor -->
+                      <ModalUsuarioSetor
+                        idModal="modalUsuarioSetor"
+                        :setorId="setor.id"
+                        :mode="modalMode"
+                        :initialData="modalInitialData"
+                        @changed="loadUsuariosSetor"
+                      />
                     </div>
                   </div>
                 </div>
@@ -524,6 +600,8 @@ import functions from "@/functions/cad_setores.js";
 import functionsMovimentacao from "@/functions/cad_movimentacao.js";
 import * as bootstrap from "bootstrap";
 import functionsEntradas from "@/functions/cad_entradas.js";
+import ModalUsuarioSetor from "@/components/cadastros/ModalUsuarioSetor.vue";
+import usuarioSetorFunctions from "@/functions/cad_usuario_setor.js";
 
 export default {
   name: "SetorDetalhesView",
@@ -534,6 +612,7 @@ export default {
     ModalVisualizarEntrada,
     ModalSetor,
     ModalSolicitacaoMovimentacao,
+    ModalUsuarioSetor,
   },
   data() {
     return {
@@ -543,6 +622,11 @@ export default {
       activeTab: "overview",
       entradaSelecionada: null,
       functions: functions,
+      // lista local de usuários vinculados a este setor
+      listUsuariosSetor: [],
+      modalMode: "ADD",
+      modalInitialData: {},
+      usuarioSetorFunctions: usuarioSetorFunctions,
     };
   },
   computed: {
@@ -736,6 +820,11 @@ export default {
       const normalized = this.normalizeTab(tab);
       this.activeTab = normalized;
 
+      // Quando trocar para a aba de usuários, carregar os vínculos
+      if (this.activeTab === "usuarios" && this.setor && this.setor.id) {
+        this.loadUsuariosSetor();
+      }
+
       // Atualizar URL mantendo outros query params
       try {
         const newQuery = Object.assign({}, this.$route.query || {});
@@ -790,6 +879,70 @@ export default {
       } else {
         console.warn("Modal addUPSetor não encontrado no DOM");
       }
+    },
+    loadUsuariosSetor() {
+      if (!this.setor || !this.setor.id) return;
+      this.usuarioSetorFunctions
+        .listBySetor(this, this.setor.id)
+        .then((data) => {
+          // data é um array de usuários com campo perfil (ou contendo pivot.perfil)
+          this.listUsuariosSetor = (data || []).map((u) => ({
+            id: u.id,
+            name: u.name || u.nome || "",
+            email: u.email || "",
+            perfil: u.perfil || (u.pivot && u.pivot.perfil) || "",
+          }));
+        });
+    },
+    abrirModalAdicionarUsuario() {
+      this.modalMode = "ADD";
+      this.modalInitialData = {};
+      // abrir o modal bootstrap
+      const modalEl = document.getElementById("modalUsuarioSetor");
+      if (modalEl) {
+        const m = new bootstrap.Modal(modalEl);
+        m.show();
+      }
+    },
+    abrirModalEditarUsuario(u) {
+      this.modalMode = "UP";
+      this.modalInitialData = { usuario_id: u.id, perfil: u.perfil };
+      const modalEl = document.getElementById("modalUsuarioSetor");
+      if (modalEl) {
+        const m = new bootstrap.Modal(modalEl);
+        m.show();
+      }
+    },
+    confirmarRemoverUsuario(u) {
+      if (
+        !confirm(
+          "Tem certeza que deseja remover o vínculo deste usuário com o setor?"
+        )
+      )
+        return;
+      this.usuarioSetorFunctions
+        .remove(this, { usuario_id: u.id, setor_id: this.setor.id })
+        .then((resp) => {
+          if (resp && resp.status) {
+            if (this.$toastr) this.$toastr.s("Vínculo removido com sucesso");
+            else alert("Vínculo removido com sucesso");
+            this.loadUsuariosSetor();
+          } else {
+            const msg = resp?.message || "Erro ao remover vínculo";
+            if (this.$toastr) this.$toastr.e(msg);
+            else alert(msg);
+          }
+        })
+        .catch((err) => {
+          const status = err?.response?.status;
+          if (status === 403) {
+            if (this.$toastr) this.$toastr.e("Permissão negada");
+            else alert("Permissão negada");
+          } else {
+            if (this.$toastr) this.$toastr.e("Erro ao remover vínculo");
+            else alert("Erro ao remover vínculo");
+          }
+        });
     },
   },
 };

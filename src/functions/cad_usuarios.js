@@ -1,12 +1,19 @@
 var ADD_UP = (content, funcao) => {
+  // Construir payload do usuário removendo campos de vinculação a setores/unidades
+  const rawUserData =
+    funcao == "ADD" || funcao == "UP"
+      ? { ...content.modalData }
+      : { ...content.user_data };
+  // Remover campos relacionados a Setores/Unidades — vinculação será gerenciada por outro módulo
+  delete rawUserData.Setores;
+  delete rawUserData.setores;
+  delete rawUserData.unidades;
+
   content.$axios
     .post(
       funcao == "ADD" ? "/user/add" : "/user/update",
       {
-        user:
-          funcao == "ADD" || funcao == "UP"
-            ? content.modalData
-            : content.user_data,
+        user: rawUserData,
       },
       {
         headers: {
@@ -49,11 +56,17 @@ var ADD_UP = (content, funcao) => {
 };
 
 var EDIT_PERFIL = (content, funcao) => {
+  // Ao editar perfil, garantir que não enviamos Setores/Unidades por este módulo
+  const userPayload = { ...content.user_data };
+  delete userPayload.Setores;
+  delete userPayload.setores;
+  delete userPayload.unidades;
+
   content.$axios
     .post(
       "/user/update",
       {
-        user: content.user_data,
+        user: userPayload,
       },
       {
         headers: {
@@ -162,8 +175,14 @@ var listData = (content) => {
       }
     )
     .then((response) => {
+      // Ao popular o modal, remover os vínculos a Setores/Unidades — estes serão gerenciados por outro módulo
+      const modalPayload = { ...response.data.data };
+      delete modalPayload.Setores;
+      delete modalPayload.setores;
+      delete modalPayload.unidades;
+
       content.$store.commit("setIdDataLoaded", content.idData);
-      content.$store.commit("setModalData", response.data.data);
+      content.$store.commit("setModalData", modalPayload);
       content.$store.commit("setModalFunction", "UP");
       content.$store.commit(
         "setModalTitle",
@@ -239,8 +258,8 @@ var listTiposVinculo = (content, url = null) => {
       console.error("Erro ao carregar tipos de vínculo:", error);
       // Inicializa com array vazio para evitar erros no frontend
       content.$store.commit("setListTiposVinculo", []);
-      // Não mostra alert para não interromper o fluxo principal
-      throw error;
+      // Retornar array vazio para que chamadores possam continuar sem rejeição
+      return [];
     });
 };
 

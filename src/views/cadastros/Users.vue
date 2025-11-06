@@ -36,7 +36,6 @@
                         'Nome',
                         'E-mail',
                         'CPF',
-                        'Matrícula',
                         'Telefone',
                         'Data de Nascimento',
                         'Status',
@@ -44,7 +43,6 @@
                       ]"
                       :align="[
                         'text-center',
-                        'text-left',
                         'text-left',
                         'text-left',
                         'text-left',
@@ -115,7 +113,6 @@ export default {
       titleModal: "Cadastro de Usuário",
       varsModalData: {
         status: "A",
-        matricula: "",
         name: "",
         cpf: "",
         email: "",
@@ -123,7 +120,6 @@ export default {
         data_nascimento: "",
         tipo_vinculo: "",
         password: "",
-        unidades: [],
       },
     };
   },
@@ -140,18 +136,16 @@ export default {
       this.closeCreateUserModal();
     },
     listAllUsers() {
-        // Carrega tipos de vínculo e unidades antes de listar usuários
-        Promise.all([
-          functions.listTiposVinculo(this),
-          functions.listUnidades(this)
-        ])
-          .then(() => {
-            functions.listALL(this);
-          })
-          .catch(() => {
-            // Se falhar ao carregar tipos de vínculo ou unidades, ainda assim carrega os usuários
-            functions.listALL(this);
-          });
+      // Carrega apenas tipos de vínculo antes de listar usuários. Vinculação a setores/unidades
+      // deixou de ser responsabilidade deste módulo.
+      functions
+        .listTiposVinculo(this)
+        .then(() => {
+          functions.listALL(this);
+        })
+        .catch(() => {
+          functions.listALL(this);
+        });
     },
   },
   computed: {

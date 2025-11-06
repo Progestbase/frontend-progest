@@ -19,9 +19,9 @@ export default createStore({
     listUnidadesMedida: [],
     listGrupoProdutos: [],
     listFornecedores: [],
-  listPolos: [],
-  // Renomeação: suportar 'unidades' (antes 'polos') — manter compatibilidade
-  listUnidades: [],
+    listPolos: [],
+    // Renomeação: suportar 'unidades' (antes 'polos') — manter compatibilidade
+    listUnidades: [],
     searchFilters: [],
     idDataLoaded: "",
     isSearching: "",
@@ -59,7 +59,6 @@ export default createStore({
     resetModalData(state) {
       state.modalData.modalData = {
         status: "A",
-        matricula: "",
         name: "",
         cpf: "",
         email: "",

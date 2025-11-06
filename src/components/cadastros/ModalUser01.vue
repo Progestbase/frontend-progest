@@ -1,12 +1,23 @@
 <template>
   <span>
-    <ModalBase01 :id="idModal" modalClass="modal-dialog modal-lg modal-dialog-centered">
+    <ModalBase01
+      :idModal="idModal"
+      modalClass="modal-dialog modal-lg modal-dialog-centered"
+    >
       <div class="col-md-12">
-        <div class="tab-content text-muted mt-4 mt-md-0" id="v-pills-tabContent">
-          <div class="tab-pane fade show active" id="aba_dados" role="tabpanel" aria-labelledby="aba_dados-tab">
+        <div
+          class="tab-content text-muted mt-4 mt-md-0"
+          id="v-pills-tabContent"
+        >
+          <div
+            class="tab-pane fade show active"
+            id="aba_dados"
+            role="tabpanel"
+            aria-labelledby="aba_dados-tab"
+          >
             <form autocomplete="off">
               <div class="row">
-                <div class="col-md-4">
+                <div class="col-md-6">
                   <div class="mb-3">
                     <label class="form-label">Status</label>
                     <select class="form-select" v-model="modalData.status">
@@ -15,20 +26,24 @@
                     </select>
                   </div>
                 </div>
-                <div class="col-md-4">
-                  <div class="mb-3">
-                    <label class="form-label" for="Matricula">Matrícula</label>
-                    <input type="text" class="form-control" placeholder="Digite a matrícula"
-                      v-model="modalData.matricula" />
-                  </div>
-                </div>
+
                 <!-- Tipo de vínculo -->
-                <div class="col-md-4">
+                <div class="col-md-6">
                   <div class="mb-3">
-                    <label class="form-label" for="UserTipoVinculo">Tipo de Vínculo *</label>
-                    <select class="form-select" v-model="modalData.tipo_vinculo" required>
+                    <label class="form-label" for="UserTipoVinculo"
+                      >Tipo de Vínculo *</label
+                    >
+                    <select
+                      class="form-select"
+                      v-model="modalData.tipo_vinculo"
+                      required
+                    >
                       <option value="">Selecione um tipo</option>
-                      <option v-for="tipo in listTiposVinculoStore" :key="tipo.id" :value="tipo.id">
+                      <option
+                        v-for="tipo in listTiposVinculoStore"
+                        :key="tipo.id"
+                        :value="tipo.id"
+                      >
                         {{ tipo.nome }}
                       </option>
                     </select>
@@ -39,15 +54,26 @@
                 <div class="col-md-8">
                   <div class="mb-3">
                     <label class="form-label" for="UserNome">Nome *</label>
-                    <input type="text" class="form-control" placeholder="Digite o nome" v-model="modalData.name"
-                      required />
+                    <input
+                      type="text"
+                      class="form-control"
+                      placeholder="Digite o nome"
+                      v-model="modalData.name"
+                      required
+                    />
                   </div>
                 </div>
                 <div class="col-md-4">
                   <div class="mb-3">
                     <label class="form-label" for="UserCpf">CPF *</label>
-                    <input type="text" class="form-control" placeholder="Digite o CPF" v-model="modalData.cpf"
-                      v-mask="'###.###.###-##'" required />
+                    <input
+                      type="text"
+                      class="form-control"
+                      placeholder="Digite o CPF"
+                      v-model="modalData.cpf"
+                      v-mask="'###.###.###-##'"
+                      required
+                    />
                   </div>
                 </div>
               </div>
@@ -55,48 +81,57 @@
                 <div class="col-md-12">
                   <div class="mb-3">
                     <label class="form-label" for="UserEmail">E-mail *</label>
-                    <input type="email" class="form-control" placeholder="Digite o e-mail" v-model="modalData.email"
-                      required />
+                    <input
+                      type="email"
+                      class="form-control"
+                      placeholder="Digite o e-mail"
+                      v-model="modalData.email"
+                      required
+                    />
                   </div>
                 </div>
               </div>
               <!-- Unidades -->
-              <div class="row">
-                <div class="col-md-12">
-                  <div class="mb-3">
-                    <label for="UserUnidades" class="form-label">Unidades *</label>
-                    <multiselect v-model="modalData.unidades" :options="listUnidadesStore" label="nome" track-by="nome"
-                      :allow-empty="true" :limit="30" :preselect-first="false" :multiple="true" :searchable="true"
-                      :loading="isLoading" :internal-search="false" :max-height="300" :clear-on-select="false"
-                      :close-on-select="false" :options-limit="500" :show-no-results="true" :hide-selected="false"
-                      placeholder="Todas" selectLabel="" deselectLabel="X" selectedLabel="">
-                      <template #noResult>
-                        Unidade não encontrada
-                      </template>
-                      <template #noOptions></template>
-                    </multiselect>
-                  </div>
-                </div>
-              </div>
+              <!-- Unidades removidas do modal: vínculo a setores será gerenciado por outro módulo -->
               <div class="row">
                 <div class="col-md-4">
                   <div class="mb-3">
-                    <label class="form-label" for="UserTelefone">Telefone</label>
-                    <input type="text" class="form-control" placeholder="(99) 99999-9999" v-model="modalData.telefone"
-                      v-mask="'(##) #####-####'" />
+                    <label class="form-label" for="UserTelefone"
+                      >Telefone</label
+                    >
+                    <input
+                      type="text"
+                      class="form-control"
+                      placeholder="(99) 99999-9999"
+                      v-model="modalData.telefone"
+                      v-mask="'(##) #####-####'"
+                    />
                   </div>
                 </div>
                 <div class="col-md-4">
                   <div class="mb-3">
-                    <label class="form-label" for="UserNascimento">Data de Nascimento</label>
-                    <input type="date" class="form-control" v-model="modalData.data_nascimento" />
+                    <label class="form-label" for="UserNascimento"
+                      >Data de Nascimento</label
+                    >
+                    <input
+                      type="date"
+                      class="form-control"
+                      v-model="modalData.data_nascimento"
+                    />
                   </div>
                 </div>
                 <div class="col-md-4">
                   <div class="mb-3">
-                    <label class="form-label" for="UserPassword">Senha {{ modalFunction === "ADD" ? "*" : "" }}</label>
-                    <input type="password" class="form-control" placeholder="Digite a senha"
-                      v-model="modalData.password" :required="modalFunction === 'ADD'" />
+                    <label class="form-label" for="UserPassword"
+                      >Senha {{ modalFunction === "ADD" ? "*" : "" }}</label
+                    >
+                    <input
+                      type="password"
+                      class="form-control"
+                      placeholder="Digite a senha"
+                      v-model="modalData.password"
+                      :required="modalFunction === 'ADD'"
+                    />
                   </div>
                 </div>
               </div>
@@ -107,11 +142,20 @@
       <div class="row mt-2">
         <div class="col-12 text-end">
           <div class="d-flex gap-2 justify-content-end">
-            <button type="button" class="btn btn-secondary btn-modal" data-bs-dismiss="modal">
+            <button
+              type="button"
+              class="btn btn-secondary btn-modal"
+              data-bs-dismiss="modal"
+            >
               <i class="mdi mdi-close-thick me-2"></i>Fechar
             </button>
-            <button type="submit" class="btn btn-success btn-modal" data-bs-target="#success-btn" id="btn-save-event"
-              v-on:click="add_UP_User()">
+            <button
+              type="submit"
+              class="btn btn-success btn-modal"
+              data-bs-target="#success-btn"
+              id="btn-save-event"
+              v-on:click="add_UP_User()"
+            >
               <i class="mdi mdi-check-bold me-2"></i>
               {{ modalFunction === "ADD" ? "Salvar" : "Atualizar" }}
             </button>
@@ -125,15 +169,15 @@
 <script>
 import ModalBase01 from "@/components/layouts/ModalBase01.vue";
 import Funcoes from "@/functions/cad_usuarios.js";
-import Multiselect from 'vue-multiselect'
-import 'vue-multiselect/dist/vue-multiselect.min.css'
+import Multiselect from "vue-multiselect";
+import "vue-multiselect/dist/vue-multiselect.min.css";
 
 export default {
   name: "ModalUser01",
   components: {
     ModalBase01,
     Funcoes,
-    Multiselect
+    Multiselect,
   },
   props: ["idModal", "functions"],
   data() {
@@ -141,8 +185,10 @@ export default {
   },
   mounted() {
     // Carrega apenas os tipos de vínculo que são obrigatórios
-    this.listTiposVinculo();
-    this.listUnidades();
+    // Captura falhas silenciosamente para não gerar promise rejection não tratada
+    this.listTiposVinculo()?.catch((e) => {
+      console.warn("Não foi possível carregar tipos de vínculo no modal:", e);
+    });
   },
   methods: {
     add_UP_User() {
@@ -151,7 +197,6 @@ export default {
         !this.modalData.name ||
         !this.modalData.email ||
         !this.modalData.cpf ||
-        !this.modalData.matricula ||
         !this.modalData.tipo_vinculo
       ) {
         alert("Por favor, preencha todos os campos obrigatórios (*)");
@@ -166,10 +211,8 @@ export default {
       this.functions.ADD_UP(this, this.modalFunction);
     },
     listTiposVinculo() {
-      Funcoes.listTiposVinculo(this);
-    },
-    listUnidades() {
-      Funcoes.listUnidades(this);
+      // Retornar a promise para que chamadores possam encadear/capturar erros
+      return Funcoes.listTiposVinculo(this);
     },
   },
   computed: {
@@ -184,9 +227,6 @@ export default {
     },
     listTiposVinculoStore() {
       return this.$store.state.listTiposVinculo || [];
-    },
-    listUnidadesStore() {
-      return this.$store.state.listUnidades || [];
     },
   },
   watch: {

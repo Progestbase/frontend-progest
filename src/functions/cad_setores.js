@@ -204,6 +204,51 @@ var ADD_UP = (content, funcao) => {
     });
 };
 
+// Função para listar setores com acesso (para seleção inicial)
+var getSetoresWithAccess = (content) => {
+  return content.$axios
+    .post(
+      "/setores/listWithAccess",
+      {},
+      {
+        headers: {
+          Authorization: "Bearer " + content.$store.getters.getUserToken,
+        },
+      }
+    )
+    .then((response) => {
+      console.log("📨 Resposta da API getSetoresWithAccess:", response.data);
+      if (response.data.status && response.data.data) {
+        // Suporta dois formatos: array direto ou paginação
+        let setores = [];
+        if (Array.isArray(response.data.data)) {
+          setores = response.data.data;
+        } else if (
+          response.data.data.data &&
+          Array.isArray(response.data.data.data)
+        ) {
+          setores = response.data.data.data;
+        }
+        console.log("✅ Setores carregados:", setores.length);
+        return { success: true, data: setores };
+      } else {
+        console.warn(
+          "⚠️ API retornou status falso ou sem data:",
+          response.data
+        );
+        return { success: false, data: [] };
+      }
+    })
+    .catch((error) => {
+      console.error(
+        "❌ Erro na requisição getSetoresWithAccess:",
+        error.response?.status,
+        error.message
+      );
+      return { success: false, data: [], error };
+    });
+};
+
 // Função para listar todos os setores
 var listAll = (content, url = null) => {
   content.$store.commit("setisSearching", true);
@@ -220,7 +265,6 @@ var listAll = (content, url = null) => {
       }
     )
     .then((response) => {
-
       if (response.data.status && response.data.data) {
         // Suporta dois formatos: array direto ou paginação do Laravel
         if (Array.isArray(response.data.data)) {
@@ -497,7 +541,43 @@ var toggleStatus = (content, setorId) => {
     });
 };
 
+// Obter detalhes completos de um setor específico
+var getSetorDetail = (content, setorId) => {
+  return content.$axios
+    .post(
+      "/setores/getDetail",
+      { id: setorId },
+      {
+        headers: {
+          Authorization: "Bearer " + content.$store.getters.getUserToken,
+        },
+      }
+    )
+    .then((response) => {
+      if (response.data.status) {
+        // Armazenar detalhes do setor no Vuex
+        content.$store.commit("setSetorDetails", response.data.data);
+        return { success: true, data: response.data.data };
+      } else {
+        console.error(
+          "Erro ao obter detalhes do setor:",
+          response.data.message
+        );
+        return { success: false, message: response.data.message };
+      }
+    })
+    .catch((error) => {
+      console.error("Erro na requisição de detalhes do setor:", error);
+      return {
+        success: false,
+        message:
+          error.response?.data?.message || "Erro de conexão com o servidor",
+      };
+    });
+};
+
 var exportFunctions = {
+  getSetoresWithAccess: getSetoresWithAccess,
   ADD_UP: ADD_UP,
   listAll: listAll,
   listData: listData,
@@ -506,6 +586,7 @@ var exportFunctions = {
   buscarSetorPorId: buscarSetorPorId,
   atualizarSetor: atualizarSetor,
   deleteSetor: deleteSetor,
+  getSetorDetail: getSetorDetail,
 };
 
 export default exportFunctions;

@@ -23,9 +23,9 @@
         </div>
 
         <div class="col-md-3">
-          <label class="form-label text-muted small">Unidade</label>
+          <label class="form-label text-muted small">Setor</label>
           <p class="mb-0 fw-semibold">
-            {{ entrada?.unidade?.nome || "-" }}
+            {{ entrada?.setor?.nome || entrada?.unidade?.nome || "-" }}
           </p>
         </div>
 
@@ -175,8 +175,24 @@ export default {
   methods: {
     formatarData(data) {
       if (!data) return null;
-      const [ano, mes, dia] = data.split("-");
-      return `${dia}/${mes}/${ano}`;
+
+      try {
+        // Se for ISO string (com T), converter para Date e formatar
+        if (typeof data === "string" && data.includes("T")) {
+          const dataObj = new Date(data);
+          return dataObj.toLocaleDateString("pt-BR");
+        }
+
+        // Se for formato YYYY-MM-DD
+        if (typeof data === "string" && data.includes("-")) {
+          const [ano, mes, dia] = data.split("-");
+          return `${dia}/${mes}/${ano}`;
+        }
+
+        return data;
+      } catch (e) {
+        return data;
+      }
     },
     formatarDataHora(dataString) {
       if (!dataString) return "-";

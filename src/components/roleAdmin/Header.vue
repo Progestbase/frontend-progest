@@ -1,90 +1,98 @@
 <template>
-  <header class="flex justify-between items-center bg-white p-4 shadow-md">
-    <div class="flex items-center">
-      <!-- Botão de toggle do menu -->
-      <button
-        class="menu-toggle-btn me-3"
-        @click="$emit('toggleSidebar')"
-        title="Expandir/Recolher Menu"
-      >
-        <span class="material-icons">menu</span>
-      </button>
-
-      <h2 class="text-xl font-semibold text-azul-eclipse">
-        <span v-if="$route.name === 'setorDetalhes'">
-          <router-link to="/setores" class="text-muted">
-            <i class="mdi mdi-arrow-left me-1"></i>Setores
-          </router-link>
-          <span class="mx-2">/</span>
-          {{ unidadeNomeAtual }}
-        </span>
-        <span v-else>{{ headerTitle }}</span>
-      </h2>
-    </div>
-    <div class="flex items-center space-x-4">
-      <div class="text-right">
-        <p class="font-bold text-azul-eclipse">{{ userName }}</p>
-        <p class="text-sm text-azul-eclipse">{{ userRole }}</p>
+  <header class="bg-white border-b border-slate-200 shadow-sm">
+    <div class="flex justify-between items-center px-6 py-3">
+      <!-- Left Side: Page Title -->
+      <div class="flex items-center gap-4">
+        <!-- Page Title -->
+        <h2 class="text-2xl font-bold text-slate-900">
+          <span v-if="$route.name === 'setorDetalhes'">
+            <router-link
+              to="/setores"
+              class="text-blue-600 hover:text-blue-700 flex items-center gap-2"
+            >
+              <span class="material-icons text-xl">arrow_back</span>
+              <span>Setores</span>
+            </router-link>
+            <span class="text-slate-400 mx-2">/</span>
+            <span class="text-slate-700">{{ unidadeNomeAtual }}</span>
+          </span>
+          <span v-else>{{ headerTitle }}</span>
+        </h2>
       </div>
-      <!-- Importa e usa o botão de logout -->
-      <LogoutButton />
+
+      <!-- Right Side: User Info + Logout -->
+      <div class="flex items-center gap-6">
+        <!-- Current Setor Badge with Details -->
+        <div
+          v-if="setorAtual"
+          class="flex items-center gap-3 px-4 py-2 bg-gradient-to-r from-blue-50 to-blue-100 border border-blue-200 rounded-lg hover:shadow-md transition-shadow"
+          :title="`Setor: ${setorDetalhes?.nome}\nUnidade: ${setorDetalhes?.unidade?.nome}\nDescrição: ${setorDetalhes?.descricao}`"
+        >
+          <span class="material-icons text-blue-600 text-lg">apartment</span>
+          <div class="flex flex-col">
+            <span
+              class="text-xs text-blue-600 font-semibold uppercase tracking-wide"
+            >
+              {{ setorDetalhes?.unidade?.nome || "Unidade" }}
+            </span>
+            <span class="text-sm font-medium text-blue-900">
+              {{ setorDetalhes?.nome }}
+            </span>
+          </div>
+        </div>
+
+        <!-- Logout Button (Dropdown) -->
+        <LogoutButton />
+      </div>
     </div>
   </header>
 </template>
 
-<script>
+<script setup>
+import { computed } from "vue";
+import { useRoute } from "vue-router";
+import { useStore } from "vuex";
 import LogoutButton from "../LogoutButton.vue";
 
-export default {
-  name: "Header",
-  components: {
-    LogoutButton,
-  },
-  props: {
-    userName: {
-      type: String,
-      required: true,
-    },
-    userRole: {
-      type: String,
-      required: true,
-    },
-  },
-  computed: {
-    headerTitle() {
-      switch (this.$route.name) {
-        case "dashboard":
-          return "Dashboard";
-        case "users":
-          return "Usuários";
-        case "tiposUsuario":
-          return "Tipos de Usuário";
-        case "setores":
-          return "Setores";
-        case "setorDetalhes":
-          return "Detalhes do Setor";
-        case "produtos":
-          return "Produtos";
-        case "grupoProduto":
-          return "Grupos de Produtos";
-        case "unidadesMedida":
-          return "Unidades de Medida";
-        case "unidades":
-        case "polos":
-          return "Unidades";
-        case "estoques":
-          return "Estoques";
-        case "fornecedores":
-          return "Fornecedores";
+const route = useRoute();
+const store = useStore();
 
-        default:
-          return "";
-      }
-    },
-    unidadeNomeAtual() {
-      // Tenta buscar do store primeiro, senão usa um valor padrão
-      return this.$store.state.setorAtual?.nome || "Carregando...";
-    },
-  },
-};
+const setorAtual = computed(() => {
+  return store.state.setorAtualNome || "Carregando...";
+});
+
+const headerTitle = computed(() => {
+  const titleMap = {
+    dashboard: "Dashboard",
+    users: "Usuários",
+    tiposUsuario: "Tipos de Usuário",
+    setores: "Setores",
+    setorDetalhes: "Detalhes do Setor",
+    produtos: "Produtos",
+    grupoProduto: "Grupos de Produtos",
+    unidadesMedida: "Unidades de Medida",
+    unidades: "Unidades",
+    polos: "Unidades",
+    estoques: "Estoques",
+    fornecedores: "Fornecedores",
+  };
+  return titleMap[route.name] || "Sistema ProGest";
+});
+
+const unidadeNomeAtual = computed(() => {
+  return store.state.setorAtualNome || "Carregando...";
+});
+
+const setorDetalhes = computed(() => {
+  return store.state.setorDetails || null;
+});
 </script>
+
+<style scoped>
+.mdi {
+  font-family: "Material Design Icons";
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+</style>

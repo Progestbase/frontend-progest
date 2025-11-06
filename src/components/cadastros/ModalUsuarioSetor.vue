@@ -1,106 +1,117 @@
 <template>
-  <span>
-    <ModalBase01
-      :idModal="idModal"
-      modalClass="modal-dialog modal-lg modal-dialog-centered"
-    >
-      <div class="col-md-12">
-        <div
-          class="tab-content text-muted mt-4 mt-md-0"
-          id="v-pills-tabContent"
-        >
-          <div
-            class="tab-pane fade show active"
-            id="aba_dados"
-            role="tabpanel"
-            aria-labelledby="aba_dados-tab"
-          >
-            <form autocomplete="off">
-              <div class="row" v-if="mode === 'ADD'">
-                <div class="col-md-6">
-                  <div class="mb-3">
-                    <label class="form-label">Usuário *</label>
-                    <select class="form-select" v-model="form.usuario_id">
-                      <option value="">Selecione um usuário</option>
-                      <option
-                        v-for="u in availableUsers"
-                        :key="u.id"
-                        :value="u.id"
-                      >
-                        {{ u.name }} - {{ u.email }}
-                      </option>
-                    </select>
-                  </div>
-                </div>
+  <Dialog :open="isOpen" @update:open="isOpen = $event">
+    <DialogContent class="sm:max-w-[500px]">
+      <DialogHeader>
+        <DialogTitle>
+          {{
+            mode === "ADD"
+              ? "Adicionar Usuário ao Setor"
+              : "Editar Perfil do Usuário"
+          }}
+        </DialogTitle>
+      </DialogHeader>
 
-                <div class="col-md-6">
-                  <div class="mb-3">
-                    <label class="form-label">Perfil *</label>
-                    <select class="form-select" v-model="form.perfil">
-                      <option value="admin">Admin</option>
-                      <option value="almoxarife">Almoxarife</option>
-                      <option value="solicitante">Solicitante</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
+      <div class="space-y-4">
+        <!-- Campo Usuário (apenas para ADD) -->
+        <div v-if="mode === 'ADD'" class="space-y-2">
+          <Label for="usuario">Usuário *</Label>
+          <Select v-model="form.usuario_id">
+            <SelectTrigger id="usuario">
+              <SelectValue placeholder="Selecione um usuário" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem v-for="u in availableUsers" :key="u.id" :value="u.id">
+                {{ u.name }} - {{ u.email }}
+              </SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
 
-              <div class="row" v-else>
-                <div class="col-md-6">
-                  <div class="mb-3">
-                    <label class="form-label">Perfil *</label>
-                    <select class="form-select" v-model="form.perfil">
-                      <option value="admin">Admin</option>
-                      <option value="almoxarife">Almoxarife</option>
-                      <option value="solicitante">Solicitante</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
-            </form>
-          </div>
+        <!-- Campo Perfil -->
+        <div class="space-y-2">
+          <Label for="perfil">Perfil *</Label>
+          <Select v-model="form.perfil">
+            <SelectTrigger id="perfil">
+              <SelectValue placeholder="Selecione um perfil" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="admin">Admin</SelectItem>
+              <SelectItem value="almoxarife">Almoxarife</SelectItem>
+              <SelectItem value="solicitante">Solicitante</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </div>
-      <div class="row mt-2">
-        <div class="col-12 text-end">
-          <div class="d-flex gap-2 justify-content-end">
-            <button
-              type="button"
-              class="btn btn-secondary btn-modal"
-              data-bs-dismiss="modal"
-              @click="close"
-            >
-              <i class="mdi mdi-close-thick me-2"></i>Fechar
-            </button>
-            <button
-              type="submit"
-              class="btn btn-success btn-modal"
-              id="btn-save-usuario-setor"
-              @click="submit"
-            >
-              <i class="mdi mdi-check-bold me-2"></i>
-              {{ mode === "ADD" ? "Adicionar" : "Atualizar" }}
-            </button>
-          </div>
-        </div>
-      </div>
-    </ModalBase01>
-  </span>
+
+      <DialogFooter class="mt-6">
+        <Button variant="outline" @click="isOpen = false"> Cancelar </Button>
+        <Button variant="confirm" @click="submit">
+          <i class="mdi mdi-check-bold me-2"></i>
+          {{ mode === "ADD" ? "Adicionar" : "Atualizar" }}
+        </Button>
+      </DialogFooter>
+    </DialogContent>
+  </Dialog>
 </template>
 
 <script>
-import ModalBase01 from "@/components/layouts/ModalBase01.vue";
 import Funcoes from "@/functions/cad_usuario_setor.js";
+import { useToast } from "@/composables/useToast";
+import { ref, inject } from "vue";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+
+const { success, error } = useToast();
 
 export default {
   name: "ModalUsuarioSetor",
-  components: { ModalBase01 },
+  components: {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogFooter,
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+    Label,
+    Button,
+  },
   props: {
     idModal: { type: String, required: true },
     setorId: { type: [Number, String], required: true },
-    mode: { type: String, default: "ADD" }, // 'ADD' or 'UP'
+    mode: { type: String, default: "ADD" },
     initialData: { type: Object, default: () => ({}) },
     functions: { type: Object, default: () => Funcoes },
+  },
+  setup() {
+    // Receber contexto do parent via inject
+    const parentContext = inject("setorAtualContext", {
+      $axios: null,
+      $store: null,
+      $toastr: undefined,
+    });
+
+    return {
+      isOpen: ref(false),
+      parentContext,
+    };
   },
   data() {
     return {
@@ -112,40 +123,55 @@ export default {
       },
     };
   },
-  mounted() {
-    this.loadData();
-    if (this.mode === "UP" && this.initialData) {
-      this.form.usuario_id = this.initialData.usuario_id;
-      this.form.perfil = this.initialData.perfil || "solicitante";
-    }
-  },
-  methods: {
-    close() {
-      try {
-        const modal = document.getElementById(this.idModal);
-        if (modal && window.bootstrap && window.bootstrap.Modal) {
-          const inst = window.bootstrap.Modal.getInstance(modal);
-          if (inst) inst.hide();
+  watch: {
+    isOpen(newVal) {
+      if (newVal) {
+        this.loadData();
+        if (this.mode === "UP" && this.initialData) {
+          this.form.usuario_id = this.initialData.usuario_id;
+          this.form.perfil = this.initialData.perfil || "solicitante";
         }
-      } catch (e) {
-        console.warn("Erro ao fechar modal:", e);
+      } else {
+        // Resetar form ao fechar
+        this.form = {
+          usuario_id: "",
+          perfil: "solicitante",
+        };
       }
     },
+  },
+  methods: {
+    openModal() {
+      this.isOpen = true;
+    },
+    closeModal() {
+      this.isOpen = false;
+    },
     loadData() {
-      // Carrega usuários já vinculados ao setor
-      Funcoes.listBySetor(this, this.setorId).then((linked) => {
+      const context = {
+        $axios: this.parentContext.$axios,
+        $store: this.parentContext.$store,
+        $toastr: this.parentContext.$toastr,
+      };
+
+      Funcoes.listBySetor(context, this.setorId).then((linked) => {
         this.linkedUsers = linked || [];
-        // Carrega todos os usuários e filtra os já vinculados
-        Funcoes.listAllUsers(this).then((all) => {
+        Funcoes.listAllUsers(context).then((all) => {
           const linkedIds = new Set((this.linkedUsers || []).map((u) => u.id));
           this.availableUsers = (all || []).filter((u) => !linkedIds.has(u.id));
         });
       });
     },
     submit() {
+      const context = {
+        $axios: this.parentContext.$axios,
+        $store: this.parentContext.$store,
+        $toastr: this.parentContext.$toastr,
+      };
+
       if (this.mode === "ADD") {
         if (!this.form.usuario_id) {
-          alert("Selecione um usuário");
+          error("Erro!", "Selecione um usuário");
           return;
         }
         const payload = {
@@ -153,55 +179,47 @@ export default {
           setor_id: this.setorId,
           perfil: this.form.perfil,
         };
-        Funcoes.create(this, payload)
+        Funcoes.create(context, payload)
           .then((resp) => {
             if (resp && resp.status) {
-              if (this.$toastr) this.$toastr.s("Vínculo criado com sucesso");
-              else alert("Vínculo criado com sucesso");
-              this.close();
+              success("Sucesso!", "Vínculo criado com sucesso");
+              this.closeModal();
               this.$emit("changed");
             } else {
               const msg = resp?.message || "Erro ao criar vínculo";
-              if (this.$toastr) this.$toastr.e(msg);
-              else alert(msg);
+              error("Erro!", msg);
             }
           })
           .catch((err) => {
             const status = err?.response?.status;
             if (status === 409) {
-              if (this.$toastr) this.$toastr.e("Vínculo já existe");
-              else alert("Vínculo já existe");
+              error("Erro!", "Vínculo já existe");
             } else if (status === 422) {
               const erros =
                 err.response?.data?.erros || err.response?.data?.errors || {};
               let msg = "";
               for (let f in erros)
                 msg += (erros[f].join ? erros[f].join("\n") : erros[f]) + "\n";
-              if (this.$toastr) this.$toastr.e(msg);
-              else alert(msg);
+              error("Erro de validação!", msg);
             } else {
-              if (this.$toastr) this.$toastr.e("Erro ao criar vínculo");
-              else alert("Erro ao criar vínculo");
+              error("Erro!", "Erro ao criar vínculo");
             }
           });
       } else {
-        // Update perfil
         const payload = {
           usuario_id: this.form.usuario_id || this.initialData.usuario_id,
           setor_id: this.setorId,
           perfil: this.form.perfil,
         };
-        Funcoes.update(this, payload)
+        Funcoes.update(context, payload)
           .then((resp) => {
             if (resp && resp.status) {
-              if (this.$toastr) this.$toastr.s("Perfil atualizado com sucesso");
-              else alert("Perfil atualizado com sucesso");
-              this.close();
+              success("Sucesso!", "Perfil atualizado com sucesso");
+              this.closeModal();
               this.$emit("changed");
             } else {
               const msg = resp?.message || "Erro ao atualizar vínculo";
-              if (this.$toastr) this.$toastr.e(msg);
-              else alert(msg);
+              error("Erro!", msg);
             }
           })
           .catch((err) => {
@@ -211,11 +229,9 @@ export default {
               let msg = "";
               for (let f in erros)
                 msg += (erros[f].join ? erros[f].join("\n") : erros[f]) + "\n";
-              if (this.$toastr) this.$toastr.e(msg);
-              else alert(msg);
+              error("Erro de validação!", msg);
             } else {
-              if (this.$toastr) this.$toastr.e("Erro ao atualizar vínculo");
-              else alert("Erro ao atualizar vínculo");
+              error("Erro!", "Erro ao atualizar vínculo");
             }
           });
       }
@@ -223,12 +239,3 @@ export default {
   },
 };
 </script>
-
-<style scoped>
-.btn-modal {
-  font-weight: 600;
-  font-size: 0.9rem;
-  padding: 0.6rem 1.25rem;
-  border-radius: 0.4rem;
-}
-</style>

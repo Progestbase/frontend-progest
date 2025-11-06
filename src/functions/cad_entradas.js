@@ -10,17 +10,27 @@
  * @param {Number} page - Número da página (padrão 1)
  */
 var listAll = (content, filters = {}, perPage = 50, page = 1) => {
-  console.log("Carregando entradas de estoque: POST /entrada/list");
+  console.log("📥 Carregando entradas de estoque: POST /entrada/list");
+
+  // Obter setor_id do store se não foi passado nos filtros
+  const setorId = filters.setor_id || content.$store.state.setorAtualId;
 
   const payload = {
-    filters: filters || {},
+    filters: {
+      ...filters,
+    },
     per_page: perPage,
     page: page,
   };
 
-  console.log("Payload:", payload);
+  // Se temos setor_id, adicionar como filtro
+  if (setorId) {
+    payload.filters.setor_id = setorId;
+  }
 
-  content.$axios
+  console.log("📋 Payload:", payload);
+
+  return content.$axios
     .post("/entrada/list", payload, {
       headers: {
         Authorization: "Bearer " + content.$store.getters.getUserToken,
@@ -28,7 +38,7 @@ var listAll = (content, filters = {}, perPage = 50, page = 1) => {
       },
     })
     .then((response) => {
-      console.log("Resposta da API listAll entradas:", response.data);
+      console.log("✅ Resposta da API listAll entradas:", response.data);
 
       if (response.data && response.data.status) {
         // Laravel retorna paginação com estrutura: { data: { data: [...], total, per_page, ... } }
@@ -36,20 +46,34 @@ var listAll = (content, filters = {}, perPage = 50, page = 1) => {
         const entradas = paginatedData?.data || [];
 
         console.log(
-          `Entradas encontradas: ${entradas.length} de ${
+          `📊 Entradas encontradas: ${entradas.length} de ${
             paginatedData?.total || 0
           } total`
         );
 
+        // ✅ ATUALIZAR: Se as propriedades forem refs, usar .value
+        if (content.entradasItems?.value !== undefined) {
+          content.entradasItems.value = entradas;
+        } else if (content.entradasItems !== undefined) {
+          Object.assign(content, { entradasItems: entradas });
+        }
+
         // Commit no Vuex store (só os items, não a paginação completa)
         content.$store.commit("setListEntradas", entradas);
+        return { success: true, data: entradas };
       } else {
-        console.warn("Resposta da API sem dados válidos:", response.data);
+        console.warn("⚠️ Resposta da API sem dados válidos:", response.data);
+        if (content.entradasItems?.value !== undefined) {
+          content.entradasItems.value = [];
+        } else if (content.entradasItems !== undefined) {
+          Object.assign(content, { entradasItems: [] });
+        }
         content.$store.commit("setListEntradas", []);
+        return { success: false, data: [] };
       }
     })
     .catch((error) => {
-      console.error("Erro ao carregar entradas:", error);
+      console.error("❌ Erro ao carregar entradas:", error);
       console.error("Resposta de erro:", error.response?.data);
       console.error("Status:", error.response?.status);
 
@@ -60,7 +84,16 @@ var listAll = (content, filters = {}, perPage = 50, page = 1) => {
           "Erro ao carregar entradas de estoque";
         content.$toastr.e(mensagem);
       }
+
+      // ✅ ATUALIZAR: Se as propriedades forem refs, usar .value
+      if (content.entradasItems?.value !== undefined) {
+        content.entradasItems.value = [];
+      } else if (content.entradasItems !== undefined) {
+        Object.assign(content, { entradasItems: [] });
+      }
+
       content.$store.commit("setListEntradas", []);
+      return { success: false, data: [], error };
     });
 };
 
@@ -83,7 +116,7 @@ var listByUnidade = (content, unidadeId, perPage = 50, page = 1) => {
 
   const payload = {
     filters: {
-      unidade_id: unidadeId,
+      setor_id: unidadeId,
     },
     per_page: perPage,
     page: page,
@@ -91,7 +124,7 @@ var listByUnidade = (content, unidadeId, perPage = 50, page = 1) => {
 
   console.log("Payload:", payload);
 
-  content.$axios
+  return content.$axios
     .post("/entrada/list", payload, {
       headers: {
         Authorization: "Bearer " + content.$store.getters.getUserToken,
@@ -123,11 +156,29 @@ var listByUnidade = (content, unidadeId, perPage = 50, page = 1) => {
           `Entradas da unidade ${unidadeId}: ${entradas.length} de ${total} total`
         );
 
+        // ✅ ATUALIZAR: Se as propriedades forem refs, usar .value
+        // ✅ ATUALIZAR: Se as propriedades forem refs, usar .value
+        if (content.entradasItems?.value !== undefined) {
+          content.entradasItems.value = entradas;
+        } else if (content.entradasItems !== undefined) {
+          Object.assign(content, { entradasItems: entradas });
+        }
+
         // Commit no Vuex store
         content.$store.commit("setListEntradas", entradas);
+        return { success: true, data: entradas };
       } else {
         console.warn("Resposta da API sem dados válidos:", response.data);
+
+        // ✅ ATUALIZAR: Se as propriedades forem refs, usar .value
+        if (content.entradasItems?.value !== undefined) {
+          content.entradasItems.value = [];
+        } else if (content.entradasItems !== undefined) {
+          Object.assign(content, { entradasItems: [] });
+        }
+
         content.$store.commit("setListEntradas", []);
+        return { success: false, data: [] };
       }
     })
     .catch((error) => {
@@ -146,7 +197,16 @@ var listByUnidade = (content, unidadeId, perPage = 50, page = 1) => {
           "Erro ao carregar entradas da unidade";
         content.$toastr.e(mensagem);
       }
+
+      // ✅ ATUALIZAR: Se as propriedades forem refs, usar .value
+      if (content.entradasItems?.value !== undefined) {
+        content.entradasItems.value = [];
+      } else if (content.entradasItems !== undefined) {
+        Object.assign(content, { entradasItems: [] });
+      }
+
       content.$store.commit("setListEntradas", []);
+      return { success: false, data: [], error };
     });
 };
 

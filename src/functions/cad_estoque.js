@@ -53,26 +53,128 @@ var ADD_UP = (content, funcao) => {
 
 var listAll = (content, url = null) => {
   content.$store.commit("setisSearching", true);
-  content.$axios
-    .post(
-      url == null ? "/estoque/list" : url,
-      {
-        filters: content.$store.state.searchFilters,
+
+  // Tentar obter setor_id do store
+  const setorId = content.$store.state.setorAtualId;
+
+  if (!setorId) {
+    console.warn("⚠️ Sem setor ID para listar estoque");
+    content.$store.commit("setisSearching", false);
+    return Promise.resolve({ success: false, data: [] });
+  }
+
+  console.log("📦 Chamando GET /estoque/setor/" + setorId);
+
+  // Usar GET /estoque/setor/{id} como no módulo antigo
+  return content.$axios
+    .get(`/estoque/setor/${setorId}`, {
+      headers: {
+        Authorization: "Bearer " + content.$store.getters.getUserToken,
       },
-      {
-        headers: {
-          Authorization: "Bearer " + content.$store.getters.getUserToken,
-        },
-      }
-    )
+    })
     .then((response) => {
-      content.$store.commit("setListEstoque", response.data);
-      console.log("setListEstoque", response.data.data);
-      content.$store.commit("setisSearching", false);
+      console.log("✅ Resposta estoque:", response.data);
+
+      if (response.data && response.data.success) {
+        // Estrutura esperada: { success: true, data: { estoque: [...], resumo: {...}, unidade/setor: {...} } }
+        const respData = response.data.data || {};
+        const estoqueItems = respData.estoque || [];
+        const resumoEstoque = respData.resumo || {};
+        const setorEstoque =
+          respData.unidade || respData.setor || respData.setorEstoque || {};
+
+        // ✅ ATUALIZAR: Se as propriedades forem refs (Composition API), usar .value
+        // Se não forem refs (Options API), atribuir direto
+        if (content.estoqueItems?.value !== undefined) {
+          content.estoqueItems.value = estoqueItems;
+        } else if (content.estoqueItems !== undefined) {
+          // Apenas para Options API
+          Object.assign(content, { estoqueItems });
+        }
+
+        if (content.resumoEstoque?.value !== undefined) {
+          content.resumoEstoque.value = resumoEstoque;
+        } else if (content.resumoEstoque !== undefined) {
+          Object.assign(content, { resumoEstoque });
+        }
+
+        if (content.setorEstoque?.value !== undefined) {
+          content.setorEstoque.value = setorEstoque;
+        } else if (content.setorEstoque !== undefined) {
+          Object.assign(content, { setorEstoque });
+        }
+
+        // Também salvar estoqueData se existir
+        if (content.estoqueData !== undefined) {
+          content.estoqueData = respData;
+        }
+
+        // Commitar no store também
+        content.$store.commit("setListEstoque", estoqueItems);
+        console.log("✓ setListEstoque atualizado:", estoqueItems.length);
+
+        content.$store.commit("setisSearching", false);
+
+        return {
+          success: true,
+          data: estoqueItems,
+          resumo: resumoEstoque,
+          setor: setorEstoque,
+        };
+      } else {
+        console.warn("⚠️ Resposta sem sucesso:", response.data);
+        // Limpar dados
+        if (content.estoqueItems?.value !== undefined) {
+          content.estoqueItems.value = [];
+        } else if (content.estoqueItems !== undefined) {
+          Object.assign(content, { estoqueItems: [] });
+        }
+
+        if (content.resumoEstoque?.value !== undefined) {
+          content.resumoEstoque.value = {};
+        } else if (content.resumoEstoque !== undefined) {
+          Object.assign(content, { resumoEstoque: {} });
+        }
+
+        if (content.setorEstoque?.value !== undefined) {
+          content.setorEstoque.value = {};
+        } else if (content.setorEstoque !== undefined) {
+          Object.assign(content, { setorEstoque: {} });
+        }
+
+        content.$store.commit("setListEstoque", []);
+        content.$store.commit("setisSearching", false);
+
+        return { success: false, data: [] };
+      }
     })
     .catch((error) => {
-      console.error(error);
-      alert("OPS! \nEstamos com algum problema, tente novamente mais tarde.");
+      console.error("❌ Erro ao listar estoque:", error);
+
+      // Limpar dados em caso de erro
+      if (content.estoqueItems?.value !== undefined) {
+        content.estoqueItems.value = [];
+      } else if (content.estoqueItems !== undefined) {
+        Object.assign(content, { estoqueItems: [] });
+      }
+
+      if (content.resumoEstoque?.value !== undefined) {
+        content.resumoEstoque.value = {};
+      } else if (content.resumoEstoque !== undefined) {
+        Object.assign(content, { resumoEstoque: {} });
+      }
+
+      if (content.setorEstoque?.value !== undefined) {
+        content.setorEstoque.value = {};
+      } else if (content.setorEstoque !== undefined) {
+        Object.assign(content, { setorEstoque: {} });
+      }
+
+      content.$store.commit("setListEstoque", []);
+      content.$store.commit("setisSearching", false);
+
+      // Não dispara alert, apenas loga
+      return { success: false, data: [], error };
     });
 };
 

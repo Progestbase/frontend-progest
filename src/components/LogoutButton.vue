@@ -1,89 +1,111 @@
 <template>
-    <button class="Btn" @click="logout">
-      <div class="sign">
-        <svg viewBox="0 0 512 512">
-          <path d="M377.9 105.9L500.7 228.7c7.2 7.2 11.3 17.1 11.3 27.3s-4.1 20.1-11.3 27.3L377.9 406.1c-6.4 6.4-15 9.9-24 9.9c-18.7 0-33.9-15.2-33.9-33.9l0-62.1-128 0c-17.7 0-32-14.3-32-32l0-64c0-17.7 14.3-32 32-32l128 0 0-62.1c0-18.7 15.2-33.9 33.9-33.9c9 0 17.6 3.6 24 9.9zM160 96L96 96c-17.7 0-32 14.3-32 32l0 256c0 17.7 14.3 32 32 32l64 0c17.7 0 32 14.3 32 32s-14.3 32-32 32l-64 0c-53 0-96-43-96-96L0 128C0 75 43 32 96 32l64 0c17.7 0 32 14.3 32 32s-14.3 32-32 32z"></path>
-        </svg>
-      </div>
-      <div class="text">Logout</div>
-    </button>
-  </template>
-  
-  <script>
-  export default {
-    methods: {
-      logout() {
-        localStorage.removeItem('token'); // Remove o token de autenticação
-        localStorage.removeItem('user'); // Remove os dados do usuário
-        this.$router.push('/login'); // Redireciona para a página de login
-      },
-    },
+  <div class="dropdown-menu-container">
+    <DropdownMenu>
+      <DropdownMenuTrigger as-child>
+        <Button variant="ghost" size="icon" class="h-9 w-9">
+          <i class="mdi mdi-dots-vertical text-xl"></i>
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" class="w-64">
+        <!-- Mini Header with User Info -->
+        <div
+          class="px-4 py-3 bg-slate-50 rounded-t-lg border-b border-slate-200"
+        >
+          <p class="font-semibold text-slate-900 text-sm m-0">{{ userName }}</p>
+
+          <p class="text-xs text-slate-500 m-0">
+            {{ userEmail }} | {{ userRoleLabel }}
+          </p>
+        </div>
+
+        <DropdownMenuSeparator class="my-2" />
+
+        <DropdownMenuItem @click="exitSetor" class="cursor-pointer">
+          <i class="mdi mdi-door-open mr-2"></i>
+          <span>Trocar de Setor</span>
+        </DropdownMenuItem>
+
+        <DropdownMenuItem @click="logout" class="cursor-pointer text-red-600">
+          <i class="mdi mdi-logout mr-2"></i>
+          <span>Sair da Conta</span>
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  </div>
+</template>
+
+<script setup>
+import { computed } from "vue";
+import { useRouter } from "vue-router";
+import { useStore } from "vuex";
+import { setorCookie } from "@/utils/setorCookie";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuItem,
+} from "@/components/ui/dropdown-menu";
+
+const router = useRouter();
+const store = useStore();
+
+const userName = computed(() => {
+  return store.state.user?.name || "Usuário";
+});
+
+const userEmail = computed(() => {
+  return store.state.user?.email || "email@exemplo.com";
+});
+
+const userRoleLabel = computed(() => {
+  const role = store.state.user?.role || "user";
+  const roleMap = {
+    A: "Administrador",
+    S: "Solicitante",
+    admin: "Administrador",
+    solicitante: "Solicitante",
   };
-  </script>
-  
-  <style scoped>
-  .Btn {
-    display: flex;
-    align-items: center;
-    justify-content: flex-start;
-    width: 35px;
-    height: 35px;
-    border: none;
-    border-radius: 50%;
-    cursor: pointer;
-    position: relative;
-    overflow: hidden;
-    transition-duration: 0.3s;
-    box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.199);
-    background-color: rgb(255, 65, 65);
-  }
-  
-  .sign {
-    width: 100%;
-    transition-duration: 0.3s;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  
-  .sign svg {
-    width: 14px;
-  }
-  
-  .sign svg path {
-    fill: white;
-  }
-  
-  .text {
-    position: absolute;
-    right: 0%;
-    width: 0%;
-    top: 13%;
-    opacity: 0;
-    color: white;
-    font-size: 1em;
-    font-weight: 600;
-    transition-duration: 0.3s;
-  }
-  
-  .Btn:hover {
-    width: 95px;
-    border-radius: 40px;
-  }
-  
-  .Btn:hover .sign {
-    width: 30%;
-    padding-left: 10px;
-  }
-  
-  .Btn:hover .text {
-    opacity: 1;
-    width: 70%;
-    padding-right: 10px;
-  }
-  
-  .Btn:active {
-    transform: translate(2px, 2px);
-  }
-  </style>
-  
+  return roleMap[role] || role;
+});
+
+const exitSetor = () => {
+  // Limpar cookies do setor
+  setorCookie.clearSector();
+
+  // Limpar dados do setor no Vuex
+  store.commit("clearSetorAtual");
+  store.commit("clearSetorDetails");
+
+  // Redirecionar para seleção de setor
+  router.push("/setor-selection");
+};
+
+const logout = () => {
+  // Remover autenticação
+  store.commit("clearUserToken");
+  store.commit("setUser", null);
+
+  // Limpar dados do setor
+  store.commit("clearSetorAtual");
+  store.commit("clearSetorDetails");
+
+  // Limpar cookies do setor
+  setorCookie.clearSector();
+
+  // Redirecionar para login
+  router.push("/login");
+};
+</script>
+
+<script>
+export default {
+  name: "LogoutButton",
+};
+</script>
+
+<style scoped>
+/* Estilos do shadcn/vue dropdown menu são aplicados automaticamente */
+</style>

@@ -113,34 +113,125 @@ var listBySetor = (content, setorId, perPage = 50, page = 1) => {
 };
 
 var listAll = (content, filters = {}, perPage = 50, page = 1) => {
-  const params = {
-    setor_id: filters.setor_id || content.form?.setor_destino_id || null, // Garantir setor_id
+  // Obter setor_id do store se não foi passado nos filtros
+  const setorId = filters.setor_id || content.$store.state.setorAtualId;
+
+  if (!setorId) {
+    console.warn("⚠️ Sem setor ID para listar movimentações");
+    return Promise.resolve({ success: false, data: [] });
+  }
+
+  const payload = {
+    setor_id: setorId,
     per_page: perPage,
     page: page,
-    ...filters, // Outros filtros adicionais
   };
 
-  content.$axios
-    .get("/movimentacao/listBySetor", {
+  console.log("🔄 Tentando /movimentacao/listByUnidade com payload:", payload);
+
+  return content.$axios
+    .post("/movimentacao/listByUnidade", payload, {
       headers: {
         Authorization: "Bearer " + content.$store.getters.getUserToken,
+        "Content-Type": "application/json",
       },
-      params: params, // Enviar os parâmetros como query strings
     })
     .then((response) => {
+      console.log("✅ Resposta movimentações:", response.data);
+
       if (response.data && response.data.status) {
         const data = response.data.data || [];
-        content.$store.commit(
-          "setListMovimentacoes",
-          Array.isArray(data) ? data : data.data || []
-        );
+        const movimentacoes = Array.isArray(data) ? data : data.data || [];
+
+        // ✅ ATUALIZAR: Se as propriedades forem refs, usar .value
+        if (content.movimentacoesItems?.value !== undefined) {
+          content.movimentacoesItems.value = movimentacoes;
+        } else if (content.movimentacoesItems !== undefined) {
+          Object.assign(content, { movimentacoesItems: movimentacoes });
+        }
+
+        content.$store.commit("setListMovimentacoes", movimentacoes);
+        console.log("✓ setListMovimentacoes atualizado:", movimentacoes.length);
+
+        return { success: true, data: movimentacoes };
       } else {
+        if (content.movimentacoesItems?.value !== undefined) {
+          content.movimentacoesItems.value = [];
+        } else if (content.movimentacoesItems !== undefined) {
+          Object.assign(content, { movimentacoesItems: [] });
+        }
         content.$store.commit("setListMovimentacoes", []);
+        return { success: false, data: [] };
       }
     })
     .catch((error) => {
-      console.error("Erro ao listar movimentações:", error);
+      console.error("❌ Erro ao listar movimentações (POST):", error.message);
+
+      // Se o backend respondeu 405 (método não permitido), tentar fallback por GET
+      const status = error?.response?.status;
+      if (status === 405) {
+        console.warn("🔄 POST retornou 405, tentando GET como fallback");
+        return content.$axios
+          .get("/movimentacao/listByUnidade", {
+            params: payload,
+            headers: {
+              Authorization: "Bearer " + content.$store.getters.getUserToken,
+            },
+          })
+          .then((response) => {
+            console.log(
+              "✅ Resposta movimentações (GET fallback):",
+              response.data
+            );
+            if (response.data && response.data.status) {
+              const data = response.data.data || [];
+              const movimentacoes = Array.isArray(data)
+                ? data
+                : data.data || [];
+
+              // ✅ ATUALIZAR: Se as propriedades forem refs, usar .value
+              if (content.movimentacoesItems?.value !== undefined) {
+                content.movimentacoesItems.value = movimentacoes;
+              } else if (content.movimentacoesItems !== undefined) {
+                Object.assign(content, { movimentacoesItems: movimentacoes });
+              }
+
+              content.$store.commit("setListMovimentacoes", movimentacoes);
+              console.log(
+                "✓ setListMovimentacoes atualizado (fallback):",
+                movimentacoes.length
+              );
+              return { success: true, data: movimentacoes };
+            } else {
+              if (content.movimentacoesItems?.value !== undefined) {
+                content.movimentacoesItems.value = [];
+              } else if (content.movimentacoesItems !== undefined) {
+                Object.assign(content, { movimentacoesItems: [] });
+              }
+              content.$store.commit("setListMovimentacoes", []);
+              return { success: false, data: [] };
+            }
+          })
+          .catch((err2) => {
+            console.error("❌ Fallback GET também falhou:", err2.message);
+            if (content.movimentacoesItems?.value !== undefined) {
+              content.movimentacoesItems.value = [];
+            } else if (content.movimentacoesItems !== undefined) {
+              Object.assign(content, { movimentacoesItems: [] });
+            }
+            content.$store.commit("setListMovimentacoes", []);
+            return { success: false, data: [], error: err2 };
+          });
+      }
+
+      console.error("❌ Erro geral ao listar movimentações:", error);
+      if (content.movimentacoesItems?.value !== undefined) {
+        content.movimentacoesItems.value = [];
+      } else if (content.movimentacoesItems !== undefined) {
+        Object.assign(content, { movimentacoesItems: [] });
+      }
       content.$store.commit("setListMovimentacoes", []);
+      return { success: false, data: [], error };
     });
 };
 

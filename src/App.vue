@@ -1,16 +1,22 @@
 <template>
-  <div id="app">
-    <router-view />
-  </div>
+  <ToastProvider>
+    <div id="app">
+      <router-view />
+    </div>
+    <Toaster />
+  </ToastProvider>
 </template>
-<script >
-import { defineComponent } from 'vue';
+<script>
+import { defineComponent } from "vue";
+import { ToastProvider, Toaster } from "@/components/ui/toast";
 
 export default defineComponent({
-  name: 'App',
+  name: "App",
+  components: {
+    ToastProvider,
+    Toaster,
+  },
 });
 </script>
 
-<style lang="scss">
-
-</style>
+<style lang="scss"></style>

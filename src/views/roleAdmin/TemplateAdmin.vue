@@ -2,34 +2,15 @@
   <div class="admin-layout">
     <Sidebar class="sidebar" />
     <main class="content">
-      <Header :userName="userName" :userRole="userRole" class="mb-3" />
+      <Header class="mb-3" />
       <slot />
     </main>
   </div>
 </template>
 
-<script>
+<script setup>
 import Sidebar from "@/components/roleAdmin/Sidebar.vue";
 import Header from "@/components/roleAdmin/Header.vue";
-import { API_URL } from "@/config";
-
-export default {
-  components: {
-    Sidebar,
-    Header,
-  },
-  data() {
-    return {
-      apiUrl: API_URL,
-      userName: "",
-      userRole: "Admin",
-    };
-  },
-  created() {
-    // Se possível fazer um timer de user
-  },
-  methods: {},
-};
 </script>
 
 <style lang="scss">

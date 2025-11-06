@@ -555,6 +555,7 @@
 
 <script>
 import ModalBase01 from "@/components/layouts/ModalBase01.vue";
+import { Modal } from "bootstrap";
 import cadFornecedores from "@/functions/cad_fornecedores.js";
 import cadProdutos from "@/functions/cad_produtos.js";
 import cadUnidadesMedida from "@/functions/cad_unidades_medida.js";
@@ -574,6 +575,10 @@ export default {
     unidade: {
       type: Object,
       default: () => ({}),
+    },
+    setorTipo: {
+      type: String,
+      default: null,
     },
   },
   data() {
@@ -630,7 +635,21 @@ export default {
       return [...base, ...custom];
     },
     produtosDisponiveis() {
-      const base = this.normalizarLista(this.$store.state.listProdutos);
+      let base = this.normalizarLista(this.$store.state.listProdutos);
+
+      // Filtrar por tipo de grupo se setorTipo estiver definido
+      if (this.setorTipo) {
+        const gruposDoTipo = this.normalizarLista(
+          this.$store.state.listGrupoProdutos
+        )
+          .filter((grupo) => grupo.tipo === this.setorTipo)
+          .map((grupo) => grupo.id);
+
+        base = base.filter((produto) =>
+          gruposDoTipo.includes(produto.grupo_produto_id)
+        );
+      }
+
       const custom = this.produtosCustom.filter(
         (item) => !base.some((baseItem) => baseItem.id === item.id)
       );
@@ -1110,7 +1129,7 @@ export default {
       try {
         const payload = {
           nota_fiscal: this.form.notaFiscal || null,
-          unidade_id: this.unidade?.id || null,
+          setor_id: this.unidade?.id || null,
           fornecedor_id: this.form.fornecedorId,
           itens: this.form.itens.map((item) => ({
             produto_id: item.produto_id,
@@ -1166,12 +1185,16 @@ export default {
     },
     fecharModal() {
       const modalEl = document.getElementById(this.idModal);
-      if (modalEl && window && window.bootstrap && window.bootstrap.Modal) {
-        const instance = window.bootstrap.Modal.getInstance(modalEl);
+      if (modalEl) {
+        const instance = Modal.getInstance(modalEl);
         if (instance) {
           instance.hide();
         }
       }
+      // Resetar o formulário após fechar
+      this.$nextTick(() => {
+        this.resetarFormulario();
+      });
     },
     resetarFormulario() {
       this.loading = false;

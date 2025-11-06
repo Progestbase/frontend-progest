@@ -1,38 +1,24 @@
 ﻿# Copilot Instructions — ProGest Frontend
 
-**ProGest** é um sistema de gestão de estoque construído em **Vue 3 + Vite + Vuex** que consome uma **API Laravel** (baseURL: `http://localhost:8000/api`). Este documento concentra padrões arquiteturais e convenções essenciais para produtividade imediata.
+**ProGest** é um sistema de gestão de estoque construído em **Vue 3 + Vite + Vuex** que consome uma **API Laravel** (baseURL: `http://localhost:8000/api`).
 
----
-
-## 1. Arquitetura em 3 camadas
+## Arquitetura em 3 Camadas
 
 ```
-src/functions/cad_*.js     → Camada de integração REST + lógica Vuex
-src/components/            → Modais reutilizáveis (ModalBase01) e componentes de layout
-src/views/                 → Views que orquestram functions + store
+src/functions/cad_*.js  → Camada de integração REST + commits Vuex
+src/components/         → Componentes reutilizáveis (modais, tabelas, layouts)
+src/views/              → Views que orquestram functions + store
 ```
 
-**Fluxo típico:**
+**Fluxo de dados típico:**
 
 1. View chama `functions.listAll(this)` no `mounted()`
-2. Função `cad_*.js` faz requisição axios → commita no Vuex → atualiza UI
-3. Modais usam `ModalBase01.vue` com slots para formulários de ADD/UPDATE
+2. Função em `cad_*.js` faz requisição axios → commita no Vuex → UI reage
+3. Modais usam `ModalBase01.vue` com slots para formulários ADD/UPDATE
 
-**Exemplo real** (`src/views/cadastros/Produtos.vue`):
+## Contrato Padrão dos Módulos `cad_*.js`
 
-```js
-mounted() {
-  functions.listAll(this);
-  this.carregarGruposProdutos();
-  this.carregarUnidadesMedida();
-}
-```
-
----
-
-## 2. Contratos de `src/functions/cad_*.js`
-
-Todos os módulos exportam métodos padronizados:
+Todos exportam estes métodos (veja `src/functions/cad_produtos.js` como referência):
 
 ```js
 export default {
@@ -43,14 +29,14 @@ export default {
 }
 ```
 
-**Parâmetro `content`** é o `this` do componente, contém:
+**Parâmetro `content`** é sempre o `this` do componente Vue, contendo:
 
-- `$axios` → Cliente HTTP configurado
+- `$axios` → Cliente HTTP (já configurado com baseURL)
 - `$store` → Vuex store
-- `$toastr` → Notificações (pode ser `undefined`)
+- `$toastr` → Notificações (pode ser `undefined` — sempre use defensivamente)
 - `modalData` → Dados do formulário
 
-**Headers obrigatórios:**
+**Headers obrigatórios em toda requisição:**
 
 ```js
 headers: {
@@ -59,16 +45,17 @@ headers: {
 }
 ```
 
----
+**IMPORTANTE:** Interceptor global em `src/main.js` adiciona `Authorization` automaticamente se token existe, mas módulos `cad_*.js` ainda definem explicitamente por compatibilidade.
 
-## 3. Estrutura de payloads da API
+## Estrutura de Payloads da API
 
-Cada módulo encapsula dados em objetos nomeados:
+Backend Laravel espera objetos encapsulados por tipo de entidade:
 
 ```js
-// src/functions/cad_produtos.js
+// Exemplo: src/functions/cad_produtos.js
 const produtoData = {
   produto: {
+    // ← Chave baseada no tipo de entidade
     nome: content.modalData.nome,
     grupo_produto_id: content.modalData.grupo_produto_id,
     unidade_medida_id: content.modalData.unidade_medida_id,
@@ -77,85 +64,62 @@ const produtoData = {
 };
 ```
 
-**Endpoints comuns:**
+**Endpoints padrão por módulo:**
 
-- `POST /produtos/add` → Criar
-- `POST /produtos/update` → Atualizar (incluir `id`)
-- `POST /produtos/list` → Listar com `{ filters, per_page, page }`
-- `POST /produtos/delete/{id}` → Excluir
+- `POST /{recurso}/add` → Criar
+- `POST /{recurso}/update` → Atualizar (incluir `id` no payload)
+- `POST /{recurso}/list` → Listar com `{ filters, per_page, page }`
+- `POST /{recurso}/listData` → Buscar por ID: `{ id: X }`
+- `POST /{recurso}/delete/{id}` → Excluir
 
----
+## Gerenciamento de Estado (Vuex)
 
-## 4. Gerenciamento de estado (Vuex)
-
-**Mutations principais** (`src/vuex/store.js`):
+**Mutations críticas** (`src/vuex/store.js`):
 
 ```js
-setModalData(payload); // Atualizar dados do modal
-setModalErrors(errors); // Validações inline (campo → [erros])
+setModalData(payload); // Atualizar dados do formulário
+setModalErrors(errors); // Validações inline (campo → array de erros)
 setModalTitle(title); // Título do modal
 setModalFunction("ADD" | "UP"); // Modo do formulário
-setListProdutos(data); // Lista de produtos
-setListMovimentacoes(data); // Movimentações de estoque
+setListProdutos(data); // Listas específicas por módulo
 ```
-
-**Getters:**
-
-- `getUserToken` → Token JWT do localStorage
-- `getModalData` → Dados atuais do formulário
 
 **Estado de autenticação:**
 
-- Token e user armazenados em `localStorage`
-- Router protege rotas via `beforeEach` (redireciona para `/login` se ausente)
+- `userToken` e `user` persistidos em `localStorage`
+- `router.beforeEach` redireciona para `/login` se `requiresAuth: true` e sem token
+- Interceptor axios anexa `Authorization` header automaticamente
 
----
+## Tratamento de Erros e Notificações
 
-## 5. Tratamento de erros e notificações
-
-### Validações do backend (422)
+**Validações do backend (status 422):**
 
 ```js
-// Backend pode retornar 'errors' ou 'erros'
 if (response.data.status == false && response.data.validacao) {
   content.$store.commit("setModalErrors", response.data.erros);
-
-  try {
-    if (content.$toastr?.e) {
-      content.$toastr.e("Erro de validação:\n" + erros);
-    } else {
-      alert("Erro de validação:\n" + erros);
-    }
-  } catch (e) {
-    alert("Erro de validação:\n" + erros);
-  }
+  // Backend pode usar 'erros' ou 'errors' — normalizar se necessário
 }
 ```
 
-### Padrão defensivo com toastr
-
-**Sempre use fallback** pois `$toastr` pode não estar disponível:
+**Padrão defensivo OBRIGATÓRIO para toastr:**
 
 ```js
 try {
-  content.$toastr?.s("Sucesso!") || alert("Sucesso!");
+  if (content.$toastr?.s) {
+    content.$toastr.s("Sucesso!");
+  } else {
+    alert("Sucesso!");
+  }
 } catch (e) {
   alert("Sucesso!");
 }
 ```
 
-### Métodos toastr suportados
+**Métodos toastr:** `.s()` (success), `.e()` (error), `.i()` (info), `.w()` (warning)
 
-- `.s()` ou `.success()` → Sucesso
-- `.e()` ou `.error()` → Erro
-- `.i()` ou `.info()` → Informação
-- `.w()` ou `.warning()` → Aviso
+## Modais Bootstrap 5
 
----
-
-## 6. Padrões de modal (Bootstrap 5)
-
-**ModalBase01.vue** é o componente base:
+**Estrutura base (`ModalBase01.vue`):**
 
 ```vue
 <ModalBase01
@@ -163,19 +127,11 @@ try {
   :showFooter="true"
   @closed="handleModalClosed"
 >
-  <slot><!-- Formulário aqui --></slot>
+  <slot><!-- Formulário --></slot>
   <template #footer>
     <button @click="salvar">Salvar</button>
   </template>
 </ModalBase01>
-```
-
-**Fechamento programático:**
-
-```js
-const modal = document.querySelector("#addUPProduto");
-const modalInstance = window.bootstrap.Modal.getInstance(modal);
-if (modalInstance) modalInstance.hide();
 ```
 
 **Validação inline:**
@@ -187,13 +143,19 @@ if (modalInstance) modalInstance.hide();
 </div>
 ```
 
----
+**Fechar modal programaticamente:**
 
-## 7. Edge cases e padrões especiais
+```js
+const modal = document.querySelector("#addUPProduto");
+const modalInstance = window.bootstrap.Modal.getInstance(modal);
+if (modalInstance) modalInstance.hide();
+```
 
-### Fallback de métodos HTTP
+## Edge Cases Importantes
 
-**Ver `src/functions/cad_movimentacao.js`** — tenta POST, depois GET se retornar 405:
+### Fallback de Métodos HTTP
+
+Ver `src/functions/cad_movimentacao.js` — tenta POST, depois GET se retornar 405:
 
 ```js
 .catch((error) => {
@@ -203,9 +165,9 @@ if (modalInstance) modalInstance.hide();
 });
 ```
 
-### Respostas paginadas
+### Normalização de Respostas Paginadas
 
-Normalize antes de commitar:
+Backend pode retornar `data.data` ou `data` diretamente — sempre normalize:
 
 ```js
 const data = response.data.data;
@@ -213,80 +175,87 @@ const lista = Array.isArray(data) ? data : data.data || [];
 content.$store.commit("setListProdutos", lista);
 ```
 
-### Compatibilidade polos/unidades
+### Compatibilidade Polos/Unidades
 
-**Nota histórica:** `listPolos` e `listUnidades` são sincronizados:
+`setListPolos` também atualiza `listUnidades` para retrocompatibilidade:
 
 ```js
 setListPolos(state, polos) {
   state.listPolos = polos;
-  state.listUnidades = polos; // Compatibilidade retroativa
+  state.listUnidades = polos;  // Compatibilidade retroativa
 }
 ```
 
----
-
-## 8. Workflows de desenvolvimento
-
-### Comandos (PowerShell)
+## Comandos de Desenvolvimento (PowerShell)
 
 ```powershell
-npm install              # Instalar dependências
-npm run dev              # Dev server (localhost:5173)
-npm run build            # Build para produção
-npm run preview          # Preview do build
+npm install    # Instalar dependências
+npm run dev    # Dev server → http://localhost:5173
+npm run build  # Build para produção
+npm run preview # Preview do build de produção
 ```
 
-### Estrutura de dependências principais
-
-- **Vue 3** → Framework reativo
-- **Vite** → Build tool e dev server
-- **Vuex 4** → Estado global
-- **axios** → Cliente HTTP
-- **Bootstrap 5** → UI e modais
-- **vue-router** → Roteamento SPA
-- **vue-the-mask** → Máscaras de input
-- **Tailwind CSS** → Utility-first CSS
-
-### Testes
-
-`vitest` está instalado mas sem script configurado. Para adicionar:
+**Nota:** Vitest configurado mas sem script. Para adicionar:
 
 ```json
-// package.json
-"scripts": {
-  "test": "vitest",
-  "test:ui": "vitest --ui"
-}
+"scripts": { "test": "vitest", "test:ui": "vitest --ui" }
 ```
 
----
+## Arquivos-Chave para Referência
 
-## 9. Arquivos-chave para referência
+| Arquivo                                  | Propósito                                      |
+| ---------------------------------------- | ---------------------------------------------- |
+| `src/config.js`                          | URL base da API                                |
+| `src/main.js`                            | Setup axios + interceptor global + plugins Vue |
+| `src/router/index.js`                    | Rotas + guard de autenticação                  |
+| `src/vuex/store.js`                      | Estado global (60+ mutations)                  |
+| `src/functions/cad_produtos.js`          | **Template de referência** para novos módulos  |
+| `src/components/layouts/ModalBase01.vue` | Modal reutilizável base                        |
+| `src/components/layouts/TableBase01.vue` | Tabela base com paginação                      |
+| `UNIDADES_MEDIDA_IMPLEMENTACAO.md`       | Exemplo de migração mock → API real            |
 
-| Arquivo                                  | Propósito                                     |
-| ---------------------------------------- | --------------------------------------------- |
-| `src/config.js`                          | URL base da API                               |
-| `src/main.js`                            | Setup axios, Vue plugins                      |
-| `src/router/index.js`                    | Rotas + guard de autenticação                 |
-| `src/vuex/store.js`                      | Estado global (60+ mutations)                 |
-| `src/functions/cad_produtos.js`          | **Template de referência** para novos módulos |
-| `src/components/layouts/ModalBase01.vue` | Modal reutilizável base                       |
-| `UNIDADES_MEDIDA_IMPLEMENTACAO.md`       | Exemplo de migração mock → API real           |
+## Regras Críticas ao Modificar Código
 
----
+1. **Preserve contratos** — Não altere assinaturas de `ADD_UP/listAll/listData` sem atualizar consumidores
+2. **Use toastr defensivamente** — Sempre try/catch com fallback para `alert()`
+3. **Normalize respostas paginadas** — Backend retorna estruturas variadas
+4. **Mantenha headers de autorização** — Mesmo com interceptor, defina explicitamente em `cad_*.js`
+5. **Teste fallbacks HTTP** — Alguns endpoints podem retornar 405 e precisar de GET
+6. **Valide `errors` e `erros`** — Backend Laravel usa ambas as chaves em diferentes contextos
+7. **Status sempre "A" ou "I"** — Ativo/Inativo, nunca booleanos
+8. **Use `text-uppercase` em inputs** — Padrão do sistema para consistência de dados
 
-## 10. Regras críticas ao modificar código
+## Stack Tecnológico
 
-1. **Preserve contratos** — Não altere assinaturas de `ADD_UP/listAll/listData` sem atualizar todos os consumidores
-2. **Use toastr defensivamente** — Sempre tente/catch com fallback para `alert()`
-3. **Normalize respostas paginadas** — Backend pode retornar `data.data` ou `data` diretamente
-4. **Mantenha headers de autorização** — Todas requisições precisam do Bearer token
-5. **Teste fallbacks HTTP** — Se alterar um `cad_*.js`, verifique se há fallback GET/POST
-6. **Valide ambos `errors` e `erros`** — Backend Laravel pode usar qualquer um
+- **Vue 3.5** + **Vite 6** — Framework reativo + build tool
+- **Vuex 4** — Gerenciamento de estado global
+- **Vue Router 4** — Roteamento SPA
+- **Axios** — Cliente HTTP (com interceptor global)
+- **Bootstrap 5.3** — UI, modais, grid system
+- **Tailwind CSS 3** — Utility-first CSS (uso complementar)
+- **vue-the-mask** — Máscaras de input (CPF, telefone, etc.)
+- **@mdi/font** — Material Design Icons
 
----
+## Criando Novos Módulos CRUD
 
-## Próximos passos sugeridos
+Use `src/functions/cad_produtos.js` como template:
 
-Se alguma seção precisa de detalhamento (ex.: fluxo de entrada de estoque, roles de usuário, estrutura de lotes), sinalize para iteração.
+1. **Crie `src/functions/cad_novomodulo.js`** seguindo o contrato padrão
+2. **Adicione mutation** em `src/vuex/store.js`: `setListNovoModulo(state, data)`
+3. **Crie view** em `src/views/cadastros/NovoModulo.vue`
+4. **Crie modal** em `src/components/cadastros/ModalNovoModulo.vue`
+5. **Registre rota** em `src/router/index.js` com `meta: { requiresAuth: true }`
+6. **Implemente validação inline** nos inputs do modal
+7. **Teste fallbacks** de erro (toastr → alert)
+
+**Exemplo de payload:**
+
+```js
+const novoModuloData = {
+  novoModulo: {
+    // ← Chave no singular
+    nome: content.modalData.nome,
+    status: content.modalData.status || "A",
+  },
+};
+```

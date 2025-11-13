@@ -555,9 +555,18 @@ var getSetorDetail = (content, setorId) => {
     )
     .then((response) => {
       if (response.data.status) {
+        // Dados completos já vêm do backend, incluindo fornecedores_relacionados
+        const setorData = response.data.data;
+
+        console.log("✓ Detalhes do setor carregados:", setorData.nome);
+        console.log(
+          "✓ Fornecedores relacionados:",
+          setorData.fornecedores_relacionados?.length || 0
+        );
+
         // Armazenar detalhes do setor no Vuex
-        content.$store.commit("setSetorDetails", response.data.data);
-        return { success: true, data: response.data.data };
+        content.$store.commit("setSetorDetails", setorData);
+        return { success: true, data: setorData };
       } else {
         console.error(
           "Erro ao obter detalhes do setor:",

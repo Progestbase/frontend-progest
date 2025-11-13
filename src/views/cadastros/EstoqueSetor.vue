@@ -191,7 +191,7 @@
 
     <!-- Modal de Visualização de Lotes -->
     <ModalVisualizarLotesProduto
-      idModal="modalVisualizarLotesProduto"
+      ref="modalVisualizarLotes"
       :produto="produtoSelecionado"
       :setor="setorEstoque"
       :estoqueId="estoqueIdSelecionado"
@@ -233,6 +233,7 @@ export default {
       estoqueIdSelecionado: null,
       quantidadeAtualSelecionada: 0,
       quantidadeMinimaSelecionada: 0,
+      modalVisualizarLotes: null,
     };
   },
   computed: {
@@ -373,12 +374,8 @@ export default {
 
       // Abrir modal APÓS carregar os lotes
       try {
-        const modalElement = document.getElementById(
-          "modalVisualizarLotesProduto"
-        );
-        if (modalElement) {
-          const modal = new bootstrap.Modal(modalElement);
-          modal.show();
+        if (this.modalVisualizarLotes) {
+          this.modalVisualizarLotes.dialogOpen = true;
         }
       } catch (error) {
         console.error("Erro ao abrir modal de lotes:", error);

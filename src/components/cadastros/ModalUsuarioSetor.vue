@@ -1,14 +1,22 @@
 <template>
   <Dialog :open="isOpen" @update:open="isOpen = $event">
     <DialogContent class="sm:max-w-[500px]">
-      <DialogHeader>
-        <DialogTitle>
+      <DialogHeader class="text-start">
+        <DialogTitle class="flex gap-2">
+          <i class="mdi mdi-account-group text-primary"></i>
           {{
             mode === "ADD"
               ? "Adicionar Usuário ao Setor"
               : "Editar Perfil do Usuário"
           }}
         </DialogTitle>
+        <DialogDescription>
+          {{
+            mode === "ADD"
+              ? "Adicione novo usuario ao setor."
+              : "Mude o perfil do usuário no setor."
+          }}
+        </DialogDescription>
       </DialogHeader>
 
       <div class="space-y-4">
@@ -45,7 +53,7 @@
 
       <DialogFooter class="mt-6">
         <Button variant="outline" @click="isOpen = false"> Cancelar </Button>
-        <Button variant="confirm" @click="submit">
+        <Button variant="default" @click="submit">
           <i class="mdi mdi-check-bold me-2"></i>
           {{ mode === "ADD" ? "Adicionar" : "Atualizar" }}
         </Button>
@@ -63,6 +71,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
 import {
@@ -84,6 +93,7 @@ export default {
     DialogContent,
     DialogHeader,
     DialogTitle,
+    DialogDescription,
     DialogFooter,
     Select,
     SelectContent,

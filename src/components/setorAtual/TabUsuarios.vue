@@ -1,12 +1,14 @@
 <template>
   <div>
-    <div class="d-flex justify-content-between align-items-center mb-3">
+    <div
+      class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-3"
+    >
       <div>
-        <h5 class="mb-1">
-          <i class="mdi mdi-account-multiple me-2"></i>
+        <h2 class="text-2xl font-bold flex items-center gap-2">
+          <i class="mdi mdi-account-multiple text-xl text-blue-600"></i>
           Usuários do Setor
-        </h5>
-        <p class="text-muted mb-0">
+        </h2>
+        <p class="text-sm text-muted-foreground">
           Lista de usuários vinculados a este setor.
         </p>
       </div>
@@ -43,7 +45,7 @@
             <td class="text-center">
               <div class="d-flex gap-2 justify-content-center">
                 <Button
-                  variant="edit"
+                  variant="outline"
                   size="icon-sm"
                   @click.prevent="abrirModalEditarUsuario(u)"
                   title="Editar"
@@ -51,7 +53,7 @@
                   <i class="mdi mdi-pencil"></i>
                 </Button>
                 <Button
-                  variant="delete"
+                  variant="destructive"
                   size="icon-sm"
                   @click.prevent="abrirAlertRemocao(u)"
                   title="Remover"
@@ -96,14 +98,12 @@
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel @click="showAlertRemocao = false" as-child>
-            <Button variant="outline"> Cancelar </Button>
-          </AlertDialogCancel>
-          <AlertDialogAction @click="executarRemocao" as-child>
-            <Button variant="delete">
-              <i class="mdi mdi-trash-can me-2"></i>Remover
-            </Button>
-          </AlertDialogAction>
+          <Button variant="outline" @click="showAlertRemocao = false">
+            Cancelar
+          </Button>
+          <Button variant="delete" @click="executarRemocao">
+            <i class="mdi mdi-trash-can me-2"></i>Remover
+          </Button>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
@@ -119,8 +119,6 @@ import { Button } from "@/components/ui/button";
 import * as bootstrap from "bootstrap";
 import {
   AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
   AlertDialogFooter,

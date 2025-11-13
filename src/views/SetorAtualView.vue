@@ -6,10 +6,11 @@
           <div class="row">
             <div class="col-12">
               <!-- Loading -->
-              <div v-if="loading" class="text-center py-5">
-                <div class="spinner-border text-primary" role="status">
-                  <span class="visually-hidden">Carregando...</span>
-                </div>
+              <div
+                v-if="loading"
+                class="w-full min-h-[400px] flex items-center justify-center"
+              >
+                <LoadingSpinner size="lg" />
               </div>
 
               <!-- Conteúdo -->
@@ -30,10 +31,10 @@
                         <span class="d-block d-sm-none"
                           ><i class="fas fa-info-circle"></i
                         ></span>
-                        <span class="d-none d-sm-block">Overview</span>
+                        <span class="d-none d-sm-block"> Visão Geral</span>
                       </a>
                     </li>
-                    <li class="nav-item" v-if="setor.estoque">
+                    <li class="nav-item" v-if="!isSolicitante && setor.estoque">
                       <a
                         class="nav-link"
                         :class="{ active: activeTab === 'estoque' }"
@@ -46,7 +47,7 @@
                         <span class="d-none d-sm-block">Estoque</span>
                       </a>
                     </li>
-                    <li class="nav-item">
+                    <li class="nav-item" v-if="!isSolicitante">
                       <a
                         class="nav-link"
                         :class="{ active: activeTab === 'movimentacoes' }"
@@ -59,7 +60,14 @@
                         <span class="d-none d-sm-block">Movimentações</span>
                       </a>
                     </li>
-                    <li class="nav-item">
+                    <li
+                      class="nav-item"
+                      v-if="
+                        !isSolicitante &&
+                        (!setor.fornecedores_relacionados ||
+                          setor.fornecedores_relacionados.length === 0)
+                      "
+                    >
                       <a
                         class="nav-link"
                         :class="{ active: activeTab === 'entrada' }"
@@ -72,7 +80,7 @@
                         <span class="d-none d-sm-block">Entrada</span>
                       </a>
                     </li>
-                    <li class="nav-item">
+                    <li class="nav-item" v-if="!isSolicitante && isAdminUser">
                       <a
                         class="nav-link"
                         :class="{ active: activeTab === 'usuarios' }"
@@ -91,12 +99,17 @@
                   <div class="tab-content p-3 text-muted">
                     <!-- Overview Tab -->
                     <div v-show="activeTab === 'overview'">
-                      <TabOverview :setor="setor" />
+                      <TabOverview
+                        :setor="setor"
+                        @navigate="changeTab"
+                        @editar-setor="editarSetor"
+                        @excluir-setor="excluirSetor"
+                      />
                     </div>
 
                     <!-- Estoque Tab -->
                     <div v-show="activeTab === 'estoque'">
-                      <TabEstoque />
+                      <TabEstoque @reload-estoque="carregarDadosEstoque" />
                     </div>
 
                     <!-- Movimentações Tab -->
@@ -105,12 +118,21 @@
                     </div>
 
                     <!-- Entrada Tab -->
-                    <div v-show="activeTab === 'entrada'">
-                      <TabEntrada :setorId="setor.id" />
+                    <div
+                      v-if="
+                        !setor.fornecedores_relacionados ||
+                        setor.fornecedores_relacionados.length === 0
+                      "
+                      v-show="activeTab === 'entrada'"
+                    >
+                      <TabEntrada
+                        :setorId="setor.id"
+                        @reload-estoque="carregarDadosEstoque"
+                      />
                     </div>
 
                     <!-- Usuários Tab -->
-                    <div v-show="activeTab === 'usuarios'">
+                    <div v-if="isAdminUser" v-show="activeTab === 'usuarios'">
                       <TabUsuarios :setorId="setor.id" />
                     </div>
                   </div>
@@ -127,11 +149,45 @@
         </div>
       </div>
     </div>
+
+    <!-- Modal de Setor -->
+    <ModalSetor
+      :open="modalSetorOpen"
+      @update:open="modalSetorOpen = $event"
+      :functions="functionsSetor"
+      title="Editar Setor"
+      :initialData="setor"
+    />
+
+    <!-- Alert Dialog de Confirmação de Exclusão -->
+    <AlertDialog
+      :open="showDeleteDialog"
+      @update:open="showDeleteDialog = $event"
+    >
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
+          <AlertDialogDescription>
+            Tem certeza que deseja excluir o setor "{{ setor.nome }}"? Esta ação
+            não pode ser desfeita.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+          <AlertDialogAction
+            @click="confirmarExclusaoSetor"
+            class="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+          >
+            Excluir
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   </TemplateAdmin>
 </template>
 
 <script setup>
-import { ref, onMounted, provide } from "vue";
+import { ref, onMounted, provide, computed } from "vue";
 import { useRoute } from "vue-router";
 import { useStore } from "vuex";
 import TemplateAdmin from "@/views/roleAdmin/TemplateAdmin.vue";
@@ -140,14 +196,31 @@ import TabEstoque from "@/components/setorAtual/TabEstoque.vue";
 import TabMovimentacoes from "@/components/setorAtual/TabMovimentacoes.vue";
 import TabEntrada from "@/components/setorAtual/TabEntrada.vue";
 import TabUsuarios from "@/components/setorAtual/TabUsuarios.vue";
+import ModalSetor from "@/components/cadastros/ModalSetor.vue";
 
 // Importar functions para carregar dados
 import functionsEstoque from "@/functions/cad_estoque";
 import functionsMovimentacao from "@/functions/cad_movimentacao";
 import functionsEntrada from "@/functions/cad_entradas";
+import functionsSetor from "@/functions/cad_setores";
+
+// Importar Bootstrap para usar o Modal
+import "bootstrap/dist/js/bootstrap.bundle.min";
 import functionsUsuarioSetor from "@/functions/cad_usuario_setor";
 
 import axios from "axios";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 const route = useRoute();
 const store = useStore();
@@ -155,6 +228,104 @@ const store = useStore();
 const setor = ref({});
 const loading = ref(true);
 const activeTab = ref("overview");
+const showDeleteDialog = ref(false);
+
+// Verificar se o usuário logado é admin deste setor (verifica vínculo usuario_setor carregado em usuariosItems)
+// E não é almoxarife
+const isAdminUser = computed(() => {
+  const user = store.state.user;
+  if (!user) return false;
+
+  // Super-admin por email sempre tem acesso
+  try {
+    if (user.email && user.email.toLowerCase() === "admin@admin.com")
+      return true;
+  } catch (e) {
+    /* ignore */
+  }
+
+  try {
+    // usuariosItems é um ref preenchido por cad_usuario_setor.listAll
+    const list = usuariosItems?.value || [];
+    const found = list.find((u) => {
+      // Vários formatos possíveis retornados pela API
+      const userId =
+        u.usuario_id || u.user_id || u.id || (u.usuario && u.usuario.id);
+      const perfil = (u.perfil || (u.pivot && u.pivot.perfil) || "")
+        .toString()
+        .toLowerCase();
+      return (
+        userId === user.id &&
+        (perfil === "admin" ||
+          perfil.includes("admin") ||
+          perfil === "administrador")
+      );
+    });
+
+    if (found) {
+      // Verificar se também não é almoxarife
+      const perfilAlmoxarife = list.find((u) => {
+        const userId =
+          u.usuario_id || u.user_id || u.id || (u.usuario && u.usuario.id);
+        const perfil = (u.perfil || (u.pivot && u.pivot.perfil) || "")
+          .toString()
+          .toLowerCase();
+        return userId === user.id && perfil === "almoxarife";
+      });
+      return !perfilAlmoxarife; // Só é admin se não for almoxarife
+    }
+  } catch (e) {
+    console.warn("Erro ao avaliar isAdminUser:", e);
+  }
+
+  // Fallback: se o objeto user tiver flag is_admin ou role global
+  if (
+    user.is_admin ||
+    (user.roles && user.roles.includes && user.roles.includes("admin"))
+  )
+    return true;
+
+  return false;
+});
+
+// Verificar se o usuário possui perfil 'solicitante' no setor atual
+const isSolicitante = computed(() => {
+  const user = store.state.user;
+  if (!user) return false;
+
+  try {
+    const list = usuariosItems?.value || [];
+    const found = list.find((u) => {
+      const userId =
+        u.usuario_id || u.user_id || u.id || (u.usuario && u.usuario.id);
+      const perfil = (u.perfil || (u.pivot && u.pivot.perfil) || "")
+        .toString()
+        .toLowerCase();
+      return (
+        userId === user.id &&
+        (perfil === "solicitante" || perfil.includes("solicitante"))
+      );
+    });
+    if (found) return true;
+  } catch (e) {
+    console.warn("Erro ao avaliar isSolicitante:", e);
+  }
+
+  if (
+    (user.roles && user.roles.includes && user.roles.includes("solicitante")) ||
+    (user.perfil &&
+      user.perfil.toString().toLowerCase().includes("solicitante"))
+  )
+    return true;
+
+  return false;
+});
+
+// Se o usuário se tornar solicitante garantir que a tab ativa volte para overview
+import { watch } from "vue";
+watch(isSolicitante, (val) => {
+  if (val) activeTab.value = "overview";
+});
 
 // ✅ NOVO: Propriedades de dados que as funções vão preencher
 const estoqueItems = ref([]);
@@ -163,6 +334,9 @@ const setorEstoque = ref({});
 const movimentacoesItems = ref([]);
 const entradasItems = ref([]);
 const usuariosItems = ref([]);
+
+// Modal do setor
+const modalSetorOpen = ref(false);
 
 // ✅ NOVO: Provide esses dados para as abas filhas
 provide("setorAtualData", {
@@ -219,6 +393,41 @@ const initTabFromRoute = () => {
   }
 };
 
+// Função para editar setor
+const editarSetor = () => {
+  console.log("🔄 Abrindo modal de edição do setor");
+
+  // Preparar dados do modal
+  store.commit("setModalData", {
+    modalTitle: "Editar Setor",
+    modalData: { ...setor.value },
+    modalFunction: "UP",
+  });
+
+  console.log("📝 Título definido no store:", store.state.modalData.modalTitle);
+
+  // Abrir modal usando variável reativa
+  modalSetorOpen.value = true;
+  console.log("✅ Modal aberto via variável reativa");
+};
+
+// Função para excluir setor
+const excluirSetor = () => {
+  showDeleteDialog.value = true;
+};
+
+// Função para confirmar e executar a exclusão
+const confirmarExclusaoSetor = async () => {
+  try {
+    console.log("Excluindo setor:", setor.value.id);
+    // Implementar lógica de exclusão
+    // Aqui você pode chamar a função de exclusão do setor
+    showDeleteDialog.value = false;
+  } catch (error) {
+    console.error("Erro ao excluir setor:", error);
+  }
+};
+
 /**
  * Carrega os dados do setor (estoque, movimentações, entradas, usuários)
  */
@@ -260,6 +469,9 @@ const carregarDadosDoSetor = async () => {
       }
     }
 
+    // Delay para evitar rate limiting
+    await new Promise((resolve) => setTimeout(resolve, 300));
+
     // Carregar movimentações do setor
     console.log("🔄 Carregando movimentações...");
     try {
@@ -273,6 +485,9 @@ const carregarDadosDoSetor = async () => {
       console.error("❌ Erro ao carregar movimentações:", err);
     }
 
+    // Delay para evitar rate limiting
+    await new Promise((resolve) => setTimeout(resolve, 300));
+
     // Carregar entradas do setor
     console.log("📥 Carregando entradas...");
     try {
@@ -285,6 +500,9 @@ const carregarDadosDoSetor = async () => {
     } catch (err) {
       console.error("❌ Erro ao carregar entradas:", err);
     }
+
+    // Delay para evitar rate limiting
+    await new Promise((resolve) => setTimeout(resolve, 300));
 
     // Carregar usuários do setor (se função existir)
     console.log("👥 Carregando usuários do setor...");
@@ -304,6 +522,37 @@ const carregarDadosDoSetor = async () => {
     console.log("✅ Todos os dados do setor foram carregados!");
   } catch (error) {
     console.error("❌ Erro geral ao carregar dados do setor:", error);
+  }
+};
+
+const carregarDadosEstoque = async () => {
+  try {
+    console.log("🔄 Recarregando dados do estoque...");
+
+    if (!setor.value.id || !setor.value.estoque) {
+      console.warn("⚠️ Setor sem ID ou sem permissão de estoque");
+      return;
+    }
+
+    // Contexto para carregar apenas o estoque
+    const context = {
+      $axios: axios,
+      $store: store,
+      $toastr: undefined,
+      modalData: {},
+      estoqueData: {},
+      estoqueItems: estoqueItems,
+      resumoEstoque: resumoEstoque,
+      setorEstoque: setorEstoque,
+      loading: false,
+      error: null,
+    };
+
+    // Recarregar apenas o estoque
+    await functionsEstoque.listAll(context);
+    console.log("✓ Estoque recarregado:", estoqueItems.value.length, "itens");
+  } catch (error) {
+    console.error("❌ Erro ao recarregar estoque:", error);
   }
 };
 

@@ -19,9 +19,7 @@
           <tbody>
             <tr v-if="isSearching">
               <td :colspan="titles.length + 1" style="text-align: center">
-                <div class="spinner-border text-primary m-1" role="status">
-                  <span class="sr-only">Carregando...</span>
-                </div>
+                <LoadingSpinner size="md" />
               </td>
             </tr>
             <tr v-else v-for="item in contentTable" :key="item.id">
@@ -112,11 +110,13 @@
 
 <script>
 import LINKMODAL01 from "@/components/layouts/LinkModal01.vue";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 
 export default {
   name: "",
   components: {
     LINKMODAL01,
+    LoadingSpinner,
   },
   props: [
     "list",

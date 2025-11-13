@@ -18,12 +18,9 @@
                     <!-- Loading -->
                     <div
                       v-if="$store.state.isSearching"
-                      class="text-center mt-5"
+                      class="w-full min-h-[300px] flex items-center justify-center"
                     >
-                      <div class="spinner-border text-primary" role="status">
-                        <span class="visually-hidden">Carregando...</span>
-                      </div>
-                      <p class="mt-2">Carregando produtos...</p>
+                      <LoadingSpinner size="lg" />
                     </div>
 
                     <!-- Tabela com dados -->
@@ -88,6 +85,7 @@ import LinkModal01 from "@/components/layouts/LinkModal01.vue";
 import TemplateAdmin from "@/views/roleAdmin/TemplateAdmin.vue";
 import ModalProdutos from "@/components/cadastros/ModalProdutos.vue";
 import TBLBASE01 from "@/components/layouts/TableBase01.vue";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 
 import functions from "../../functions/cad_produtos.js";
 
@@ -98,6 +96,7 @@ export default {
     TemplateAdmin,
     ModalProdutos,
     TBLBASE01,
+    LoadingSpinner,
   },
   data() {
     return {

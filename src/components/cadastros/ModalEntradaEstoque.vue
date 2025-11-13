@@ -1,68 +1,68 @@
 <template>
-  <span>
-    <ModalBase01
-      :idModal="idModal"
-      modalClass="modal-dialog modal-fullscreen-xxl-down modal-dialog-scrollable modal-dialog-centered"
-    >
-      <div class="row">
-        <div class="col-12">
-          <h4 class="mb-3 d-flex align-items-center gap-2">
-            <i class="mdi mdi-tray-arrow-down text-primary"></i>
-            Registrar entrada de estoque
-          </h4>
-          <p class="text-muted mb-4">
-            Preencha os dados abaixo para lançar uma nova entrada de produtos na
-            unidade selecionada.
-          </p>
-        </div>
-      </div>
+  <Dialog :open="open" @update:open="$emit('update:open', $event)">
+    <DialogContent class="max-w-6xl max-h-[90vh] overflow-y-auto">
+      <DialogHeader class="text-start">
+        <DialogTitle class="flex gap-2">
+          <i class="mdi mdi-tray-arrow-down text-primary"></i>
+          Registrar entrada de estoque
+        </DialogTitle>
+        <DialogDescription>
+          Preencha os dados abaixo para lançar uma nova entrada de produtos na
+          unidade selecionada.
+        </DialogDescription>
+      </DialogHeader>
 
       <form @submit.prevent="registrarEntradaLocal" novalidate>
         <div class="row g-3">
           <div class="col-md-4">
-            <label class="form-label" for="entradaNotaFiscal">
+            <Label for="entradaNotaFiscal">
               Nota fiscal
               <span class="text-muted small">(opcional)</span>
-            </label>
-            <input
+            </Label>
+            <Input
               id="entradaNotaFiscal"
               v-model="form.notaFiscal"
               type="text"
-              class="form-control text-uppercase"
+              class="text-uppercase"
               placeholder="Ex: NF-2025/001"
             />
           </div>
 
           <div class="col-md-8">
-            <label class="form-label" for="entradaFornecedor">
+            <Label for="entradaFornecedor">
               Fornecedor
               <span class="text-danger">*</span>
-            </label>
-            <div class="input-group">
-              <select
-                id="entradaFornecedor"
-                class="form-select"
-                :class="{ 'is-invalid': fornecedorErro }"
-                v-model="form.fornecedorId"
-              >
-                <option value="">Selecione um fornecedor</option>
-                <option
-                  v-for="fornecedor in fornecedoresDisponiveis"
-                  :key="fornecedor.id"
-                  :value="fornecedor.id"
-                >
-                  {{ fornecedorLabel(fornecedor) }}
-                </option>
-              </select>
-              <button
-                class="btn btn-outline-primary"
+            </Label>
+            <div class="flex gap-2">
+              <div class="flex-1">
+                <Select v-model="form.fornecedorId">
+                  <SelectTrigger
+                    id="entradaFornecedor"
+                    :class="{ 'border-red-500': fornecedorErro }"
+                  >
+                    <SelectValue placeholder="Selecione um fornecedor" />
+                  </SelectTrigger>
+                  <SelectContent class="z-[9999]">
+                    <SelectItem
+                      v-for="fornecedor in fornecedoresDisponiveis"
+                      :key="fornecedor.id"
+                      :value="fornecedor.id"
+                    >
+                      {{ fornecedorLabel(fornecedor) }}
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <Button
+                variant="outline"
+                size="icon"
                 type="button"
                 @click="toggleFornecedorForm"
               >
                 <i class="mdi mdi-plus"></i>
-              </button>
+              </Button>
             </div>
-            <div v-if="fornecedorErro" class="invalid-feedback">
+            <div v-if="fornecedorErro" class="text-red-500 text-sm mt-1">
               {{ fornecedorErro }}
             </div>
           </div>
@@ -72,56 +72,56 @@
           <h6 class="mb-3 text-primary">Cadastrar fornecedor rapidamente</h6>
           <div class="row g-3">
             <div class="col-md-4">
-              <label class="form-label" for="novoFornecedorNome">
+              <Label for="novoFornecedorNome">
                 Razão social / Nome
                 <span class="text-danger">*</span>
-              </label>
-              <input
+              </Label>
+              <Input
                 id="novoFornecedorNome"
                 v-model="novoFornecedor.nome"
                 type="text"
-                class="form-control text-uppercase"
+                class="text-uppercase"
                 placeholder="Digite o nome do fornecedor"
               />
             </div>
             <div class="col-md-4">
-              <label class="form-label" for="novoFornecedorTipo">
-                Tipo de pessoa
-              </label>
-              <select
-                id="novoFornecedorTipo"
-                v-model="novoFornecedor.tipo"
-                class="form-select"
-              >
-                <option value="J">Pessoa Jurídica</option>
-                <option value="F">Pessoa Física</option>
-              </select>
+              <Label for="novoFornecedorTipo"> Tipo de pessoa </Label>
+              <Select v-model="novoFornecedor.tipo">
+                <SelectTrigger id="novoFornecedorTipo" class="w-full">
+                  <SelectValue placeholder="Selecione o tipo" />
+                </SelectTrigger>
+                <SelectContent class="z-[9999]">
+                  <SelectItem value="J">Pessoa Jurídica</SelectItem>
+                  <SelectItem value="F">Pessoa Física</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <div class="col-md-4">
-              <label class="form-label" for="novoFornecedorDocumento">
+              <Label for="novoFornecedorDocumento">
                 {{ novoFornecedor.tipo === "J" ? "CNPJ" : "CPF" }}
-              </label>
-              <input
+              </Label>
+              <Input
                 id="novoFornecedorDocumento"
                 v-model="novoFornecedor.documento"
                 type="text"
-                class="form-control"
                 placeholder="Somente números"
                 v-mask="mascaraDocumentoFornecedor"
               />
             </div>
             <div class="col-12 d-flex justify-content-end gap-2">
-              <button
+              <Button
+                variant="outline"
+                size="sm"
                 type="button"
-                class="btn btn-secondary btn-sm"
                 @click="cancelarFornecedorForm"
               >
                 <i class="mdi mdi-close"></i>
                 Cancelar
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="default"
+                size="sm"
                 type="button"
-                class="btn btn-success btn-sm d-flex align-items-center gap-2"
                 @click="salvarFornecedorInline"
                 :disabled="
                   salvandoFornecedorInline ||
@@ -141,7 +141,7 @@
                   ></span>
                   <span>Salvando...</span>
                 </template>
-              </button>
+              </Button>
             </div>
           </div>
         </div>
@@ -156,46 +156,50 @@
 
           <div class="row g-3 p-3 border rounded bg-light">
             <div class="col-md-4">
-              <label class="form-label" for="produtoSelect">
+              <Label for="produtoSelect">
                 Produto
                 <span class="text-danger">*</span>
-              </label>
-              <div class="input-group">
-                <select
-                  id="produtoSelect"
-                  class="form-select"
-                  v-model="produtoSelecionadoId"
-                  :disabled="produtosDisponiveis.length === 0"
-                >
-                  <option value="">Selecione um produto</option>
-                  <option
-                    v-for="produto in produtosDisponiveis"
-                    :key="produto.id"
-                    :value="produto.id"
-                  >
-                    {{ produtoLabel(produto) }}
-                  </option>
-                </select>
-                <button
-                  class="btn btn-outline-primary"
+              </Label>
+              <div class="flex gap-2">
+                <div class="flex-1">
+                  <Select v-model="produtoSelecionadoId">
+                    <SelectTrigger
+                      id="produtoSelect"
+                      :disabled="produtosDisponiveis.length === 0"
+                    >
+                      <SelectValue placeholder="Selecione um produto" />
+                    </SelectTrigger>
+                    <SelectContent class="z-[9999]">
+                      <SelectItem
+                        v-for="produto in produtosDisponiveis"
+                        :key="produto.id"
+                        :value="produto.id"
+                      >
+                        {{ produtoLabel(produto) }}
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <Button
+                  variant="outline"
+                  size="icon"
                   type="button"
                   @click="toggleProdutoForm"
                   title="Cadastrar novo produto"
                 >
                   <i class="mdi mdi-plus"></i>
-                </button>
+                </Button>
               </div>
             </div>
 
             <div class="col-md-2">
-              <label class="form-label" for="produtoQuantidade">
+              <Label for="produtoQuantidade">
                 Quantidade
                 <span class="text-danger">*</span>
-              </label>
-              <input
+              </Label>
+              <Input
                 id="produtoQuantidade"
                 type="number"
-                class="form-control"
                 min="1"
                 v-model.number="itemAtual.quantidade"
                 placeholder="Ex: 100"
@@ -203,14 +207,14 @@
             </div>
 
             <div class="col-md-2">
-              <label class="form-label" for="produtoLote">
+              <Label for="produtoLote">
                 Lote
                 <span class="text-danger">*</span>
-              </label>
-              <input
+              </Label>
+              <Input
                 id="produtoLote"
                 type="text"
-                class="form-control text-uppercase"
+                class="text-uppercase"
                 maxlength="50"
                 v-model="itemAtual.lote"
                 placeholder="Ex: LOTE123"
@@ -218,41 +222,33 @@
             </div>
 
             <div class="col-md-2">
-              <label class="form-label" for="produtoDataFabricacao">
-                Data fabricação
-              </label>
-              <input
+              <Label for="produtoDataFabricacao"> Data fabricação </Label>
+              <Input
                 id="produtoDataFabricacao"
                 type="date"
-                class="form-control"
                 v-model="itemAtual.data_fabricacao"
                 :max="dataHoje"
               />
             </div>
 
             <div class="col-md-2">
-              <label class="form-label" for="produtoDataVencimento">
+              <Label for="produtoDataVencimento">
                 Data vencimento
                 <span class="text-danger">*</span>
-              </label>
-              <input
+              </Label>
+              <Input
                 id="produtoDataVencimento"
                 type="date"
-                class="form-control"
                 v-model="itemAtual.data_vencimento"
                 :min="dataAmanha"
               />
             </div>
 
             <div class="col-12 d-flex justify-content-end">
-              <button
-                type="button"
-                class="btn btn-success d-flex align-items-center gap-2"
-                @click="adicionarProduto"
-              >
+              <Button variant="default" type="button" @click="adicionarProduto">
                 <i class="mdi mdi-cart-plus"></i>
                 <span>Adicionar à lista</span>
-              </button>
+              </Button>
             </div>
           </div>
         </div>
@@ -264,108 +260,103 @@
           <h6 class="mb-3 text-primary">Cadastrar produto rapidamente</h6>
           <div class="row g-3">
             <div class="col-lg-4 col-md-6">
-              <label class="form-label" for="novoProdutoNome">
+              <Label for="novoProdutoNome">
                 Nome do produto
                 <span class="text-danger">*</span>
-              </label>
-              <input
+              </Label>
+              <Input
                 id="novoProdutoNome"
                 v-model="novoProduto.nome"
                 type="text"
-                class="form-control text-uppercase"
+                class="text-uppercase"
                 placeholder="Ex: DIPIRONA 500MG"
               />
             </div>
             <div class="col-lg-4 col-md-6">
-              <label class="form-label" for="novoProdutoGrupo">
-                Grupo do produto
-              </label>
-              <div class="input-group">
-                <select
-                  id="novoProdutoGrupo"
-                  v-model="novoProduto.grupo_produto_id"
-                  class="form-select"
-                >
-                  <option value="">Selecionar grupo</option>
-                  <option
-                    v-for="grupo in gruposDisponiveis"
-                    :key="grupo.id"
-                    :value="grupo.id"
-                  >
-                    {{ grupo.nome }}
-                  </option>
-                </select>
-                <button
-                  class="btn btn-outline-primary"
+              <Label for="novoProdutoGrupo"> Grupo do produto </Label>
+              <div class="flex gap-2">
+                <div class="flex-1">
+                  <Select v-model="novoProduto.grupo_produto_id">
+                    <SelectTrigger id="novoProdutoGrupo">
+                      <SelectValue placeholder="Selecionar grupo" />
+                    </SelectTrigger>
+                    <SelectContent class="z-[9999]">
+                      <SelectItem
+                        v-for="grupo in gruposDisponiveis"
+                        :key="grupo.id"
+                        :value="grupo.id"
+                      >
+                        {{ grupo.nome }}
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <Button
+                  variant="outline"
+                  size="icon"
                   type="button"
                   @click="toggleGrupoProdutoForm"
                   title="Cadastrar novo grupo"
                 >
                   <i class="mdi mdi-plus"></i>
-                </button>
+                </Button>
               </div>
             </div>
             <div class="col-lg-4 col-md-6">
-              <label class="form-label" for="novoProdutoUnidade">
-                Unidade de medida
-              </label>
-              <select
-                id="novoProdutoUnidade"
-                v-model="novoProduto.unidade_medida_id"
-                class="form-select"
-              >
-                <option value="">Selecionar unidade</option>
-                <option
-                  v-for="unidade in unidadesMedidaDisponiveis"
-                  :key="unidade.id"
-                  :value="unidade.id"
-                >
-                  {{ unidade.nome }}
-                </option>
-              </select>
+              <Label for="novoProdutoUnidade"> Unidade de medida </Label>
+              <Select v-model="novoProduto.unidade_medida_id">
+                <SelectTrigger id="novoProdutoUnidade" class="w-full">
+                  <SelectValue placeholder="Selecionar unidade" />
+                </SelectTrigger>
+                <SelectContent class="z-[9999]">
+                  <SelectItem
+                    v-for="unidade in unidadesMedidaDisponiveis"
+                    :key="unidade.id"
+                    :value="unidade.id"
+                  >
+                    {{ unidade.nome }}
+                  </SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <div class="col-md-3">
-              <label class="form-label" for="novoProdutoStatus"> Status </label>
-              <select
-                id="novoProdutoStatus"
-                v-model="novoProduto.status"
-                class="form-select"
-              >
-                <option value="A">Ativo</option>
-                <option value="I">Inativo</option>
-              </select>
+              <Label for="novoProdutoStatus"> Status </Label>
+              <Select v-model="novoProduto.status">
+                <SelectTrigger id="novoProdutoStatus" class="w-full">
+                  <SelectValue placeholder="Selecione o status" />
+                </SelectTrigger>
+                <SelectContent class="z-[9999]">
+                  <SelectItem value="A">Ativo</SelectItem>
+                  <SelectItem value="I">Inativo</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <div class="col-md-3">
-              <label class="form-label" for="novoProdutoCodigoSimpras">
-                Código SIMPRAS
-              </label>
-              <input
+              <Label for="novoProdutoCodigoSimpras"> Código SIMPRAS </Label>
+              <Input
                 id="novoProdutoCodigoSimpras"
                 v-model="novoProduto.codigo_simpras"
                 type="text"
-                class="form-control text-uppercase"
+                class="text-uppercase"
                 placeholder="Ex: 10301012"
               />
             </div>
             <div class="col-md-3">
-              <label class="form-label" for="novoProdutoCodigoBarras">
-                Código de barras
-              </label>
-              <input
+              <Label for="novoProdutoCodigoBarras"> Código de barras </Label>
+              <Input
                 id="novoProdutoCodigoBarras"
                 v-model="novoProduto.codigo_barras"
                 type="text"
-                class="form-control"
                 placeholder="EAN (opcional)"
               />
             </div>
             <div class="col-md-3">
-              <label class="form-label" for="novoProdutoMarca"> Marca </label>
-              <input
+              <Label for="novoProdutoMarca"> Marca </Label>
+              <Input
                 id="novoProdutoMarca"
                 v-model="novoProduto.marca"
                 type="text"
-                class="form-control text-uppercase"
+                class="text-uppercase"
                 placeholder="Ex: EMS"
               />
             </div>
@@ -373,43 +364,46 @@
               <div class="p-3 border rounded bg-white">
                 <div class="row g-3 align-items-end">
                   <div class="col-md-6">
-                    <label class="form-label small" for="novoGrupoProdutoNome">
+                    <Label class="text-sm" for="novoGrupoProdutoNome">
                       Nome do grupo
                       <span class="text-danger">*</span>
-                    </label>
-                    <input
+                    </Label>
+                    <Input
                       id="novoGrupoProdutoNome"
                       v-model="novoGrupoProduto.nome"
                       type="text"
-                      class="form-control text-uppercase"
+                      class="text-uppercase"
                       placeholder="Ex: ANALGÉSICOS"
                     />
                   </div>
                   <div class="col-md-3">
-                    <label class="form-label small" for="novoGrupoProdutoTipo">
+                    <Label class="text-sm" for="novoGrupoProdutoTipo">
                       Tipo
-                    </label>
-                    <select
-                      id="novoGrupoProdutoTipo"
-                      v-model="novoGrupoProduto.tipo"
-                      class="form-select"
-                    >
-                      <option value="Material">Material</option>
-                      <option value="Medicamento">Medicamento</option>
-                    </select>
+                    </Label>
+                    <Select v-model="novoGrupoProduto.tipo">
+                      <SelectTrigger id="novoGrupoProdutoTipo" class="w-full">
+                        <SelectValue placeholder="Selecione o tipo" />
+                      </SelectTrigger>
+                      <SelectContent class="z-[9999]">
+                        <SelectItem value="Material">Material</SelectItem>
+                        <SelectItem value="Medicamento">Medicamento</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                   <div class="col-md-3 d-flex justify-content-end gap-2">
-                    <button
+                    <Button
+                      variant="secondary"
+                      size="sm"
                       type="button"
-                      class="btn btn-secondary btn-sm"
                       @click="cancelarGrupoProdutoForm"
                     >
                       <i class="mdi mdi-close"></i>
                       Cancelar
-                    </button>
-                    <button
+                    </Button>
+                    <Button
+                      variant="default"
+                      size="sm"
                       type="button"
-                      class="btn btn-success btn-sm d-flex align-items-center gap-2"
                       @click="salvarGrupoProdutoInline"
                       :disabled="
                         salvandoGrupoProdutoInline || !novoGrupoProduto.nome
@@ -427,23 +421,25 @@
                         ></span>
                         <span>Salvando...</span>
                       </template>
-                    </button>
+                    </Button>
                   </div>
                 </div>
               </div>
             </div>
             <div class="col-12 d-flex justify-content-end gap-2">
-              <button
+              <Button
+                variant="secondary"
+                size="sm"
                 type="button"
-                class="btn btn-secondary btn-sm"
                 @click="cancelarProdutoForm"
               >
                 <i class="mdi mdi-close"></i>
                 Cancelar
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="default"
+                size="sm"
                 type="button"
-                class="btn btn-success btn-sm d-flex align-items-center gap-2"
                 @click="salvarProdutoInline"
                 :disabled="
                   salvandoProdutoInline ||
@@ -463,7 +459,7 @@
                   ></span>
                   <span>Salvando...</span>
                 </template>
-              </button>
+              </Button>
             </div>
           </div>
         </div>
@@ -501,37 +497,51 @@
                   <small>{{ formatarData(item.data_vencimento) }}</small>
                 </td>
                 <td class="text-center">
-                  <button
-                    type="button"
-                    class="btn btn-outline-danger btn-sm"
-                    @click="removerProduto(item.localId)"
-                    title="Remover produto"
-                  >
-                    <i class="mdi mdi-delete"></i>
-                  </button>
+                  <div class="d-flex gap-1 justify-content-center">
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      type="button"
+                      @click="editarProduto(item)"
+                      title="Editar produto"
+                    >
+                      <i class="mdi mdi-pencil"></i>
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      size="icon"
+                      type="button"
+                      @click="removerProduto(item.localId)"
+                      title="Remover produto"
+                    >
+                      <i class="mdi mdi-delete"></i>
+                    </Button>
+                  </div>
                 </td>
               </tr>
             </tbody>
           </table>
         </div>
-        <div v-else class="alert alert-info d-flex align-items-center">
-          <i class="mdi mdi-information-outline me-2"></i>
-          <span>Inclua ao menos um produto para registrar a entrada.</span>
-        </div>
+        <Alert v-else class="flex">
+          <i class="mdi mdi-information-outline h-4 w-4"></i>
+          <AlertDescription>
+            Inclua ao menos um produto para registrar a entrada.
+          </AlertDescription>
+        </Alert>
 
         <div class="mt-4 d-flex justify-content-end gap-2">
-          <button
+          <Button
+            variant="outline"
             type="button"
-            class="btn btn-secondary btn-modal"
-            data-bs-dismiss="modal"
+            @click="fecharModal"
             :disabled="loading"
           >
             <i class="mdi mdi-close-thick me-2"></i>
             Cancelar
-          </button>
-          <button
+          </Button>
+          <Button
+            variant="default"
             type="submit"
-            class="btn btn-success btn-modal d-flex align-items-center gap-2"
             :disabled="loading || !podeSalvar"
           >
             <template v-if="!loading">
@@ -546,31 +556,63 @@
               ></span>
               <span>Registrando...</span>
             </template>
-          </button>
+          </Button>
         </div>
       </form>
-    </ModalBase01>
-  </span>
+    </DialogContent>
+  </Dialog>
 </template>
 
 <script>
-import ModalBase01 from "@/components/layouts/ModalBase01.vue";
-import { Modal } from "bootstrap";
 import cadFornecedores from "@/functions/cad_fornecedores.js";
 import cadProdutos from "@/functions/cad_produtos.js";
 import cadUnidadesMedida from "@/functions/cad_unidades_medida.js";
 import cadGrupoProduto from "@/functions/cad_grupo_produto.js";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 export default {
   name: "ModalEntradaEstoque",
   components: {
-    ModalBase01,
+    Button,
+    Input,
+    Label,
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+    Alert,
+    AlertDescription,
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
   },
-  emits: ["registrado"],
+  emits: ["registrado", "update:open"],
   props: {
-    idModal: {
-      type: String,
-      required: true,
+    open: {
+      type: Boolean,
+      default: false,
     },
     unidade: {
       type: Object,
@@ -696,10 +738,9 @@ export default {
   },
   mounted() {
     this.ensureDadosDependencias();
-    this.registrarEventosModal();
   },
   beforeUnmount() {
-    this.removerEventosModal();
+    // Não necessário com Dialog do shadcn
   },
   methods: {
     ensureDadosDependencias() {
@@ -717,17 +758,10 @@ export default {
       }
     },
     registrarEventosModal() {
-      const modalEl = document.getElementById(this.idModal);
-      if (!modalEl) return;
-
-      modalEl.addEventListener("show.bs.modal", this.handleShowModal);
-      modalEl.addEventListener("hidden.bs.modal", this.resetarFormulario);
+      // Não necessário com Dialog do shadcn
     },
     removerEventosModal() {
-      const modalEl = document.getElementById(this.idModal);
-      if (!modalEl) return;
-      modalEl.removeEventListener("show.bs.modal", this.handleShowModal);
-      modalEl.removeEventListener("hidden.bs.modal", this.resetarFormulario);
+      // Não necessário com Dialog do shadcn
     },
     handleShowModal() {
       this.ensureDadosDependencias();
@@ -1106,6 +1140,27 @@ export default {
         (item) => item.localId !== localId
       );
     },
+    editarProduto(item) {
+      // Preencher os campos do formulário com os dados do item para edição
+      this.produtoSelecionadoId = item.produto_id;
+      this.itemAtual = {
+        quantidade: item.quantidade,
+        lote: item.lote,
+        data_fabricacao: item.data_fabricacao || "",
+        data_vencimento: item.data_vencimento,
+      };
+
+      // Remover o item da lista (será adicionado novamente quando salvar)
+      this.removerProduto(item.localId);
+
+      // Scroll para o topo do formulário para facilitar a edição
+      const formSection = document.querySelector(".bg-light");
+      if (formSection) {
+        formSection.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+
+      this.notificar("Produto carregado para edição", "info");
+    },
     async registrarEntradaLocal() {
       console.log("🔍 Iniciando registro de entrada...");
 
@@ -1184,13 +1239,7 @@ export default {
       }
     },
     fecharModal() {
-      const modalEl = document.getElementById(this.idModal);
-      if (modalEl) {
-        const instance = Modal.getInstance(modalEl);
-        if (instance) {
-          instance.hide();
-        }
-      }
+      this.$emit("update:open", false);
       // Resetar o formulário após fechar
       this.$nextTick(() => {
         this.resetarFormulario();

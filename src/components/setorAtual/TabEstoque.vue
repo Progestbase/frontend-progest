@@ -1,21 +1,25 @@
 <template>
   <div>
     <!-- Loading -->
-    <div v-if="loading" class="flex justify-center items-center py-12">
-      <div
-        class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"
-      ></div>
-      <p class="mt-4 text-muted-foreground">Carregando estoque...</p>
+    <div
+      v-if="loading"
+      class="w-full min-h-[400px] flex items-center justify-center"
+    >
+      <LoadingSpinner size="lg" />
     </div>
 
     <!-- Conteúdo do Estoque -->
     <div v-else class="space-y-6">
       <!-- Header -->
+
       <div>
         <h2 class="text-2xl font-bold flex items-center gap-2">
-          <i class="mdi mdi-package-variant text-xl"></i>
-          Estoque - {{ setorEstoque.nome || "Setor" }}
+          <i class="mdi mdi-package-variant text-xl text-blue-600"></i>
+          Estoque
         </h2>
+        <p class="text-sm text-muted-foreground">
+          Estoque para controle do setor atual.
+        </p>
       </div>
 
       <!-- Cards de Resumo -->
@@ -68,7 +72,6 @@
                 <th class="text-start">Grupo</th>
                 <th class="text-center">Qtd. Atual</th>
                 <th class="text-center">Qtd. Mínima</th>
-                <th class="text-center">Status</th>
                 <th class="text-center">Alerta</th>
                 <th class="text-center">Ações</th>
               </tr>
@@ -142,22 +145,13 @@
                   </div>
                 </td>
                 <td class="text-center">
-                  <Badge
-                    :variant="
-                      item.status === 'Disponível' ? 'default' : 'secondary'
-                    "
-                  >
-                    {{ item.status }}
-                  </Badge>
-                </td>
-                <td class="text-center">
                   {{ item.alerta }}
                 </td>
                 <td class="text-center" @click.stop>
                   <div class="d-flex align-items-center justify-content-center">
                     <Button
                       v-if="editandoQuantidade !== item.id"
-                      variant="edit"
+                      variant="outline"
                       size="icon-sm"
                       @click="
                         editarQuantidadeMinima(
@@ -187,8 +181,15 @@
       </div>
     </div>
 
-    <!-- Modal de Visualização de Detalhes -->
-    <ModalVisualizarEstoque ref="modalVisualizarEstoque" />
+    <!-- Modal de Visualização de Lotes -->
+    <ModalVisualizarLotesProduto
+      ref="modalVisualizarLotes"
+      :produto="produtoSelecionado"
+      :setor="setorEstoque"
+      :estoqueId="estoqueIdSelecionado"
+      :quantidadeAtual="quantidadeAtualSelecionada"
+      :quantidadeMinima="quantidadeMinimaSelecionada"
+    />
   </div>
 </template>
 
@@ -196,13 +197,21 @@
 import { computed, ref, inject } from "vue";
 import { useStore } from "vuex";
 import functionsEstoque from "@/functions/cad_estoque";
+import cadEstoqueLote from "@/functions/cad_estoque_lote";
 import axios from "axios";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import ModalVisualizarEstoque from "@/components/cadastros/ModalVisualizarEstoque.vue";
+import ModalVisualizarLotesProduto from "@/components/cadastros/ModalVisualizarLotesProduto.vue";
+import { useToast } from "@/composables/useToast";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import * as bootstrap from "bootstrap";
+
+// Emits para comunicar com o componente pai
+const emit = defineEmits(["reloadEstoque"]);
 
 const store = useStore();
+const { success, error } = useToast();
 
 // Receber dados do componente pai (SetorAtualView) via provide/inject
 const parentData = inject("setorAtualData", {
@@ -212,10 +221,27 @@ const parentData = inject("setorAtualData", {
   loading: false,
 });
 
-// Ref do modal
-const modalVisualizarEstoque = ref(null);
+// Ref do modal (removido pois não é mais usado)
+// const modalVisualizarEstoque = ref(null);
 
-const loading = computed(() => store.state.isSearching || false);
+// Estados para o modal de lotes
+const produtoSelecionado = ref({});
+const estoqueIdSelecionado = ref(null);
+const quantidadeAtualSelecionada = ref(0);
+const quantidadeMinimaSelecionada = ref(0);
+const modalVisualizarLotes = ref(null);
+
+const loading = computed(() => {
+  // Se já temos dados do componente pai, não mostrar loading
+  const parentItems = parentData.estoqueItems?.value || parentData.estoqueItems;
+  const hasParentData = Array.isArray(parentItems) && parentItems.length >= 0;
+  if (hasParentData) {
+    return false;
+  }
+
+  // Caso contrário, verificar se há busca em andamento
+  return Boolean(store.state.isSearching);
+});
 const estoqueItems = computed(() => {
   const items = parentData.estoqueItems;
   // Se for uma ref (Composition API), usar .value
@@ -230,10 +256,50 @@ const setorEstoque = computed(() => {
   return setor?.value || setor || {};
 });
 
-// Função para visualizar detalhes do item
-const visualizarDetalhes = (item) => {
-  if (modalVisualizarEstoque.value) {
-    modalVisualizarEstoque.value.openModal(item);
+// Função para visualizar detalhes do item (lotes)
+const visualizarDetalhes = async (item) => {
+  // Buscar dados completos do item no estoqueItems
+  const itemCompleto = estoqueItems.value.find((e) => e.estoque_id === item.id);
+
+  if (!itemCompleto) {
+    error("Erro", "Item de estoque não encontrado");
+    return;
+  }
+
+  // Definir dados do produto selecionado
+  produtoSelecionado.value = itemCompleto.produto || {};
+  estoqueIdSelecionado.value = itemCompleto.estoque_id;
+  quantidadeAtualSelecionada.value = itemCompleto.quantidade_atual || 0;
+  quantidadeMinimaSelecionada.value = itemCompleto.quantidade_minima || 0;
+
+  // Carregar lotes via API e aguardar
+  if (estoqueIdSelecionado.value) {
+    try {
+      // Aguardar o carregamento dos lotes
+      await cadEstoqueLote.listByEstoque(
+        {
+          $axios: axios,
+          $store: store,
+          $toastr: undefined,
+        },
+        estoqueIdSelecionado.value
+      );
+
+      // Pequeno delay para garantir que o Vue atualizou os computed
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    } catch (errorMsg) {
+      console.error("Erro ao carregar lotes:", errorMsg);
+    }
+  }
+
+  // Abrir modal APÓS carregar os lotes
+  try {
+    if (modalVisualizarLotes.value) {
+      modalVisualizarLotes.value.dialogOpen = true;
+    }
+  } catch (errorMsg) {
+    console.error("Erro ao abrir modal de lotes:", errorMsg);
+    error("Erro", "Não foi possível abrir o modal. Tente novamente.");
   }
 };
 
@@ -261,14 +327,17 @@ const salvarQuantidadeMinima = async (itemId, quantidadeAtual) => {
       (item) => item.estoque_id === itemId
     );
     if (!itemOriginal) {
-      alert("Item não encontrado");
+      error("Erro", "Item não encontrado");
       return;
     }
 
     // Validar a nova quantidade
     const novaQuantidade = parseInt(novaQuantidadeMinima.value);
     if (isNaN(novaQuantidade) || novaQuantidade < 0) {
-      alert("Quantidade deve ser um número maior ou igual a zero");
+      error(
+        "Erro de validação",
+        "Quantidade deve ser um número maior ou igual a zero"
+      );
       return;
     }
 
@@ -292,20 +361,17 @@ const salvarQuantidadeMinima = async (itemId, quantidadeAtual) => {
       novaQuantidade
     );
 
-    // Recarregar dados para refletir a mudança
-    const setorId = store.state.setorAtualId;
-    if (setorId) {
-      await functionsEstoque.listAll(context);
-    }
+    // Emitir evento para o componente pai recarregar os dados
+    emit("reloadEstoque");
 
     // Cancelar edição
     cancelarEdicao();
 
     // Feedback de sucesso
-    alert("Quantidade mínima atualizada com sucesso!");
-  } catch (error) {
-    console.error("Erro ao salvar quantidade mínima:", error);
-    alert("Erro ao atualizar quantidade mínima");
+    success("Sucesso", "Quantidade mínima atualizada com sucesso!");
+  } catch (errorMsg) {
+    console.error("Erro ao salvar quantidade mínima:", errorMsg);
+    error("Erro", "Erro ao atualizar quantidade mínima");
   }
 };
 
@@ -322,8 +388,6 @@ const formattedEstoque = computed(() => {
       quantidade_minima:
         `${item.quantidade_minima || 0} ${item.produto?.unidade_medida?.nome || ""}`.trim(),
       quantidade_minima_valor: item.quantidade_minima || 0,
-      status:
-        item.status_disponibilidade === "D" ? "Disponível" : "Indisponível",
       alerta: item.abaixo_minimo ? "⚠️ Abaixo" : "✅ OK",
     })),
   };

@@ -202,7 +202,7 @@
                           </div>
 
                           <!-- Informações adicionais -->
-                          <!-- Fornecedores relacionados (novo card) -->
+                          <!-- Setor Distribuidor (novo card) -->
                           <div
                             v-if="
                               setor.fornecedores_relacionados &&
@@ -215,7 +215,7 @@
                                 <i
                                   class="mdi mdi-truck-delivery-outline me-2"
                                 ></i>
-                                Fornecedores Relacionados
+                                Setor Distribuidor
                               </h5>
                             </div>
                             <div class="card-body">
@@ -573,7 +573,7 @@
 
     <!-- Modal de Visualização de Entrada -->
     <ModalVisualizarEntrada
-      idModal="modalVisualizarEntrada"
+      ref="modalVisualizarEntrada"
       :entrada="entradaSelecionada"
     />
     <!-- Modal de Solicitação de Movimentação -->
@@ -598,7 +598,6 @@ import ModalSetor from "@/components/cadastros/ModalSetor.vue";
 import ModalSolicitacaoMovimentacao from "@/components/cadastros/ModalSolicitacaoMovimentacao.vue";
 import functions from "@/functions/cad_setores.js";
 import functionsMovimentacao from "@/functions/cad_movimentacao.js";
-import * as bootstrap from "bootstrap";
 import functionsEntradas from "@/functions/cad_entradas.js";
 import ModalUsuarioSetor from "@/components/cadastros/ModalUsuarioSetor.vue";
 import usuarioSetorFunctions from "@/functions/cad_usuario_setor.js";
@@ -727,11 +726,13 @@ export default {
       }
     },
     abrirModalEntrada() {
-      // Abrir modal de entrada de estoque
-      const modal = new bootstrap.Modal(
-        document.getElementById("modalEntradaEstoque")
-      );
-      modal.show();
+      // Abrir modal de entrada de estoque usando Dialog do shadcn
+      const modalComponent = this.$refs.modalEntradaEstoque;
+      if (modalComponent) {
+        modalComponent.dialogOpen = true;
+      } else {
+        console.error("Modal component não encontrado");
+      }
     },
     async carregarEntradas() {
       if (this.setor?.id) {
@@ -796,10 +797,9 @@ export default {
       console.log("Visualizar entrada:", entrada);
       this.entradaSelecionada = entrada;
       // Abrir modal de visualização
-      const modal = new bootstrap.Modal(
-        document.getElementById("modalVisualizarEntrada")
-      );
-      modal.show();
+      if (this.$refs.modalVisualizarEntrada) {
+        this.$refs.modalVisualizarEntrada.dialogOpen = true;
+      }
     },
     formatarData(data) {
       if (!data) return null;

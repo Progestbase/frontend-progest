@@ -1,5 +1,122 @@
 <template>
-  <span>
+  <!-- Novo modal usando shadcn Dialog quando open prop é fornecida -->
+  <Dialog
+    v-if="open !== undefined"
+    :open="open"
+    @update:open="$emit('update:open', $event)"
+  >
+    <DialogContent class="w-full max-w-4xl max-h-[90vh] overflow-hidden">
+      <DialogHeader class="text-start">
+        <DialogTitle class="flex gap-2">
+          <i class="mdi mdi-office-building text-primary"></i>
+          {{ mode === "ADD" ? "Criar novo Setor" : "Editar Setor" }}
+        </DialogTitle>
+        <DialogDescription>
+          {{
+            mode === "ADD"
+              ? "Crie um novo setor."
+              : "Edite as informações do setor."
+          }}
+        </DialogDescription>
+      </DialogHeader>
+
+      <div class="space-y-6 max-h-[70vh] overflow-y-auto p-6">
+        <form autocomplete="off">
+          <div class="grid grid-cols-2 gap-4">
+            <div class="space-y-2">
+              <Label>Status</Label>
+              <Select v-model="modalData.status">
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione o status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="A">Ativo</SelectItem>
+                  <SelectItem value="I">Inativo</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div class="space-y-2">
+              <Label>Tipo</Label>
+              <Select v-model="modalData.tipo">
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione o tipo" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Material">Material</SelectItem>
+                  <SelectItem value="Medicamento">Medicamento</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div class="space-y-2">
+              <Label>Controla estoque</Label>
+              <Select v-model="modalData.estoque">
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione controle de estoque" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem :value="true">Com controle</SelectItem>
+                  <SelectItem :value="false">Sem controle</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div class="space-y-2">
+              <Label>Unidade</Label>
+              <Select v-model="modalData.unidade_id">
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione a unidade" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem
+                    v-for="unidade in unidadesList"
+                    :key="unidade.id"
+                    :value="unidade.id"
+                  >
+                    {{ unidade.nome }}
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div class="space-y-4 mt-6">
+            <div class="space-y-2">
+              <Label>Nome</Label>
+              <Input
+                v-model="modalData.nome"
+                placeholder="Digite o nome do setor"
+              />
+            </div>
+
+            <div class="space-y-2">
+              <Label>Descrição</Label>
+              <textarea
+                class="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                v-model="modalData.descricao"
+                placeholder="Digite a descrição do setor"
+                rows="3"
+              ></textarea>
+            </div>
+          </div>
+        </form>
+      </div>
+
+      <DialogFooter>
+        <Button variant="outline" @click="$emit('update:open', false)">
+          Cancelar
+        </Button>
+        <Button @click="add_UP_Unidades" :disabled="loading">
+          <i v-if="loading" class="mdi mdi-loading mdi-spin me-2"></i>
+          {{ modalFunction === "UP" ? "Atualizar" : "Salvar" }}
+        </Button>
+      </DialogFooter>
+    </DialogContent>
+  </Dialog>
+
+  <!-- Modal legado usando ModalBase01 para compatibilidade -->
+  <span v-else>
     <ModalBase01
       :idModal="idModal"
       modalClass="modal-dialog modal-lg modal-dialog-centered"
@@ -102,11 +219,11 @@
                     ></textarea>
                   </div>
                 </div>
-                <!-- Fornecedores relacionados - NOVO LAYOUT -->
+                <!-- Setor Distribuidor - NOVO LAYOUT -->
                 <div class="col-12 mt-3">
                   <div class="card border p-3">
                     <div class="mb-2">
-                      <h6 class="mb-0">Fornecedores Relacionados</h6>
+                      <h6 class="mb-0">Setor Distribuidor</h6>
                     </div>
                     <div class="row g-2 align-items-end mb-2">
                       <div class="col-md-8">
@@ -232,14 +349,46 @@
 import ModalBase01 from "@/components/layouts/ModalBase01.vue";
 import Funcoes from "@/functions/cad_setores.js";
 import cadPolos from "@/functions/cad_polos.js";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export default {
   name: "ModalSetor",
   components: {
     ModalBase01,
     Funcoes,
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogDescription,
+    DialogFooter,
+    Button,
+    Input,
+    Label,
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
   },
-  props: ["idModal", "functions"],
+  props: ["idModal", "functions", "open", "title", "initialData"],
   data() {
     return {
       loading: false,
@@ -404,7 +553,7 @@ export default {
       return this.$store.state.modalData.modalTitle;
     },
     modalData() {
-      return this.$store.state.modalData.modalData;
+      return this.initialData || this.$store.state.modalData.modalData;
     },
     modalFunction() {
       return this.$store.state.modalData.modalFunction;

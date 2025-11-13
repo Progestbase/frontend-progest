@@ -9,6 +9,8 @@ import axios from "axios";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap/dist/js/bootstrap.bundle.min";
 import VueTheMask from "vue-the-mask";
+import { initSetorContext } from "@/init/loadSetorData";
+import { setorCookie } from "@/utils/setorCookie";
 
 const app = createApp(App);
 
@@ -53,6 +55,18 @@ axios.interceptors.request.use(
 
 app.use(router);
 app.use(store); // Use o store importado
+// Inicializar dados do setor assim que possível (não bloqueante)
+try {
+  const token = store.getters.getUserToken;
+  if (token && setorCookie.hasSector()) {
+    // Chamar inicializador (async) — não aguardamos o término para não bloquear o mount
+    initSetorContext({ axios, store }).catch((e) =>
+      console.warn("Erro no initSetorContext:", e)
+    );
+  }
+} catch (e) {
+  console.warn("Erro ao tentar iniciar contexto do setor:", e);
+}
 
 app.mount("#app");
 app.use(VueTheMask);

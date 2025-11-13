@@ -1,14 +1,14 @@
 <template>
   <div>
     <div
-      class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3 mb-3"
+      class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-3"
     >
       <div>
-        <h5 class="mb-1">
-          <i class="mdi mdi-swap-horizontal me-2"></i>
+        <h2 class="text-2xl font-bold flex items-center gap-2">
+          <i class="mdi mdi-swap-horizontal text-xl text-blue-600"></i>
           Movimentações de Estoque
-        </h5>
-        <p class="text-muted mb-0">
+        </h2>
+        <p class="text-sm text-muted-foreground">
           Histórico de movimentações (transferências) de estoque.
         </p>
       </div>

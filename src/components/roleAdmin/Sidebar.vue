@@ -30,87 +30,196 @@
 
     <!-- Main Menu -->
     <nav class="menu-section">
-      <router-link class="menu-item" to="/setor-atual" title="Setor Atual">
-        <span class="material-icons menu-icon">apartment</span>
-        <span class="menu-text">Setor Atual</span>
-      </router-link>
+      <!-- When user is a solicitante in the current sector show only the solicitante pages -->
+      <template v-if="isSolicitante">
+        <router-link class="menu-item" to="/setor-atual" title="Setor Atual">
+          <span class="material-icons menu-icon">apartment</span>
+          <span class="menu-text">Setor Atual</span>
+        </router-link>
 
-      <router-link class="menu-item" to="/setores" title="Setores">
-        <span class="material-icons menu-icon">apartment</span>
-        <span class="menu-text">Setores</span>
-      </router-link>
+        <router-link class="menu-item" to="/itens" title="Itens">
+          <span class="material-icons menu-icon">inventory_2</span>
+          <span class="menu-text">Itens</span>
+        </router-link>
 
-      <router-link class="menu-item" to="/users" title="Usuários">
-        <span class="material-icons menu-icon">group</span>
-        <span class="menu-text">Usuários</span>
-      </router-link>
-
-      <router-link class="menu-item" to="/produtos" title="Produtos">
-        <span class="material-icons menu-icon">inventory</span>
-        <span class="menu-text">Produtos</span>
-      </router-link>
-
-      <router-link class="menu-item" to="/fornecedores" title="Fornecedores">
-        <span class="material-icons menu-icon">business_center</span>
-        <span class="menu-text">Fornecedores</span>
-      </router-link>
-
-      <!-- Submenu: Cadastros -->
-      <div class="submenu-section">
-        <button
-          class="menu-item submenu-toggle"
-          @click="toggleSubmenu"
-          title="Mais Cadastros"
+        <router-link
+          class="menu-item"
+          to="/historico"
+          title="Histórico de Pedidos"
         >
-          <span class="material-icons menu-icon">settings</span>
-          <span class="menu-text">Cadastros</span>
-          <span
-            class="material-icons expand-icon"
-            :class="{ open: submenuOpen }"
+          <span class="material-icons menu-icon">history</span>
+          <span class="menu-text">Histórico de Pedidos</span>
+        </router-link>
+      </template>
+
+      <!-- Default admin/management menu -->
+      <template v-else>
+        <router-link class="menu-item" to="/setor-atual" title="Setor Atual">
+          <span class="material-icons menu-icon">apartment</span>
+          <span class="menu-text">Setor Atual</span>
+        </router-link>
+
+        <router-link
+          v-if="isAdminUser"
+          class="menu-item"
+          to="/setores"
+          title="Setores"
+        >
+          <span class="material-icons menu-icon">apartment</span>
+          <span class="menu-text">Setores</span>
+        </router-link>
+
+        <router-link
+          v-if="isAdminUser"
+          class="menu-item"
+          to="/users"
+          title="Usuários"
+        >
+          <span class="material-icons menu-icon">group</span>
+          <span class="menu-text">Usuários</span>
+        </router-link>
+
+        <router-link
+          v-if="!hasSetorFornecedor"
+          class="menu-item"
+          to="/produtos"
+          title="Produtos"
+        >
+          <span class="material-icons menu-icon">inventory</span>
+          <span class="menu-text">Produtos</span>
+        </router-link>
+
+        <router-link
+          v-if="!hasSetorFornecedor"
+          class="menu-item"
+          to="/fornecedores"
+          title="Fornecedores"
+        >
+          <span class="material-icons menu-icon">business_center</span>
+          <span class="menu-text">Fornecedores</span>
+        </router-link>
+
+        <!-- Submenu: Cadastros -->
+        <div v-if="!hasSetorFornecedor" class="submenu-section">
+          <button
+            class="menu-item submenu-toggle"
+            @click="toggleSubmenu"
+            title="Mais Cadastros"
           >
-            expand_more
-          </span>
-        </button>
-
-        <!-- Submenu Items -->
-        <transition name="submenu-transition">
-          <div v-show="submenuOpen" class="submenu-items">
-            <router-link class="submenu-item" to="/unidades" title="Unidades">
-              <span class="material-icons menu-icon">map</span>
-              <span class="menu-text">Unidades</span>
-            </router-link>
-
-            <router-link
-              class="submenu-item"
-              to="/grupoProduto"
-              title="Grupos de Produtos"
+            <span class="material-icons menu-icon">settings</span>
+            <span class="menu-text">Cadastros</span>
+            <span
+              class="material-icons expand-icon"
+              :class="{ open: submenuOpen }"
             >
-              <span class="material-icons menu-icon">label</span>
-              <span class="menu-text">Grupos de Produtos</span>
-            </router-link>
+              expand_more
+            </span>
+          </button>
 
-            <router-link
-              class="submenu-item"
-              to="/unidadesMedida"
-              title="Unidades de Medida"
-            >
-              <span class="material-icons menu-icon">straighten</span>
-              <span class="menu-text">Unidades de Medida</span>
-            </router-link>
-          </div>
-        </transition>
-      </div>
+          <!-- Submenu Items -->
+          <transition name="submenu-transition">
+            <div v-show="submenuOpen" class="submenu-items">
+              <router-link
+                v-if="!hasSetorFornecedor"
+                class="submenu-item"
+                to="/unidades"
+                title="Unidades"
+              >
+                <span class="material-icons menu-icon">map</span>
+                <span class="menu-text">Unidades</span>
+              </router-link>
+
+              <router-link
+                v-if="!hasSetorFornecedor"
+                class="submenu-item"
+                to="/grupoProduto"
+                title="Grupos de Produtos"
+              >
+                <span class="material-icons menu-icon">label</span>
+                <span class="menu-text">Grupos de Produtos</span>
+              </router-link>
+
+              <router-link
+                v-if="!hasSetorFornecedor"
+                class="submenu-item"
+                to="/unidadesMedida"
+                title="Unidades de Medida"
+              >
+                <span class="material-icons menu-icon">straighten</span>
+                <span class="menu-text">Unidades de Medida</span>
+              </router-link>
+            </div>
+          </transition>
+        </div>
+      </template>
     </nav>
   </aside>
 </template>
 
 <script setup>
-import { ref, watch, onMounted } from "vue";
+import { ref, watch, onMounted, computed } from "vue";
+import { useStore } from "vuex";
+
+const store = useStore();
 
 const is_expanded = ref(false);
 const submenuOpen = ref(false);
 
 const emit = defineEmits(["toggle"]);
+
+// Verificar se o usuário é admin@admin.com
+const isAdminUser = computed(() => {
+  const user = store.state.user;
+  return user && user.email === "admin@admin.com";
+});
+
+// Verificar se o setor atual tem um setor fornecedor (não é raiz/fornecedor/distribuidor)
+const hasSetorFornecedor = computed(() => {
+  const setorDetails = store.state.setorDetails;
+  return (
+    setorDetails &&
+    (setorDetails.setor_fornecedor ||
+      setorDetails.setor_fornecedor_id ||
+      (setorDetails.fornecedores_relacionados &&
+        setorDetails.fornecedores_relacionados.length > 0))
+  );
+});
+
+// Verificar se o usuário possui perfil 'solicitante' no setor atual
+const isSolicitante = computed(() => {
+  const user = store.state.user;
+  if (!user) return false;
+
+  try {
+    // tentar usar a lista carregada no store (listUsuariosSetor)
+    const list = store.state.listUsuariosSetor || [];
+    const found = list.find((u) => {
+      const userId =
+        u.usuario_id || u.user_id || u.id || (u.usuario && u.usuario.id);
+      const perfil = (u.perfil || (u.pivot && u.pivot.perfil) || "")
+        .toString()
+        .toLowerCase();
+      return (
+        userId === user.id &&
+        (perfil === "solicitante" || perfil.includes("solicitante"))
+      );
+    });
+
+    if (found) return true;
+  } catch (e) {
+    console.warn("Erro ao avaliar isSolicitante:", e);
+  }
+
+  // fallback: checar roles/perfil no objeto user
+  if (
+    (user.roles && user.roles.includes && user.roles.includes("solicitante")) ||
+    (user.perfil &&
+      user.perfil.toString().toLowerCase().includes("solicitante"))
+  )
+    return true;
+
+  return false;
+});
 
 const handleMouseEnter = () => {
   is_expanded.value = true;

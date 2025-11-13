@@ -1,175 +1,193 @@
 <template>
-  <ModalBase01
-    :idModal="idModal"
-    :modalTitle="modalTitle"
-    size="xl"
-    width="95vw"
-    style="max-width: 1800px"
-  >
-    <!-- Slot default (body) -->
-    <div>
-      <div v-if="temProduto">
-        <!-- Header com informações do produto -->
-        <div class="card border-0 bg-light mb-4">
-          <div class="card-body">
-            <div class="row">
-              <div class="col-md-6">
-                <h5 class="mb-3">
-                  <i class="mdi mdi-package-variant me-2"></i>
-                  {{ produto.nome }}
-                </h5>
-                <div class="mb-2">
-                  <strong>Marca:</strong>
-                  <span class="ms-2">{{ produto.marca || "-" }}</span>
+  <Dialog v-model:open="dialogOpen">
+    <DialogContent class="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogHeader class="text-start">
+        <DialogTitle class="flex gap-2">
+          <i class="mdi mdi-package-variant text-primary"></i>
+          {{ modalTitle }}
+        </DialogTitle>
+        <DialogDescription>
+          Visualização detalhada dos lotes do produto selecionado.
+        </DialogDescription>
+      </DialogHeader>
+
+      <!-- Slot default (body) -->
+      <div>
+        <div v-if="temProduto">
+          <!-- Header com informações do produto -->
+          <div class="card border-0 bg-light mb-4">
+            <div class="card-body">
+              <div class="row">
+                <div class="col-md-6">
+                  <div class="mb-2">
+                    <strong>Marca:</strong>
+                    <span class="ms-2">{{ produto.marca || "-" }}</span>
+                  </div>
+                  <div class="mb-2">
+                    <strong>Grupo:</strong>
+                    <span class="ms-2">{{ produtoGrupoNome || "-" }}</span>
+                  </div>
+                  <div class="mb-2">
+                    <strong>Unidade de Medida:</strong>
+                    <span class="ms-2">
+                      {{ produtoUnidadeNome || "-" }}
+                      <span v-if="unidadeAbreviacao"
+                        >({{ unidadeAbreviacao }})</span
+                      >
+                    </span>
+                  </div>
                 </div>
-                <div class="mb-2">
-                  <strong>Grupo:</strong>
-                  <span class="ms-2">{{ produtoGrupoNome || "-" }}</span>
-                </div>
-                <div class="mb-2">
-                  <strong>Unidade de Medida:</strong>
-                  <span class="ms-2">
-                    {{ produtoUnidadeNome || "-" }}
-                    <span v-if="unidadeAbreviacao"
-                      >({{ unidadeAbreviacao }})</span
-                    >
-                  </span>
-                </div>
-              </div>
-              <div class="col-md-6">
-                <div class="mb-2">
-                  <strong>Setor:</strong>
-                  <span class="ms-2">{{ displaySetor?.nome || "-" }}</span>
-                </div>
-                <div class="mb-2">
-                  <strong>Estoque ID:</strong>
-                  <span class="ms-2">#{{ estoqueId }}</span>
-                </div>
-                <div class="mb-2">
-                  <strong>Quantidade Atual:</strong>
-                  <span class="ms-2">
-                    {{ quantidadeAtual }}
-                    {{ unidadeAbreviacao }}
-                  </span>
-                </div>
-                <div class="mb-2">
-                  <strong>Quantidade Mínima:</strong>
-                  <span class="ms-2">
-                    {{ quantidadeMinima }}
-                    {{ unidadeAbreviacao }}
-                  </span>
+                <div class="col-md-6">
+                  <div class="mb-2">
+                    <strong>Setor:</strong>
+                    <span class="ms-2">{{ displaySetor?.nome || "-" }}</span>
+                  </div>
+                  <div class="mb-2">
+                    <strong>Estoque ID:</strong>
+                    <span class="ms-2">#{{ estoqueId }}</span>
+                  </div>
+                  <div class="mb-2">
+                    <strong>Quantidade Atual:</strong>
+                    <span class="ms-2">
+                      {{ quantidadeAtual }}
+                      {{ unidadeAbreviacao }}
+                    </span>
+                  </div>
+                  <div class="mb-2">
+                    <strong>Quantidade Mínima:</strong>
+                    <span class="ms-2">
+                      {{ quantidadeMinima }}
+                      {{ unidadeAbreviacao }}
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
 
-        <!-- Loading de Lotes -->
-        <div v-if="loadingLotes" class="text-center py-4">
-          <div class="spinner-border text-primary" role="status">
-            <span class="visually-hidden">Carregando lotes...</span>
+          <!-- Loading de Lotes -->
+          <div v-if="loadingLotes" class="text-center py-4">
+            <div class="spinner-border text-primary" role="status">
+              <span class="visually-hidden">Carregando lotes...</span>
+            </div>
+            <p class="mt-2 text-muted">Carregando lotes...</p>
           </div>
-          <p class="mt-2 text-muted">Carregando lotes...</p>
-        </div>
 
-        <!-- Tabela de Lotes -->
-        <div v-else-if="lotes.length > 0">
-          <h6 class="mb-3">
-            <i class="mdi mdi-format-list-bulleted me-2"></i>
-            Lotes Disponíveis ({{ lotes.length }})
-          </h6>
-          <div class="table-responsive">
-            <table class="table table-hover table-striped mb-0">
-              <thead class="table-light">
-                <tr>
-                  <th class="text-center">#</th>
-                  <th class="text-start">Lote</th>
-                  <th class="text-center">Quantidade Disponível</th>
-                  <th class="text-center">Data de Fabricação</th>
-                  <th class="text-center">Data de Vencimento</th>
-                  <th class="text-center">Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr v-for="(lote, index) in lotes" :key="lote.id">
-                  <td class="text-center">{{ index + 1 }}</td>
-                  <td class="text-start">
-                    {{ lote.lote }}
-                  </td>
-                  <td class="text-center">
-                    {{ formatarQuantidade(lote.quantidade_disponivel) }}
-                    {{ unidadeAbreviacao }}
-                  </td>
-                  <td class="text-center">
-                    {{ formatarData(lote.data_fabricacao) }}
-                  </td>
-                  <td class="text-center">
-                    {{ formatarData(lote.data_vencimento) }}
-                  </td>
-                  <td class="text-center">
-                    <span
-                      :class="getStatusVencimentoClass(lote.data_vencimento)"
-                    >
-                      {{ getStatusVencimentoTexto(lote.data_vencimento) }}
-                    </span>
-                  </td>
-                </tr>
-              </tbody>
-              <tfoot class="table-light">
-                <tr>
-                  <td colspan="2" class="text-end">
-                    <strong>Total:</strong>
-                  </td>
-                  <td class="text-center">
-                    <strong class="text-primary">
-                      {{ totalQuantidade }}
+          <!-- Tabela de Lotes -->
+          <div v-else-if="lotes.length > 0">
+            <h6 class="mb-3">
+              <i class="mdi mdi-format-list-bulleted me-2"></i>
+              Lotes Disponíveis ({{ lotes.length }})
+            </h6>
+            <div class="table-responsive">
+              <table class="table table-hover table-striped mb-0">
+                <thead class="table-light">
+                  <tr>
+                    <th class="text-center">#</th>
+                    <th class="text-start">Lote</th>
+                    <th class="text-center">Quantidade Disponível</th>
+                    <th class="text-center">Data de Fabricação</th>
+                    <th class="text-center">Data de Vencimento</th>
+                    <th class="text-center">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="(lote, index) in lotes" :key="lote.id">
+                    <td class="text-center">{{ index + 1 }}</td>
+                    <td class="text-start">
+                      {{ lote.lote }}
+                    </td>
+                    <td class="text-center">
+                      {{ formatarQuantidade(lote.quantidade_disponivel) }}
                       {{ unidadeAbreviacao }}
-                    </strong>
-                  </td>
-                  <td colspan="3"></td>
-                </tr>
-              </tfoot>
-            </table>
+                    </td>
+                    <td class="text-center">
+                      {{ formatarData(lote.data_fabricacao) }}
+                    </td>
+                    <td class="text-center">
+                      {{ formatarData(lote.data_vencimento) }}
+                    </td>
+                    <td class="text-center">
+                      <span
+                        :class="getStatusVencimentoClass(lote.data_vencimento)"
+                      >
+                        {{ getStatusVencimentoTexto(lote.data_vencimento) }}
+                      </span>
+                    </td>
+                  </tr>
+                </tbody>
+                <tfoot class="table-light">
+                  <tr>
+                    <td colspan="2" class="text-end">
+                      <strong>Total:</strong>
+                    </td>
+                    <td class="text-center">
+                      <strong class="text-primary">
+                        {{ totalQuantidade }}
+                        {{ unidadeAbreviacao }}
+                      </strong>
+                    </td>
+                    <td colspan="3"></td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          </div>
+
+          <!-- Mensagem quando não há lotes -->
+          <div v-else class="text-center py-5">
+            <i
+              class="mdi mdi-package-variant-closed display-4 text-muted mb-3"
+            ></i>
+            <h5>Nenhum lote encontrado</h5>
+            <p class="text-muted">
+              Este produto não possui lotes registrados nesta unidade.
+            </p>
           </div>
         </div>
 
-        <!-- Mensagem quando não há lotes -->
+        <!-- Mensagem quando não há produto -->
         <div v-else class="text-center py-5">
           <i
-            class="mdi mdi-package-variant-closed display-4 text-muted mb-3"
+            class="mdi mdi-alert-circle-outline display-4 text-warning mb-3"
           ></i>
-          <h5>Nenhum lote encontrado</h5>
+          <h5>Produto não selecionado</h5>
           <p class="text-muted">
-            Este produto não possui lotes registrados nesta unidade.
+            Selecione um produto para visualizar os lotes.
           </p>
         </div>
       </div>
+      <!-- Fim slot default (body) -->
 
-      <!-- Mensagem quando não há produto -->
-      <div v-else class="text-center py-5">
-        <i class="mdi mdi-alert-circle-outline display-4 text-warning mb-3"></i>
-        <h5>Produto não selecionado</h5>
-        <p class="text-muted">Selecione um produto para visualizar os lotes.</p>
+      <div class="flex justify-end space-x-2 mt-4">
+        <button type="button" class="btn btn-secondary" @click="fecharModal">
+          <i class="mdi mdi-close me-1"></i>
+          Fechar
+        </button>
       </div>
-    </div>
-    <!-- Fim slot default (body) -->
-
-    <template #footer>
-      <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-        <i class="mdi mdi-close me-1"></i>
-        Fechar
-      </button>
-    </template>
-  </ModalBase01>
+    </DialogContent>
+  </Dialog>
 </template>
 
 <script>
-import ModalBase01 from "@/components/layouts/ModalBase01.vue";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 export default {
   name: "ModalVisualizarLotesProduto",
   components: {
-    ModalBase01,
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
   },
   props: {
     idModal: {
@@ -205,6 +223,7 @@ export default {
   data() {
     return {
       loadingLotes: false,
+      dialogOpen: false,
     };
   },
   computed: {
@@ -325,6 +344,9 @@ export default {
       } else {
         return "badge bg-success"; // Dentro da validade
       }
+    },
+    fecharModal() {
+      this.dialogOpen = false;
     },
   },
 };

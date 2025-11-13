@@ -2,16 +2,16 @@
   <div>
     <!-- Header com Botão -->
     <div
-      class="d-flex flex-column flex-md-row align-items-md-center justify-content-md-between gap-3 mb-4"
+      class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4"
     >
       <div>
-        <h4 class="mb-1">
-          <i class="mdi mdi-tray-arrow-down text-primary me-2"></i>
+        <h2 class="text-2xl font-bold flex items-center gap-2">
+          <i class="mdi mdi-tray-arrow-down text-xl text-blue-600"></i>
           Entradas de Estoque
-        </h4>
-        <small class="text-muted">
+        </h2>
+        <p class="text-sm text-muted-foreground">
           Registros de entradas já lançadas para este setor.
-        </small>
+        </p>
       </div>
       <Button @click="abrirModalEntrada" :disabled="!setorId" class="w-md">
         <i class="mdi mdi-plus me-2"></i>
@@ -27,6 +27,7 @@
             <th role="columnheader">ID</th>
             <th role="columnheader">Lançada em</th>
             <th role="columnheader">Nota Fiscal</th>
+            <th role="columnheader">Fornecedor</th>
             <th role="columnheader" class="text-center">Itens</th>
           </tr>
         </thead>
@@ -43,6 +44,7 @@
             </td>
             <td>{{ formatarData(entrada.created_at) }}</td>
             <td class="fw-medium">{{ entrada.nota_fiscal || "-" }}</td>
+            <td>{{ entrada.fornecedor?.razao_social_nome || "-" }}</td>
             <td class="text-center">
               <Badge>{{ entrada.itens?.length || 0 }}</Badge>
             </td>
@@ -67,15 +69,14 @@
 
     <!-- Modais -->
     <ModalEntradaEstoque
-      ref="modalEntradaEstoque"
-      idModal="modalEntradaEstoque"
+      v-model:open="dialogEntradaOpen"
       :unidade="{ id: setorId }"
       :setorTipo="setorAtual.tipo"
       @registrado="handleEntradaRegistrada"
     />
 
     <ModalVisualizarEntrada
-      idModal="modalVisualizarEntrada"
+      ref="modalVisualizarEntrada"
       :entrada="entradaSelecionada"
     />
   </div>
@@ -84,12 +85,14 @@
 <script setup>
 import { defineProps, computed, inject, ref } from "vue";
 import { useStore } from "vuex";
-import { Modal } from "bootstrap";
 import axios from "axios";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import ModalEntradaEstoque from "@/components/cadastros/ModalEntradaEstoque.vue";
 import ModalVisualizarEntrada from "@/components/cadastros/ModalVisualizarEntrada.vue";
+
+// Emits para comunicar com o componente pai
+const emit = defineEmits(["reload-estoque"]);
 
 const props = defineProps({
   setorId: {
@@ -110,6 +113,12 @@ const setorAtual = computed(() => store.state.setorDetails || {});
 
 // Ref para armazenar a entrada selecionada
 const entradaSelecionada = ref(null);
+
+// Estado do Dialog de entrada
+const dialogEntradaOpen = ref(false);
+
+// Ref do modal de visualização
+const modalVisualizarEntrada = ref(null);
 
 const listEntradas = computed(() => {
   const items = parentData.entradasItems;
@@ -132,24 +141,16 @@ const formatarData = (data) => {
 };
 
 const abrirModalEntrada = () => {
-  // Abrir modal de entrada de estoque usando Bootstrap
-  const modalElement = document.getElementById("modalEntradaEstoque");
-  if (modalElement) {
-    const modal = new Modal(modalElement);
-    modal.show();
-  } else {
-    console.error("Modal element não encontrado");
-  }
+  // Abrir modal de entrada de estoque usando Dialog do shadcn
+  dialogEntradaOpen.value = true;
 };
 
 const visualizarEntrada = (entrada) => {
   console.log("Visualizar entrada:", entrada);
   entradaSelecionada.value = entrada;
   // Abrir modal de visualização
-  const modalElement = document.getElementById("modalVisualizarEntrada");
-  if (modalElement) {
-    const modal = new Modal(modalElement);
-    modal.show();
+  if (modalVisualizarEntrada.value) {
+    modalVisualizarEntrada.value.dialogOpen = true;
   }
 };
 
@@ -167,5 +168,8 @@ const handleEntradaRegistrada = async () => {
   if (functionsEntrada.listByUnidade) {
     await functionsEntrada.listByUnidade(context, props.setorId);
   }
+
+  // Emitir evento para o componente pai recarregar os dados do estoque
+  emit("reload-estoque");
 };
 </script>

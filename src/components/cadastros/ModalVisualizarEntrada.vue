@@ -1,154 +1,163 @@
 <template>
-  <span>
-    <ModalBase01
-      :idModal="idModal"
-      modalClass="modal-dialog modal-fullscreen-xxl-down modal-dialog-scrollable modal-dialog-centered"
-    >
-      <div class="row">
-        <div class="col-12">
-          <h4 class="mb-3 d-flex align-items-center gap-2">
-            <i class="mdi mdi-file-document-outline text-primary"></i>
-            Detalhes da Entrada #{{ entrada?.id || "N/A" }}
-          </h4>
-          <p class="text-muted mb-4">
-            Visualização completa dos dados da entrada de estoque.
-          </p>
+  <Dialog v-model:open="dialogOpen">
+    <DialogContent class="max-w-6xl max-h-[90vh] overflow-y-auto">
+      <DialogHeader class="text-start">
+        <DialogTitle class="flex items-center gap-2">
+          <i class="mdi mdi-file-document-outline text-xl text-blue-600"></i>
+          Detalhes da Entrada #{{ entrada?.id || "N/A" }}
+        </DialogTitle>
+        <DialogDescription>
+          Visualização completa dos dados da entrada de estoque.
+        </DialogDescription>
+      </DialogHeader>
+
+      <div class="space-y-6">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div>
+            <label class="text-sm font-medium text-muted-foreground"
+              >Nota Fiscal</label
+            >
+            <p class="font-semibold">{{ entrada?.nota_fiscal || "-" }}</p>
+          </div>
+
+          <div>
+            <label class="text-sm font-medium text-muted-foreground"
+              >Setor</label
+            >
+            <p class="font-semibold">
+              {{ entrada?.setor?.nome || entrada?.unidade?.nome || "-" }}
+            </p>
+          </div>
+
+          <div>
+            <label class="text-sm font-medium text-muted-foreground"
+              >Fornecedor</label
+            >
+            <p class="font-semibold">
+              {{ entrada?.fornecedor?.razao_social_nome || "-" }}
+            </p>
+          </div>
+
+          <div>
+            <label class="text-sm font-medium text-muted-foreground"
+              >Data de Registro</label
+            >
+            <p class="font-semibold">
+              {{ formatarDataHora(entrada?.created_at) }}
+            </p>
+          </div>
+        </div>
+
+        <hr />
+
+        <div>
+          <h5 class="mb-3 flex items-center gap-2">
+            <i class="mdi mdi-package-variant text-blue-600"></i>
+            Produtos da Entrada
+          </h5>
+
+          <div
+            v-if="entrada?.itens && entrada.itens.length > 0"
+            class="table-responsive"
+          >
+            <table class="table table-striped table-hover align-middle">
+              <thead>
+                <tr>
+                  <th class="text-start">Produto</th>
+                  <th class="text-center">Quantidade</th>
+                  <th class="text-center">Unidade</th>
+                  <th class="text-center">Lote</th>
+                  <th class="text-center">Data Fabricação</th>
+                  <th class="text-center">Data Vencimento</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="item in entrada?.itens || []" :key="item.id">
+                  <td class="text-start">
+                    <strong>{{
+                      item.produto?.nome || "Produto não encontrado"
+                    }}</strong>
+                    <div class="text-muted small" v-if="item.produto?.marca">
+                      {{ item.produto.marca }}
+                    </div>
+                    <div
+                      class="text-muted small"
+                      v-if="item.produto?.grupo_produto"
+                    >
+                      <i class="mdi mdi-tag-outline"></i>
+                      {{ item.produto.grupo_produto.nome }}
+                    </div>
+                  </td>
+                  <td class="text-center">
+                    <span class="badge bg-primary fs-6">{{
+                      item.quantidade
+                    }}</span>
+                  </td>
+                  <td class="text-center">
+                    {{ item.produto?.unidade_medida?.nome || "-" }}
+                  </td>
+                  <td class="text-center">
+                    <code class="text-dark">{{ item.lote }}</code>
+                  </td>
+                  <td class="text-center">
+                    <small>{{
+                      formatarData(item.data_fabricacao) || "-"
+                    }}</small>
+                  </td>
+                  <td class="text-center">
+                    <small>{{ formatarData(item.data_vencimento) }}</small>
+                  </td>
+                </tr>
+              </tbody>
+              <tfoot>
+                <tr class="table-light">
+                  <td colspan="1" class="text-end fw-bold">Total de itens:</td>
+                  <td class="text-center fw-bold">
+                    {{ totalQuantidade }}
+                  </td>
+                  <td colspan="4" class="text-muted small">
+                    {{ entrada?.itens?.length || 0 }} produto(s) diferente(s)
+                  </td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+          <div v-else class="alert alert-info">
+            <i class="mdi mdi-information-outline me-2"></i>
+            Nenhum item registrado nesta entrada.
+          </div>
         </div>
       </div>
 
-      <div class="row g-3 mb-4">
-        <div class="col-md-3">
-          <label class="form-label text-muted small">Nota Fiscal</label>
-          <p class="mb-0 fw-semibold">{{ entrada?.nota_fiscal || "-" }}</p>
-        </div>
-
-        <div class="col-md-3">
-          <label class="form-label text-muted small">Setor</label>
-          <p class="mb-0 fw-semibold">
-            {{ entrada?.setor?.nome || entrada?.unidade?.nome || "-" }}
-          </p>
-        </div>
-
-        <div class="col-md-3">
-          <label class="form-label text-muted small">Fornecedor</label>
-          <p class="mb-0 fw-semibold">
-            {{ entrada?.fornecedor?.razao_social_nome || "-" }}
-          </p>
-        </div>
-
-        <div class="col-md-3">
-          <label class="form-label text-muted small">Data de Registro</label>
-          <p class="mb-0 fw-semibold">
-            {{ formatarDataHora(entrada?.created_at) }}
-          </p>
-        </div>
-      </div>
-
-      <hr class="my-4" />
-
-      <div class="mb-3">
-        <h5 class="mb-3">
-          <i class="mdi mdi-package-variant me-2"></i>
-          Produtos da Entrada
-        </h5>
-
-        <div
-          v-if="entrada?.itens && entrada.itens.length > 0"
-          class="table-responsive"
-        >
-          <table class="table table-striped table-hover align-middle">
-            <thead>
-              <tr>
-                <th class="text-start">Produto</th>
-                <th class="text-center">Quantidade</th>
-                <th class="text-center">Unidade</th>
-                <th class="text-center">Lote</th>
-                <th class="text-center">Data Fabricação</th>
-                <th class="text-center">Data Vencimento</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="item in entrada?.itens || []" :key="item.id">
-                <td class="text-start">
-                  <strong>{{
-                    item.produto?.nome || "Produto não encontrado"
-                  }}</strong>
-                  <div class="text-muted small" v-if="item.produto?.marca">
-                    {{ item.produto.marca }}
-                  </div>
-                  <div
-                    class="text-muted small"
-                    v-if="item.produto?.grupo_produto"
-                  >
-                    <i class="mdi mdi-tag-outline"></i>
-                    {{ item.produto.grupo_produto.nome }}
-                  </div>
-                </td>
-                <td class="text-center">
-                  <span class="badge bg-primary fs-6">{{
-                    item.quantidade
-                  }}</span>
-                </td>
-                <td class="text-center">
-                  {{ item.produto?.unidade_medida?.nome || "-" }}
-                </td>
-                <td class="text-center">
-                  <code class="text-dark">{{ item.lote }}</code>
-                </td>
-                <td class="text-center">
-                  <small>{{ formatarData(item.data_fabricacao) || "-" }}</small>
-                </td>
-                <td class="text-center">
-                  <small>{{ formatarData(item.data_vencimento) }}</small>
-                </td>
-              </tr>
-            </tbody>
-            <tfoot>
-              <tr class="table-light">
-                <td colspan="1" class="text-end fw-bold">Total de itens:</td>
-                <td class="text-center fw-bold">
-                  {{ totalQuantidade }}
-                </td>
-                <td colspan="4" class="text-muted small">
-                  {{ entrada?.itens?.length || 0 }} produto(s) diferente(s)
-                </td>
-              </tr>
-            </tfoot>
-          </table>
-        </div>
-        <div v-else class="alert alert-info">
-          <i class="mdi mdi-information-outline me-2"></i>
-          Nenhum item registrado nesta entrada.
-        </div>
-      </div>
-
-      <div class="mt-4 d-flex justify-content-end">
-        <button
-          type="button"
-          class="btn btn-secondary btn-modal"
-          data-bs-dismiss="modal"
-        >
+      <div class="flex justify-end space-x-2 mt-4">
+        <button type="button" class="btn btn-secondary" @click="fecharModal">
           <i class="mdi mdi-close-thick me-2"></i>
           Fechar
         </button>
       </div>
-    </ModalBase01>
-  </span>
+    </DialogContent>
+  </Dialog>
 </template>
 
 <script>
-import ModalBase01 from "@/components/layouts/ModalBase01.vue";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 export default {
   name: "ModalVisualizarEntrada",
   components: {
-    ModalBase01,
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
   },
   props: {
-    idModal: {
-      type: String,
-      required: true,
-    },
     entrada: {
       type: Object,
       default: () => ({
@@ -160,6 +169,11 @@ export default {
         itens: [],
       }),
     },
+  },
+  data() {
+    return {
+      dialogOpen: false,
+    };
   },
   computed: {
     totalQuantidade() {
@@ -203,6 +217,9 @@ export default {
         data.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })
       );
     },
+    fecharModal() {
+      this.dialogOpen = false;
+    },
   },
 };
 </script>
@@ -225,25 +242,5 @@ export default {
 
 .table tbody tr:hover {
   background-color: #f8f9fa;
-}
-
-/* Aumentar largura máxima do modal */
-:deep(.modal-dialog) {
-  max-width: 98vw !important;
-  width: 98vw !important;
-  margin: 1rem auto;
-}
-
-@media (min-width: 1400px) {
-  :deep(.modal-dialog) {
-    max-width: 1800px !important;
-    width: 95vw !important;
-  }
-}
-
-@media (min-width: 1920px) {
-  :deep(.modal-dialog) {
-    max-width: 2200px !important;
-  }
 }
 </style>

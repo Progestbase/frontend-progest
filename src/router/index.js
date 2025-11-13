@@ -4,10 +4,13 @@ import Login from "../views/Login.vue";
 import Register from "../views/Register.vue";
 import SetorSelectionView from "../views/SetorSelectionView.vue";
 import HistoricoDePedidosView from "@/views/roleSolicitante/HistoricoDePedidosView.vue";
+import ItensView from "@/views/roleSolicitante/ItensView.vue";
 import SetorAtualView from "@/views/SetorAtualView.vue";
 import { setorCookie } from "@/utils/setorCookie";
 import axios from "axios";
 import store from "@/vuex/store";
+import functionsSetor from "@/functions/cad_setores";
+import functionsUsuarioSetor from "@/functions/cad_usuario_setor";
 
 // cadastros
 import Home from "@/views/Home.vue";
@@ -96,6 +99,12 @@ const router = createRouter({
       component: Produtos,
       meta: { requiresAuth: true, requiresSector: true },
     },
+    {
+      path: "/itens",
+      name: "itens",
+      component: ItensView,
+      meta: { requiresAuth: true, requiresSector: true },
+    },
     /* categoriasProdutos removed in favor of grupoProduto */
     {
       path: "/grupoProduto",
@@ -141,6 +150,62 @@ router.beforeEach(async (to, from, next) => {
   const isAuthenticated = localStorage.getItem("token");
   const hasSector = setorCookie.hasSector();
 
+  // Helper to determine if logged user is 'solicitante' for the current sector
+  const checkIsSolicitante = async () => {
+    const user = store.state.user;
+    if (!user) return false;
+
+    try {
+      let list = store.state.listUsuariosSetor || [];
+
+      // If not loaded yet, try to fetch user-setor vínculos
+      if (
+        (!list || list.length === 0) &&
+        functionsUsuarioSetor &&
+        functionsUsuarioSetor.listAll
+      ) {
+        try {
+          await functionsUsuarioSetor.listAll({ $axios: axios, $store: store });
+          list = store.state.listUsuariosSetor || [];
+        } catch (e) {
+          console.warn(
+            "checkIsSolicitante: erro ao carregar usuarios do setor",
+            e
+          );
+        }
+      }
+
+      const found = list.find((u) => {
+        const userId =
+          u.usuario_id || u.user_id || u.id || (u.usuario && u.usuario.id);
+        const perfil = (u.perfil || (u.pivot && u.pivot.perfil) || "")
+          .toString()
+          .toLowerCase();
+        return (
+          userId === user.id &&
+          (perfil === "solicitante" || perfil.includes("solicitante"))
+        );
+      });
+
+      if (found) return true;
+    } catch (e) {
+      console.warn("Erro ao avaliar solicitante no guard:", e);
+    }
+
+    // fallback to roles/perfil on user object
+    const userObj = store.state.user || {};
+    if (
+      (userObj.roles &&
+        userObj.roles.includes &&
+        userObj.roles.includes("solicitante")) ||
+      (userObj.perfil &&
+        userObj.perfil.toString().toLowerCase().includes("solicitante"))
+    )
+      return true;
+
+    return false;
+  };
+
   // Se a rota requer autenticação e não está autenticado
   if (to.meta.requiresAuth && !isAuthenticated) {
     setorCookie.clearSector();
@@ -150,7 +215,17 @@ router.beforeEach(async (to, from, next) => {
 
   // Se está autenticado e tenta acessar login/register, redirecionar para seleção de setor ou dashboard
   if (isAuthenticated && (to.path === "/login" || to.path === "/register")) {
-    next(hasSector ? "/dashboard" : "/setor-selection");
+    if (hasSector) {
+      // Se o usuário for solicitante no setor, redireciona para /itens
+      try {
+        const isSolic = await checkIsSolicitante();
+        next(isSolic ? "/itens" : "/dashboard");
+      } catch (e) {
+        next("/dashboard");
+      }
+    } else {
+      next("/setor-selection");
+    }
     return;
   }
 
@@ -184,24 +259,44 @@ router.beforeEach(async (to, from, next) => {
         setorId &&
         (!store.state.setorDetails || store.state.setorDetails.id != setorId)
       ) {
-        const token = localStorage.getItem("token");
-        const response = await axios.post(
-          "/setores/getDetail",
-          { id: setorId },
-          {
-            headers: {
-              Authorization: "Bearer " + token,
-              "Content-Type": "application/json",
-            },
-          }
+        // Usar a função getSetorDetail que carrega setor + fornecedores relacionados
+        const result = await functionsSetor.getSetorDetail(
+          { $axios: axios, $store: store },
+          setorId
         );
 
-        if (response.data.status) {
-          store.commit("setSetorDetails", response.data.data);
+        if (result.success) {
+          // Já foi armazenado no Vuex pela função getSetorDetail
+        } else {
+          console.warn(
+            "Aviso: não foi possível carregar detalhes do setor:",
+            result.message
+          );
         }
       }
     } catch (error) {
       console.warn("Aviso: não foi possível carregar detalhes do setor");
+    }
+  }
+
+  // Bloquear acesso a rotas de gerenciamento para solicitantes: redirecionar para /itens
+  if (isAuthenticated && hasSector) {
+    const isSolic = await checkIsSolicitante();
+    const allowedForSolicitante = [
+      "/itens",
+      "/historico",
+      "/setor-selection",
+      "/login",
+      "/register",
+    ];
+    if (
+      isSolic &&
+      to.meta &&
+      to.meta.requiresSector &&
+      !allowedForSolicitante.includes(to.path)
+    ) {
+      next("/itens");
+      return;
     }
   }
 

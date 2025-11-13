@@ -17,16 +17,10 @@
         <CardHeader class="text-center">
           <CardTitle class="text-xl">Carregando...</CardTitle>
         </CardHeader>
-        <CardContent class="flex flex-col items-center justify-center py-12">
-          <div
-            class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"
-          ></div>
-          <p class="text-gray-600 mt-4 text-sm">
-            Carregando setores disponíveis...
-          </p>
-          <p class="text-gray-500 mt-2 text-xs">
-            Use o botão "Sair" no canto superior direito para fazer logout
-          </p>
+        <CardContent
+          class="w-full min-h-[300px] flex items-center justify-center"
+        >
+          <LoadingSpinner size="lg" />
         </CardContent>
       </template>
 
@@ -103,12 +97,14 @@
                       :key="setor.id"
                       :value="setor.id.toString()"
                     >
-                      {{ setor.nome }}
-                      <span
-                        v-if="setor.status === 'A'"
-                        class="text-green-600 ml-2"
-                        >●</span
+                      <div
+                        class="flex items-center justify-between w-full gap-2"
                       >
+                        <span>{{ setor.nome }}</span>
+                        <div class="flex items-center gap-2">
+                          <Badge variant="">{{ setor.unidade.nome }}</Badge>
+                        </div>
+                      </div>
                     </SelectItem>
                   </SelectGroup>
                 </SelectContent>
@@ -182,6 +178,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 
 const router = useRouter();
 const store = useStore();

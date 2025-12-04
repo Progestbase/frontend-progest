@@ -7,12 +7,8 @@
     <!-- Logo Section -->
     <div class="logo-section">
       <img
-        :src="
-          is_expanded
-            ? '/src/assets/logo-horizontal.png'
-            : '/src/assets/logo-icon.png'
-        "
-        alt="ProGest Logo"
+        :src="currentLogoSrc"
+        :alt="is_expanded ? unidadeNome : 'ProGest Logo'"
         class="logo-image"
       />
     </div>
@@ -32,41 +28,30 @@
     <nav class="menu-section">
       <!-- When user is a solicitante in the current sector show only the solicitante pages -->
       <template v-if="isSolicitante">
-        <router-link class="menu-item" to="/setor-atual" title="Setor Atual">
+        <router-link
+          class="menu-item"
+          to="/setor-atual"
+          :title="setorAtualNome"
+        >
           <span class="material-icons menu-icon">apartment</span>
-          <span class="menu-text">Setor Atual</span>
+          <span class="menu-text">{{ setorAtualNome }}</span>
         </router-link>
 
         <router-link class="menu-item" to="/itens" title="Itens">
           <span class="material-icons menu-icon">inventory_2</span>
           <span class="menu-text">Itens</span>
         </router-link>
-
-        <router-link
-          class="menu-item"
-          to="/historico"
-          title="Histórico de Pedidos"
-        >
-          <span class="material-icons menu-icon">history</span>
-          <span class="menu-text">Histórico de Pedidos</span>
-        </router-link>
       </template>
 
       <!-- Default admin/management menu -->
       <template v-else>
-        <router-link class="menu-item" to="/setor-atual" title="Setor Atual">
-          <span class="material-icons menu-icon">apartment</span>
-          <span class="menu-text">Setor Atual</span>
-        </router-link>
-
         <router-link
-          v-if="isAdminUser"
           class="menu-item"
-          to="/setores"
-          title="Setores"
+          to="/setor-atual"
+          :title="setorAtualNome"
         >
           <span class="material-icons menu-icon">apartment</span>
-          <span class="menu-text">Setores</span>
+          <span class="menu-text">{{ setorAtualNome }}</span>
         </router-link>
 
         <router-link
@@ -153,17 +138,62 @@
         </div>
       </template>
     </nav>
+
+    <!-- Divider -->
+    <div v-if="setoresConsumidores.length > 0" class="menu-divider"></div>
+
+    <!-- Setores Consumidores Section -->
+    <nav v-if="setoresConsumidores.length > 0" class="menu-section">
+      <div class="submenu-section">
+        <button
+          class="menu-item submenu-toggle"
+          @click="toggleConsumidoresSubmenu"
+          title="Setores Consumidores"
+        >
+          <span class="material-icons menu-icon">store</span>
+          <span class="menu-text">Setores Consumidores</span>
+          <span
+            class="material-icons expand-icon"
+            :class="{ open: consumidoresSubmenuOpen }"
+          >
+            expand_more
+          </span>
+        </button>
+
+        <!-- Consumidores Submenu Items -->
+        <transition name="submenu-transition">
+          <div v-show="consumidoresSubmenuOpen" class="submenu-items">
+            <a
+              v-for="consumidor in setoresConsumidores"
+              :key="consumidor.id"
+              class="submenu-item"
+              @click="navigateToSetor(consumidor.id)"
+              :title="consumidor.nome"
+            >
+              <span class="material-icons menu-icon">store</span>
+              <span class="menu-text">{{ consumidor.nome }}</span>
+            </a>
+          </div>
+        </transition>
+      </div>
+    </nav>
   </aside>
 </template>
 
 <script setup>
 import { ref, watch, onMounted, computed } from "vue";
 import { useStore } from "vuex";
+import { useRouter } from "vue-router";
+import axios from "axios";
+import { API_URL } from "@/config";
 
 const store = useStore();
+const router = useRouter();
 
 const is_expanded = ref(false);
 const submenuOpen = ref(false);
+const consumidoresSubmenuOpen = ref(false);
+const setoresConsumidores = ref([]);
 
 const emit = defineEmits(["toggle"]);
 
@@ -221,6 +251,91 @@ const isSolicitante = computed(() => {
   return false;
 });
 
+// Obter o nome do setor atual
+const setorAtualNome = computed(() => {
+  const setorDetails = store.state.setorDetails;
+  return setorDetails?.nome || "Setor Atual";
+});
+
+// Obter o nome da unidade do setor atual
+const unidadeNome = computed(() => {
+  const setorDetails = store.state.setorDetails;
+  return setorDetails?.unidade?.nome || "ProGest";
+});
+
+// Obter a imagem da unidade baseada no nome
+const getUnidadeImage = (nomeUnidade) => {
+  if (!nomeUnidade) return null;
+
+  // Mapear nomes de unidades para arquivos de imagem
+  const imageMap = {
+    "Crescêncio Silveira": "Crescêncio Silveira.png",
+    "Hospital Afrânio Peixoto": "Hospital Afrânio Peixoto.png",
+    "Hospital Geral": "Hospital Geral.png",
+    CHVC: "Logo-CHVC .png",
+    UPA: "UPA.png",
+  };
+
+  // Tentar encontrar correspondência exata ou parcial
+  for (const [key, value] of Object.entries(imageMap)) {
+    if (nomeUnidade.includes(key) || key.includes(nomeUnidade)) {
+      return `/src/assets/unidades/${value}`;
+    }
+  }
+
+  return null;
+};
+
+// Computed para a logo atual
+const currentLogoSrc = computed(() => {
+  if (is_expanded.value) {
+    // Quando expandida, tentar mostrar a logo da unidade
+    const unidadeImage = getUnidadeImage(unidadeNome.value);
+    return unidadeImage || "/src/assets/logo-horizontal.png";
+  } else {
+    // Quando recolhida, mostrar o ícone
+    return "/src/assets/logo-icon.png";
+  }
+});
+
+// Carregar setores consumidores
+const loadSetoresConsumidores = async () => {
+  const setorDetails = store.state.setorDetails;
+  if (!setorDetails || !setorDetails.id) return;
+
+  try {
+    const response = await axios.post(
+      `${API_URL}/setores/listConsumers`,
+      { id: setorDetails.id },
+      {
+        headers: {
+          Authorization: `Bearer ${store.getters.getUserToken}`,
+        },
+      }
+    );
+
+    if (response.data.status && response.data.data) {
+      setoresConsumidores.value = response.data.data;
+    }
+  } catch (error) {
+    console.warn("Erro ao carregar setores consumidores:", error);
+    setoresConsumidores.value = [];
+  }
+};
+
+// Navegar para outro setor
+const navigateToSetor = async (setorId) => {
+  try {
+    // Atualizar cookie do setor
+    document.cookie = `setor_id=${setorId}; path=/; max-age=31536000`;
+
+    // Recarregar a página para atualizar todos os dados do setor
+    window.location.href = "/setor-atual";
+  } catch (error) {
+    console.error("Erro ao navegar para setor:", error);
+  }
+};
+
 const handleMouseEnter = () => {
   is_expanded.value = true;
 };
@@ -233,14 +348,39 @@ const toggleSubmenu = () => {
   submenuOpen.value = !submenuOpen.value;
 };
 
+const toggleConsumidoresSubmenu = () => {
+  consumidoresSubmenuOpen.value = !consumidoresSubmenuOpen.value;
+};
+
 onMounted(() => {
   const savedSubmenu = localStorage.getItem("submenuOpen");
   submenuOpen.value = savedSubmenu === "true";
+
+  const savedConsumidoresSubmenu = localStorage.getItem(
+    "consumidoresSubmenuOpen"
+  );
+  consumidoresSubmenuOpen.value = savedConsumidoresSubmenu === "true";
+
+  // Carregar setores consumidores
+  loadSetoresConsumidores();
 });
 
 watch(submenuOpen, (val) => {
   localStorage.setItem("submenuOpen", val);
 });
+
+watch(consumidoresSubmenuOpen, (val) => {
+  localStorage.setItem("consumidoresSubmenuOpen", val);
+});
+
+// Recarregar consumidores quando o setor atual mudar
+watch(
+  () => store.state.setorDetails,
+  () => {
+    loadSetoresConsumidores();
+  },
+  { deep: true }
+);
 </script>
 
 <style lang="scss" scoped>
@@ -249,13 +389,13 @@ watch(submenuOpen, (val) => {
   flex-direction: column;
   width: 80px;
   min-height: 100vh;
-  background: linear-gradient(135deg, #004d99 0%, #003d7a 100%);
-  color: white;
+  background: linear-gradient(135deg, #1a237e 0%, #0d47a1 100%);
+  color: #ffffff;
   overflow: hidden;
   overflow-y: auto;
   padding: 1rem 0;
   transition: width 0.3s ease;
-  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 2px 0 12px rgba(0, 0, 0, 0.3);
 
   &.is-expanded {
     width: 280px;
@@ -268,20 +408,21 @@ watch(submenuOpen, (val) => {
     align-items: center;
     height: 70px;
     padding: 0 1rem;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.15);
     margin-bottom: 0.5rem;
 
     .logo-image {
       max-width: 45px;
       height: auto;
       transition: max-width 0.3s ease;
+      filter: brightness(0) invert(1);
     }
   }
 
   &.is-expanded {
     .logo-section {
       .logo-image {
-        max-width: 140px;
+        max-width: 220px;
       }
     }
   }
@@ -301,7 +442,7 @@ watch(submenuOpen, (val) => {
     .menu-label {
       font-size: 0.75rem;
       text-transform: uppercase;
-      color: rgba(255, 255, 255, 0.5);
+      color: rgba(255, 255, 255, 0.6);
       padding: 0.5rem 1rem;
 
       opacity: 1;
@@ -314,7 +455,7 @@ watch(submenuOpen, (val) => {
   /* Menu Divider */
   .menu-divider {
     height: 1px;
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.2);
     margin: 0.5rem 1rem;
   }
 
@@ -328,7 +469,7 @@ watch(submenuOpen, (val) => {
     padding: 0 1rem;
     border-radius: 8px;
     text-decoration: none;
-    color: rgba(255, 255, 255, 0.8);
+    color: rgba(255, 255, 255, 0.9);
     transition: all 0.3s ease;
     font-size: 0.95rem;
     white-space: nowrap;
@@ -343,6 +484,7 @@ watch(submenuOpen, (val) => {
       align-items: center;
       justify-content: center;
       flex-shrink: 0;
+      color: rgba(255, 255, 255, 0.9);
     }
 
     .menu-text {
@@ -354,16 +496,17 @@ watch(submenuOpen, (val) => {
 
     &:hover {
       background: rgba(255, 255, 255, 0.15);
-      color: white;
+      color: #ffffff;
       transform: translateX(2px);
     }
 
     &.router-link-active,
     &.router-link-exact-active {
-      background: rgba(255, 255, 255, 0.2);
-      color: #fff;
-      border-left: 3px solid #bbbfff;
+      background: rgba(255, 255, 255, 0.25);
+      color: #ffffff;
+      border-left: 3px solid #64b5f6;
       padding-left: calc(1rem - 3px);
+      font-weight: 500;
     }
   }
 
@@ -388,6 +531,7 @@ watch(submenuOpen, (val) => {
         font-size: 1.1rem;
         margin-left: auto;
         transition: transform 0.3s ease;
+        color: rgba(255, 255, 255, 0.9);
 
         &.open {
           transform: rotate(180deg);
@@ -407,17 +551,18 @@ watch(submenuOpen, (val) => {
         padding-left: 1.5rem;
         height: 40px;
         font-size: 0.9rem;
-        color: rgba(255, 255, 255, 0.7);
+        color: rgba(255, 255, 255, 0.8);
+        cursor: pointer;
 
         &:hover {
-          background: rgba(255, 255, 255, 0.1);
-          color: rgba(255, 255, 255, 0.95);
+          background: rgba(255, 255, 255, 0.12);
+          color: #ffffff;
         }
 
         &.router-link-active,
         &.router-link-exact-active {
-          background: rgba(255, 255, 255, 0.15);
-          border-left-color: #bbbfff;
+          background: rgba(255, 255, 255, 0.2);
+          border-left-color: #64b5f6;
         }
       }
     }

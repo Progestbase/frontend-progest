@@ -585,6 +585,71 @@ var getSetorDetail = (content, setorId) => {
     });
 };
 
+// Adicionar fornecedor a um setor
+export const addFornecedor = async (setorSolicitanteId, setorFornecedorId) => {
+  try {
+    const response = await axios.post(
+      `${API_URL}/setores/addFornecedor`,
+      {
+        setor_solicitante_id: setorSolicitanteId,
+        setor_fornecedor_id: setorFornecedorId,
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      }
+    );
+
+    if (response.data.status) {
+      return { success: true, message: response.data.message };
+    } else {
+      return {
+        success: false,
+        message: response.data.message || "Erro ao adicionar fornecedor",
+      };
+    }
+  } catch (error) {
+    console.error("Erro ao adicionar fornecedor:", error);
+    return {
+      success: false,
+      message:
+        error.response?.data?.message || "Erro de conexão com o servidor",
+    };
+  }
+};
+
+// Remover fornecedor de um setor
+export const removeFornecedor = async (id) => {
+  try {
+    const response = await axios.post(
+      `${API_URL}/setores/removeFornecedor`,
+      { id },
+      {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      }
+    );
+
+    if (response.data.status) {
+      return { success: true, message: response.data.message };
+    } else {
+      return {
+        success: false,
+        message: response.data.message || "Erro ao remover fornecedor",
+      };
+    }
+  } catch (error) {
+    console.error("Erro ao remover fornecedor:", error);
+    return {
+      success: false,
+      message:
+        error.response?.data?.message || "Erro de conexão com o servidor",
+    };
+  }
+};
+
 var exportFunctions = {
   getSetoresWithAccess: getSetoresWithAccess,
   ADD_UP: ADD_UP,
@@ -596,6 +661,8 @@ var exportFunctions = {
   atualizarSetor: atualizarSetor,
   deleteSetor: deleteSetor,
   getSetorDetail: getSetorDetail,
+  addFornecedor: addFornecedor,
+  removeFornecedor: removeFornecedor,
 };
 
 export default exportFunctions;

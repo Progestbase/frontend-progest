@@ -89,60 +89,92 @@
           </CardContent>
         </Card>
 
-        <Card
-          v-if="
-            setor.fornecedores_relacionados &&
-            setor.fornecedores_relacionados.length > 0
-          "
-          class="mb-4"
-        >
+        <Card class="mb-4">
           <CardHeader>
-            <CardTitle class="flex items-center gap-2">
-              <i class="mdi mdi-truck-delivery-outline"></i>
-              Setor Distribuidor
-            </CardTitle>
+            <div class="flex items-center justify-between">
+              <CardTitle class="flex items-center gap-2">
+                <i class="mdi mdi-truck-delivery-outline"></i>
+                Setor Distribuidor
+              </CardTitle>
+              <Dialog v-if="!isSolicitante" :open="isAddModalOpen" @update:open="isAddModalOpen = $event">
+                <DialogTrigger as-child>
+                  <Button variant="outline" size="sm" @click="openAddModal">
+                    <i class="mdi mdi-plus"></i>
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Adicionar Fornecedor</DialogTitle>
+                  </DialogHeader>
+                  <div class="py-4">
+                    <Label class="mb-2 block">Selecione o Setor Fornecedor</Label>
+                    <Select v-model="selectedFornecedorId">
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione um setor..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem
+                          v-for="s in availableSetores"
+                          :key="s.id"
+                          :value="String(s.id)"
+                        >
+                          {{ s.nome }} ({{ s.tipo }})
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div class="flex justify-end gap-2">
+                    <Button variant="ghost" @click="isAddModalOpen = false">Cancelar</Button>
+                    <Button @click="handleAddFornecedor" :disabled="!selectedFornecedorId || loadingAdd">
+                      {{ loadingAdd ? 'Adicionando...' : 'Adicionar' }}
+                    </Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
+            </div>
           </CardHeader>
           <CardContent>
             <div
-              v-for="rel in setor.fornecedores_relacionados.slice(0, 3)"
-              :key="rel.id"
-              class="mb-3 p-3 border rounded-lg"
+              v-if="setor.fornecedores_relacionados && setor.fornecedores_relacionados.length > 0"
             >
-              <div class="flex justify-between items-start">
-                <div>
-                  <div class="font-semibold">
-                    {{
-                      rel.fornecedor?.nome ||
-                      rel.fornecedor?.razao_social ||
-                      "Desconhecido"
-                    }}
+              <div
+                v-for="rel in setor.fornecedores_relacionados"
+                :key="rel.id"
+                class="mb-3 p-3 border rounded-lg"
+              >
+                <div class="flex justify-between items-start">
+                  <div>
+                    <div class="font-semibold">
+                      {{
+                        rel.fornecedor?.nome ||
+                        rel.fornecedor?.razao_social ||
+                        "Desconhecido"
+                      }}
+                    </div>
+                    <div class="text-muted-foreground text-sm">
+                      {{ rel.fornecedor?.descricao || "" }}
+                    </div>
                   </div>
-                  <div class="text-muted-foreground text-sm">
-                    {{ rel.fornecedor?.descricao || "" }}
+                  <div class="flex items-center gap-2">
+                    <Badge variant="outline">
+                      {{ rel.fornecedor?.tipo || "-" }}
+                    </Badge>
+                    <Button
+                      v-if="!isSolicitante"
+                      variant="ghost"
+                      size="icon"
+                      class="h-6 w-6 text-destructive hover:text-destructive/90"
+                      @click="handleRemoveFornecedor(rel.id)"
+                      title="Remover fornecedor"
+                    >
+                      <i class="mdi mdi-trash-can-outline"></i>
+                    </Button>
                   </div>
-                </div>
-                <div class="text-right">
-                  <Badge
-                    :variant="
-                      rel.tipo_produto === 'Medicamento'
-                        ? 'secondary'
-                        : 'default'
-                    "
-                  >
-                    {{ rel.tipo_produto || rel.fornecedor?.tipo || "-" }}
-                  </Badge>
                 </div>
               </div>
             </div>
-
-            <div
-              v-if="setor.fornecedores_relacionados.length > 3"
-              class="text-center"
-            >
-              <p class="text-muted-foreground text-sm">
-                +{{ setor.fornecedores_relacionados.length - 3 }} outros
-                fornecedores
-              </p>
+            <div v-else class="text-center text-muted-foreground py-4">
+              Nenhum fornecedor vinculado.
             </div>
           </CardContent>
         </Card>
@@ -152,16 +184,38 @@
 </template>
 
 <script setup>
-import { defineProps, defineEmits, computed } from "vue";
+import { defineProps, defineEmits, computed, ref } from "vue";
 import { useStore } from "vuex";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  listarSetores,
+  addFornecedor,
+  removeFornecedor,
+  buscarSetorPorId,
+} from "@/functions/cad_setores";
+import { useToast } from "@/components/ui/toast/use-toast";
 
 const store = useStore();
+const { toast } = useToast();
 
-defineProps({
+const props = defineProps({
   setor: {
     type: Object,
     required: true,
@@ -169,6 +223,12 @@ defineProps({
 });
 
 const emit = defineEmits(["navigate", "editar-setor", "excluir-setor"]);
+
+// State for Add Modal
+const isAddModalOpen = ref(false);
+const availableSetores = ref([]);
+const selectedFornecedorId = ref("");
+const loadingAdd = ref(false);
 
 // Verificar se o usuário é admin@admin.com
 const isAdminUser = computed(() => {
@@ -209,27 +269,92 @@ const isSolicitante = computed(() => {
   return false;
 });
 
-// Função para formatar datas
-const formatarData = (dataString) => {
-  if (!dataString) return "N/A";
-  const data = new Date(dataString);
-  return data.toLocaleString("pt-BR", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-};
-
 // Funções de ação do setor
 const editarSetor = () => {
-  // Emitir evento para o componente pai editar o setor
   emit("editar-setor");
 };
 
 const excluirSetor = () => {
-  // Emitir evento para o componente pai excluir o setor
   emit("excluir-setor");
+};
+
+// Supplier Management Functions
+const openAddModal = async () => {
+  isAddModalOpen.value = true;
+  selectedFornecedorId.value = "";
+  loadingAdd.value = false;
+
+  // Fetch available sectors
+  const result = await listarSetores();
+  if (result.success) {
+    // Filter out current sector and already added suppliers
+    const currentId = props.setor.id;
+    const existingIds = (props.setor.fornecedores_relacionados || []).map(
+      (r) => r.setor_fornecedor_id
+    );
+
+    availableSetores.value = result.data.filter(
+      (s) => s.id !== currentId && !existingIds.includes(s.id) && s.estoque
+    );
+  } else {
+    toast({
+      title: "Erro",
+      description: "Não foi possível carregar os setores disponíveis.",
+      variant: "destructive",
+    });
+  }
+};
+
+const handleAddFornecedor = async () => {
+  if (!selectedFornecedorId.value) return;
+
+  loadingAdd.value = true;
+  const result = await addFornecedor(props.setor.id, selectedFornecedorId.value);
+
+  if (result.success) {
+    toast({
+      title: "Sucesso",
+      description: "Fornecedor adicionado com sucesso.",
+    });
+    isAddModalOpen.value = false;
+    // Reload sector details to update the list
+    await reloadSetorDetails();
+  } else {
+    toast({
+      title: "Erro",
+      description: result.message,
+      variant: "destructive",
+    });
+  }
+  loadingAdd.value = false;
+};
+
+const handleRemoveFornecedor = async (relationId) => {
+  if (!confirm("Tem certeza que deseja remover este fornecedor?")) return;
+
+  const result = await removeFornecedor(relationId);
+
+  if (result.success) {
+    toast({
+      title: "Sucesso",
+      description: "Fornecedor removido com sucesso.",
+    });
+    // Reload sector details to update the list
+    await reloadSetorDetails();
+  } else {
+    toast({
+      title: "Erro",
+      description: result.message,
+      variant: "destructive",
+    });
+  }
+};
+
+const reloadSetorDetails = async () => {
+  const result = await buscarSetorPorId(props.setor.id);
+  
+  if (result.success) {
+     store.commit("setSetorDetails", result.data);
+  }
 };
 </script>

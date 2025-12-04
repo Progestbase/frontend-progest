@@ -5,18 +5,7 @@
       <div class="flex items-center gap-4">
         <!-- Page Title -->
         <h2 class="text-2xl font-bold text-slate-900">
-          <span v-if="$route.name === 'setorDetalhes'">
-            <router-link
-              to="/setores"
-              class="text-blue-600 hover:text-blue-700 flex items-center gap-2"
-            >
-              <span class="material-icons text-xl">arrow_back</span>
-              <span>Setores</span>
-            </router-link>
-            <span class="text-slate-400 mx-2">/</span>
-            <span class="text-slate-700">{{ unidadeNomeAtual }}</span>
-          </span>
-          <span v-else>{{ headerTitle }}</span>
+          <span>{{ headerTitle }}</span>
         </h2>
       </div>
 
@@ -66,7 +55,7 @@ const headerTitle = computed(() => {
     dashboard: "Dashboard",
     users: "Usuários",
     tiposUsuario: "Tipos de Usuário",
-    setores: "Setores",
+
     setorDetalhes: "Detalhes do Setor",
     produtos: "Produtos",
     grupoProduto: "Grupos de Produtos",

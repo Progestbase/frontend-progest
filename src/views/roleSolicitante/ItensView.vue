@@ -1,62 +1,169 @@
-<template class="">
-  <div class="bg-[#f7f8fc] min-h-screen">
-    <HeaderSolicitante :userName="userName" :userRole="userRole" />
-    <ProductSearch />
-  </div>
-  
+<template>
+  <TemplateAdmin>
+    <div class="main-content">
+      <div class="page-content">
+        <div class="container-fluid">
+          <div class="row">
+            <div class="col-12">
+              <!-- Tabs Navigation -->
+              <ul class="nav nav-tabs nav-tabs-custom nav-justified" role="tablist">
+                <li class="nav-item">
+                  <a
+                    class="nav-link"
+                    :class="{ active: activeTab === 'itens' }"
+                    @click="changeTab('itens')"
+                    href="#"
+                  >
+                    <span class="d-block d-sm-none"><i class="fas fa-search"></i></span>
+                    <span class="d-none d-sm-block">Buscar Itens</span>
+                  </a>
+                </li>
+                <li class="nav-item">
+                  <a
+                    class="nav-link"
+                    :class="{ active: activeTab === 'historico' }"
+                    @click="changeTab('historico')"
+                    href="#"
+                  >
+                    <span class="d-block d-sm-none"><i class="fas fa-history"></i></span>
+                    <span class="d-none d-sm-block">Histórico de Pedidos</span>
+                  </a>
+                </li>
+                <li class="nav-item">
+                  <a
+                    class="nav-link"
+                    :class="{ active: activeTab === 'pedido' }"
+                    @click="changeTab('pedido')"
+                    href="#"
+                  >
+                    <span class="d-block d-sm-none"><i class="fas fa-shopping-cart"></i></span>
+                    <span class="d-none d-sm-block">Finalizar Pedido</span>
+                  </a>
+                </li>
+              </ul>
+
+              <!-- Tab Content -->
+              <div class="tab-content p-3 text-muted">
+                <!-- Itens Tab -->
+                <div v-show="activeTab === 'itens'">
+                  <ProductSearch />
+                </div>
+
+                <!-- Histórico Tab -->
+                <div v-show="activeTab === 'historico'">
+                  <HistoricoPedidos />
+                </div>
+
+                <!-- Pedido Tab -->
+                <div v-show="activeTab === 'pedido'">
+                  <FinalizarPedidoTab />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </TemplateAdmin>
 </template>
 
 <script>
-import HeaderSolicitante from '@/components/roleSolicitante/HeaderSolicitante.vue';
+import { ref, onMounted } from 'vue';
+import { useRouter, useRoute } from 'vue-router';
+import TemplateAdmin from '@/views/roleAdmin/TemplateAdmin.vue';
 import ProductSearch from '@/components/roleSolicitante/ProductSearch.vue';
-import axios from 'axios';
-import { API_URL } from '@/config';
+import HistoricoPedidos from '@/components/roleSolicitante/HistoricoPedidos.vue';
+import FinalizarPedidoTab from '@/components/roleSolicitante/FinalizarPedidoTab.vue';
 
 export default {
   name: "ItensView",
   components: {
-    HeaderSolicitante,
+    TemplateAdmin,
     ProductSearch,
+    HistoricoPedidos,
+    FinalizarPedidoTab,
   },
-  data() {
-    return {
-      userName: "",
-      userRole: "",
-      apiUrl: API_URL, // Ajuste conforme necessário
-    };
-  },
-  created() {
-    this.fetchUserInfo();
-  },
-  methods: {
-    async fetchUserInfo() {
+  setup() {
+    const router = useRouter();
+    const route = useRoute();
+    const activeTab = ref('itens');
+
+    const changeTab = (tab) => {
+      const normalized = normalizeTab(tab);
+      activeTab.value = normalized;
+
+      // Atualizar URL mantendo outros query params
       try {
-        const token = localStorage.getItem("token");
-        if (!token) {
-          console.error("Token não encontrado");
-          this.$router.push("/login");
-          return;
-        }
-
-        const headers = {
-          Authorization: `Bearer ${token}`,
-        };
-
-        const response = await axios.get(`${this.apiUrl}/user`, {
-          headers,
-        });
-
-        this.userName = response.data.name; // Certifique-se de que o nome vem no campo correto
-        this.userRole = response.data.role;
-      } catch (error) {
-        console.error("Erro ao buscar informações do usuário:", error);
-        this.$router.push("/login");
+        window.history.replaceState({}, '', `${route.path}?tab=${normalized}`);
+      } catch (e) {
+        console.warn('Não foi possível atualizar a URL com a tab:', e);
       }
-    },
+    };
+
+    const normalizeTab = (tab) => {
+      const allowed = ['itens', 'historico', 'pedido'];
+      if (!tab || typeof tab !== 'string') return 'itens';
+      return allowed.includes(tab) ? tab : 'itens';
+    };
+
+    const initTabFromRoute = () => {
+      const queryTab = route.query?.tab;
+      activeTab.value = normalizeTab(queryTab);
+
+      // garantir que a URL contenha o param
+      try {
+        window.history.replaceState({}, '', `${route.path}?tab=${activeTab.value}`);
+      } catch (e) {
+        /* ignore */
+      }
+    };
+
+    onMounted(() => {
+      initTabFromRoute();
+    });
+
+    return {
+      activeTab,
+      changeTab,
+    };
   },
 };
 </script>
 
 <style scoped>
-/* Estilos adicionais, caso necessário */
+.nav-tabs-custom {
+  border-bottom: 2px solid #e9ecef;
+}
+
+.nav-tabs-custom .nav-link {
+  color: #495057;
+  border: none;
+  border-bottom: 3px solid transparent;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.nav-tabs-custom .nav-link:hover {
+  color: #007bff;
+  border-bottom-color: #e9ecef;
+}
+
+.nav-tabs-custom .nav-link.active {
+  color: #007bff;
+  background-color: transparent;
+  border-bottom-color: #007bff;
+}
+
+.tab-content {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
 </style>

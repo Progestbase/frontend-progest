@@ -16,7 +16,7 @@ import functionsUsuarioSetor from "@/functions/cad_usuario_setor";
 import Home from "@/views/Home.vue";
 import About from "@/views/About.vue";
 import Users from "../views/cadastros/Users.vue";
-import Setores from "../views/cadastros/Setores.vue";
+
 import SetorDetalhes from "../views/cadastros/SetorDetalhes.vue";
 import Produtos from "../views/cadastros/Produtos.vue";
 import UnidadesMedida from "../views/cadastros/UnidadesMedida.vue";
@@ -74,12 +74,7 @@ const router = createRouter({
       component: Users,
       meta: { requiresAuth: true, requiresSector: true },
     },
-    {
-      path: "/setores",
-      name: "setores",
-      component: Setores,
-      meta: { requiresAuth: true, requiresSector: true },
-    },
+
     {
       path: "/setor/:id",
       name: "setorDetalhes",
@@ -216,13 +211,8 @@ router.beforeEach(async (to, from, next) => {
   // Se está autenticado e tenta acessar login/register, redirecionar para seleção de setor ou dashboard
   if (isAuthenticated && (to.path === "/login" || to.path === "/register")) {
     if (hasSector) {
-      // Se o usuário for solicitante no setor, redireciona para /itens
-      try {
-        const isSolic = await checkIsSolicitante();
-        next(isSolic ? "/itens" : "/dashboard");
-      } catch (e) {
-        next("/dashboard");
-      }
+      // Redireciona para dashboard independente do perfil
+      next("/dashboard");
     } else {
       next("/setor-selection");
     }
@@ -279,12 +269,13 @@ router.beforeEach(async (to, from, next) => {
     }
   }
 
-  // Bloquear acesso a rotas de gerenciamento para solicitantes: redirecionar para /itens
+  // Bloquear acesso a rotas de gerenciamento para solicitantes
   if (isAuthenticated && hasSector) {
     const isSolic = await checkIsSolicitante();
     const allowedForSolicitante = [
+      "/dashboard",
+      "/setor-atual",
       "/itens",
-      "/historico",
       "/setor-selection",
       "/login",
       "/register",
@@ -295,7 +286,7 @@ router.beforeEach(async (to, from, next) => {
       to.meta.requiresSector &&
       !allowedForSolicitante.includes(to.path)
     ) {
-      next("/itens");
+      next("/dashboard");
       return;
     }
   }

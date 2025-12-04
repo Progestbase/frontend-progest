@@ -261,8 +261,7 @@
                       v-if="fornecedores.length === 0"
                       class="text-muted small"
                     >
-                      Nenhum fornecedor adicionado. Você pode adicionar até 1
-                      fornecedor por tipo (Medicamento/Material).
+                      Nenhum fornecedor adicionado. Você pode adicionar múltiplos fornecedores.
                     </div>
                     <div
                       v-for="(f, idx) in fornecedores"
@@ -279,25 +278,6 @@
                                 f.fornecedor.razao_social)) ||
                             getSetorById(f.setor_fornecedor_id)?.nome ||
                             "Setor não encontrado"
-                          }}
-                        </span>
-
-                        <!-- Tipo do produto: primeiro tenta tipo_produto do relacionamento, depois tipo do fornecedor, depois tipo do setor -->
-                        <span
-                          class="badge ms-2"
-                          :class="
-                            badgeClassForTipo(
-                              f.tipo_produto ||
-                                f.fornecedor?.tipo ||
-                                getSetorById(f.setor_fornecedor_id)?.tipo
-                            )
-                          "
-                        >
-                          {{
-                            f.tipo_produto ||
-                            f.fornecedor?.tipo ||
-                            getSetorById(f.setor_fornecedor_id)?.tipo ||
-                            "-"
                           }}
                         </span>
                       </div>
@@ -460,11 +440,10 @@ export default {
       const modalCopy = JSON.parse(JSON.stringify(this.modalData || {}));
       // Normalizar fornecedores: remover entradas vazias
       modalCopy.fornecedores = (this.fornecedores || [])
-        .filter((f) => f.setor_fornecedor_id && f.tipo_produto)
+        .filter((f) => f.setor_fornecedor_id)
         .map((f) => ({
           id: f.id || undefined,
           setor_fornecedor_id: f.setor_fornecedor_id,
-          tipo_produto: f.tipo_produto,
         }));
 
       const content = {
@@ -487,12 +466,9 @@ export default {
     },
     // Fornecedores methods
     addFornecedor() {
-      // Evitar adicionar se já tiver 2 (um por tipo)
-      if (!this.canAddFornecedor) return;
       this.fornecedores.push({
         _localId: Date.now() + Math.random(),
         setor_fornecedor_id: null,
-        tipo_produto: null,
       });
     },
     removeFornecedor(idx) {
@@ -532,18 +508,10 @@ export default {
     adicionarFornecedorSelecionado() {
       const setor = this.getSetorById(this.selectedSetorId);
       if (!setor) return;
-      // Remover fornecedor existente do mesmo tipo, se houver
-      const idxExistente = this.fornecedores.findIndex(
-        (f) => this.getSetorById(f.setor_fornecedor_id)?.tipo === setor.tipo
-      );
-      if (idxExistente !== -1) {
-        this.fornecedores.splice(idxExistente, 1);
-      }
       // Adicionar novo fornecedor
       this.fornecedores.push({
         _localId: Date.now() + Math.random(),
         setor_fornecedor_id: setor.id,
-        tipo_produto: setor.tipo,
       });
       this.selectedSetorId = "";
     },
@@ -576,19 +544,14 @@ export default {
       );
     },
     setoresDisponiveis() {
-      // Setores com estoque, que ainda não foram selecionados para o tipo correspondente
+      // Setores com estoque, que ainda não foram selecionados
       const usados = (this.fornecedores || [])
-        .map((f) => this.getSetorById(f.setor_fornecedor_id)?.tipo)
+        .map((f) => f.setor_fornecedor_id)
         .filter(Boolean);
-      return this.allSetores.filter((s) => !usados.includes(s.tipo));
+      return this.allSetores.filter((s) => !usados.includes(s.id));
     },
     canAddFornecedor() {
-      // Pode adicionar enquanto houver tipos não usados (Medicamento/Material)
-      const tiposUsados = (this.fornecedores || [])
-        .map((f) => f.tipo_produto)
-        .filter(Boolean);
-      const allowed = ["Medicamento", "Material"];
-      return allowed.some((t) => !tiposUsados.includes(t));
+      return true;
     },
   },
   watch: {
@@ -612,11 +575,6 @@ export default {
                   r.setor_fornecedor_id ||
                   fornecedorObj?.id ||
                   r.fornecedor?.id ||
-                  null,
-                tipo_produto:
-                  r.tipo_produto ||
-                  fornecedorObj?.tipo ||
-                  r.fornecedor?.tipo ||
                   null,
                 fornecedor: fornecedorObj || r.fornecedor || null,
               };

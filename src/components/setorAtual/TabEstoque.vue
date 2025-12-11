@@ -73,7 +73,7 @@
                 <th class="text-center">Qtd. Atual</th>
                 <th class="text-center">Qtd. Mínima</th>
                 <th class="text-center">Alerta</th>
-                <th class="text-center">Ações</th>
+                <th class="text-center" v-if="!readOnly">Ações</th>
               </tr>
             </thead>
             <tbody>
@@ -98,7 +98,7 @@
                 </td>
                 <td class="text-center" @click.stop>
                   <div
-                    v-if="editandoQuantidade === item.id"
+                    v-if="editandoQuantidade === item.id && !readOnly"
                     class="d-flex align-items-center justify-content-center gap-2"
                   >
                     <input
@@ -147,7 +147,7 @@
                 <td class="text-center">
                   {{ item.alerta }}
                 </td>
-                <td class="text-center" @click.stop>
+                <td class="text-center" @click.stop v-if="!readOnly">
                   <div class="d-flex align-items-center justify-content-center">
                     <Button
                       v-if="editandoQuantidade !== item.id"
@@ -209,6 +209,13 @@ import * as bootstrap from "bootstrap";
 
 // Emits para comunicar com o componente pai
 const emit = defineEmits(["reloadEstoque"]);
+
+const props = defineProps({
+  readOnly: {
+    type: Boolean,
+    default: false,
+  },
+});
 
 const store = useStore();
 const { success, error } = useToast();

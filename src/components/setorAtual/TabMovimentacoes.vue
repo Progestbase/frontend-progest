@@ -18,7 +18,57 @@
       </Button>
     </div>
 
-    <div v-if="listMovimentacoes.length > 0" class="table-responsive">
+    <!-- Filters Bar -->
+    <div
+      class="bg-gray-50 border p-3 rounded mb-3 flex flex-wrap items-center gap-3"
+    >
+      <!-- Tipo -->
+      <div class="flex items-center gap-2">
+        <Label class="whitespace-nowrap">Tipo:</Label>
+        <select
+          v-model="filterTipo"
+          class="form-select form-select-sm w-auto border-gray-300 rounded shadow-sm"
+        >
+          <option value="todos">Todos</option>
+          <option value="entrada">Entrada</option>
+          <option value="saida">Saída</option>
+        </select>
+      </div>
+
+      <!-- Status -->
+      <div class="flex items-center gap-2">
+        <Label class="whitespace-nowrap">Status:</Label>
+        <select
+          v-model="filterStatus"
+          class="form-select form-select-sm w-auto border-gray-300 rounded shadow-sm"
+        >
+          <option value="todos">Todos</option>
+          <option value="A">Aprovada</option>
+          <option value="P">Pendente</option>
+          <option value="R">Rejeitada</option>
+          <option value="C">Rascunho</option>
+          <option value="X">Cancelada</option>
+        </select>
+      </div>
+
+      <!-- Search -->
+      <div class="flex items-center gap-2 flex-grow">
+        <i class="mdi mdi-magnify text-gray-400"></i>
+        <Input
+          v-model="filterSearch"
+          placeholder="Buscar por origem ou destino..."
+          class="max-w-xs h-8 text-sm"
+        />
+      </div>
+
+      <!-- Results Count -->
+      <div class="ml-auto text-xs text-muted-foreground">
+        Total:
+        <span class="font-medium">{{ filteredMovimentacoes.length }}</span>
+      </div>
+    </div>
+
+    <div v-if="filteredMovimentacoes.length > 0" class="table-responsive">
       <table class="table table-hover align-middle mb-0">
         <thead>
           <tr>
@@ -33,7 +83,7 @@
         </thead>
         <tbody>
           <tr
-            v-for="mov in listMovimentacoes"
+            v-for="mov in filteredMovimentacoes"
             :key="mov.id"
             :class="getRowClass(mov.status_solicitacao)"
           >
@@ -253,10 +303,10 @@
       :open="dialogAprovacaoOpen"
       @update:open="dialogAprovacaoOpen = $event"
     >
-      <DialogContent class="max-w-3xl">
-        <DialogHeader>
-          <DialogTitle class="flex gap-2">
-            <i class="mdi mdi-clipboard-check-outline text-primary"></i>
+      <DialogContent class="max-w-4xl">
+        <DialogHeader class="space-y-2 mb-2">
+          <DialogTitle class="flex gap-2 items-center">
+            <i class="mdi mdi-clipboard-check-outline text-primary text-xl"></i>
             Analisar Solicitação #{{ movimentacaoParaAprovar?.id }}
           </DialogTitle>
           <DialogDescription>
@@ -266,21 +316,54 @@
         </DialogHeader>
 
         <div v-if="movimentacaoParaAprovar" class="space-y-4">
-          <!-- Info do pedido -->
-          <div class="grid grid-cols-2 gap-4 p-3 bg-light rounded">
-            <div>
-              <Label class="text-muted small">Solicitante (Destino)</Label>
-              <div class="fw-medium">
-                {{
+          <!-- Flow Info: Distribuidor (Você) -> Solicitante -->
+          <div
+            class="flex flex-wrap items-center gap-4 p-4 bg-muted/30 rounded border mb-4"
+          >
+            <!-- Source (Distributor - You) -->
+            <div class="flex-shrink-0">
+              <label class="text-xs text-muted-foreground block mb-1"
+                >Setor Distribuidor (Você)</label
+              >
+              <div
+                class="p-2 px-3 bg-white rounded-lg flex items-center gap-2 border h-10 shadow-sm"
+              >
+                <i class="mdi mdi-store text-primary"></i>
+                <span class="font-medium text-sm">{{ setorNome }}</span>
+              </div>
+            </div>
+
+            <!-- Arrow -->
+            <div class="hidden md:flex items-center pt-4">
+              <i class="mdi mdi-arrow-right text-2xl text-muted-foreground"></i>
+            </div>
+
+            <!-- Destination (Solicitante) -->
+            <div class="flex-shrink-0">
+              <label class="text-xs text-muted-foreground block mb-1"
+                >Solicitante (Destino)</label
+              >
+              <div
+                class="p-2 px-3 bg-blue-50 text-blue-700 rounded-lg flex items-center gap-2 border border-blue-100 h-10 shadow-sm"
+              >
+                <i class="mdi mdi-map-marker"></i>
+                <span class="font-medium text-sm">{{
                   movimentacaoParaAprovar.setor_destino?.nome ||
                   movimentacaoParaAprovar.setorDestino?.nome ||
                   "-"
-                }}
+                }}</span>
               </div>
             </div>
-            <div>
-              <Label class="text-muted small">Data da Solicitação</Label>
-              <div>{{ formatarData(movimentacaoParaAprovar.created_at) }}</div>
+
+            <!-- Date -->
+            <div class="ml-auto border-l pl-4">
+              <label class="text-xs text-muted-foreground block mb-1"
+                >Data da Solicitação</label
+              >
+              <div class="font-medium flex items-center gap-2">
+                <i class="mdi mdi-calendar text-muted-foreground"></i>
+                {{ formatarData(movimentacaoParaAprovar.created_at) }}
+              </div>
             </div>
           </div>
 
@@ -301,6 +384,7 @@
                   <tr>
                     <th class="text-start">Produto</th>
                     <th class="text-center">Qtd Solicitada</th>
+                    <th class="text-center">Qtd Estoque</th>
                     <th class="text-center" style="width: 150px">
                       Qtd a Liberar
                     </th>
@@ -309,9 +393,16 @@
                 <tbody>
                   <tr v-for="(item, index) in itensParaAprovacao" :key="index">
                     <td class="text-start">
-                      <strong>{{
-                        item.produto?.nome || item.produtoNome || "-"
-                      }}</strong>
+                      <div class="d-flex align-items-center">
+                        <i
+                          v-if="item.quantidade_liberada > item.estoque_atual"
+                          class="mdi mdi-alert-circle text-red-600 me-2"
+                          title="Quantidade a liberar excede o estoque!"
+                        ></i>
+                        <strong>{{
+                          item.produto?.nome || item.produtoNome || "-"
+                        }}</strong>
+                      </div>
                     </td>
                     <td class="text-center">
                       <Badge variant="outline">{{
@@ -319,13 +410,25 @@
                       }}</Badge>
                     </td>
                     <td class="text-center">
+                      <Badge
+                        :variant="
+                          item.estoque_atual > 0 ? 'secondary' : 'destructive'
+                        "
+                      >
+                        {{ item.estoque_atual }}
+                      </Badge>
+                    </td>
+                    <td class="text-center">
                       <Input
                         type="number"
                         min="0"
-                        :max="item.quantidade_solicitada"
                         v-model.number="item.quantidade_liberada"
                         class="text-center"
                         style="width: 100px; margin: 0 auto"
+                        :class="{
+                          'border-red-500 ring-red-500':
+                            item.quantidade_liberada > item.estoque_atual,
+                        }"
                       />
                     </td>
                   </tr>
@@ -336,14 +439,21 @@
 
           <!-- Erros de estoque -->
           <div
-            v-if="errosAprovacao.length > 0"
+            v-if="temErroEstoque || errosAprovacao.length > 0 || isTotalZerado"
             class="mt-3 p-3 bg-red-50 border border-red-200 rounded"
           >
             <Label class="text-red-700 fw-bold mb-2">
               <i class="mdi mdi-alert-circle me-1"></i>
-              Erro de Estoque
+              Atenção
             </Label>
             <ul class="mb-0 ps-3 text-red-600 small">
+              <li v-if="temErroEstoque">
+                A quantidade a liberar não pode ser maior que a quantidade em
+                estoque.
+              </li>
+              <li v-if="isTotalZerado">
+                Defina uma quantidade maior que zero para pelo menos um item.
+              </li>
               <li v-for="(erro, idx) in errosAprovacao" :key="idx">
                 {{ erro }}
               </li>
@@ -372,8 +482,8 @@
             <Button
               variant="default"
               @click="aprovarMovimentacao"
-              :disabled="loadingAprovacao"
-              class="bg-green-600 hover:bg-green-700"
+              :disabled="loadingAprovacao || temErroEstoque || isTotalZerado"
+              class="bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <template v-if="!loadingAprovacao">
                 <i class="mdi mdi-check-circle me-1"></i>
@@ -491,10 +601,55 @@ const dialogCancelamentoOpen = ref(false);
 const movimentacaoParaCancelar = ref(null);
 const loadingCancelamento = ref(false);
 
+// Filters State
+const filterTipo = ref("todos");
+const filterStatus = ref("todos");
+const filterSearch = ref("");
+
 // Computed
 const listMovimentacoes = computed(() => {
   const items = parentData.movimentacoesItems;
   return items?.value || items || [];
+});
+
+const filteredMovimentacoes = computed(() => {
+  let items = listMovimentacoes.value;
+
+  // 1. Filter by Tipo
+  if (filterTipo.value !== "todos") {
+    if (filterTipo.value === "entrada") {
+      items = items.filter((mov) => isEntrada(mov));
+    } else if (filterTipo.value === "saida") {
+      items = items.filter((mov) => isSaida(mov));
+    }
+  }
+
+  // 2. Filter by Status
+  if (filterStatus.value !== "todos") {
+    items = items.filter(
+      (mov) => mov.status_solicitacao === filterStatus.value
+    );
+  }
+
+  // 3. Filter by Search (Origem/Destino)
+  if (filterSearch.value.trim()) {
+    const term = filterSearch.value.toLowerCase();
+    items = items.filter((mov) => {
+      const origem = (
+        mov.setor_origem?.nome ||
+        mov.setorOrigem?.nome ||
+        ""
+      ).toLowerCase();
+      const destino = (
+        mov.setor_destino?.nome ||
+        mov.setorDestino?.nome ||
+        ""
+      ).toLowerCase();
+      return origem.includes(term) || destino.includes(term);
+    });
+  }
+
+  return items;
 });
 
 const setorNome = computed(() => {
@@ -580,14 +735,60 @@ const verDetalhes = (mov) => {
   dialogDetalhesOpen.value = true;
 };
 
-const abrirModalAprovacao = (mov) => {
+const temErroEstoque = computed(() => {
+  return itensParaAprovacao.value.some(
+    (item) => (item.quantidade_liberada || 0) > (item.estoque_atual || 0)
+  );
+});
+
+const isTotalZerado = computed(() => {
+  return itensParaAprovacao.value.every(
+    (item) => (item.quantidade_liberada || 0) === 0
+  );
+});
+
+const abrirModalAprovacao = async (mov) => {
   movimentacaoParaAprovar.value = mov;
-  // Criar cópia dos itens com quantidade_liberada inicializada
-  itensParaAprovacao.value = (mov.itens || []).map((item) => ({
-    ...item,
-    quantidade_liberada: item.quantidade_liberada || item.quantidade_solicitada,
-  }));
-  dialogAprovacaoOpen.value = true;
+  loadingAprovacao.value = true;
+
+  try {
+    // Buscar estoque atual do setor (origem da movimentação)
+    let estoqueMap = {};
+    if (store.getters.getUserToken) {
+      try {
+        const response = await axios.get(`/estoque/setor/${props.setorId}`, {
+          headers: {
+            Authorization: "Bearer " + store.getters.getUserToken,
+          },
+        });
+        if (response.data.success && response.data.data.estoque) {
+          response.data.data.estoque.forEach((e) => {
+            const prodId = e.produto?.id || e.produto_id;
+            estoqueMap[prodId] = e.quantidade_atual;
+          });
+        }
+      } catch (e) {
+        console.error("Erro ao buscar estoque para validação", e);
+      }
+    }
+
+    // Criar cópia dos itens com quantidade_liberada inicializada e estoque_atual
+    itensParaAprovacao.value = (mov.itens || []).map((item) => {
+      const prodId = item.produto?.id || item.produto_id;
+      return {
+        ...item,
+        quantidade_liberada:
+          item.quantidade_liberada !== undefined
+            ? item.quantidade_liberada
+            : item.quantidade_solicitada,
+        estoque_atual:
+          estoqueMap[prodId] !== undefined ? estoqueMap[prodId] : 0,
+      };
+    });
+  } finally {
+    loadingAprovacao.value = false;
+    dialogAprovacaoOpen.value = true;
+  }
 };
 
 const aprovarMovimentacao = async () => {

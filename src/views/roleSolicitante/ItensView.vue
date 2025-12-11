@@ -6,7 +6,10 @@
           <div class="row">
             <div class="col-12">
               <!-- Tabs Navigation -->
-              <ul class="nav nav-tabs nav-tabs-custom nav-justified" role="tablist">
+              <ul
+                class="nav nav-tabs nav-tabs-custom nav-justified"
+                role="tablist"
+              >
                 <li class="nav-item">
                   <a
                     class="nav-link"
@@ -14,7 +17,9 @@
                     @click="changeTab('itens')"
                     href="#"
                   >
-                    <span class="d-block d-sm-none"><i class="fas fa-search"></i></span>
+                    <span class="d-block d-sm-none"
+                      ><i class="fas fa-search"></i
+                    ></span>
                     <span class="d-none d-sm-block">Buscar Itens</span>
                   </a>
                 </li>
@@ -25,7 +30,9 @@
                     @click="changeTab('historico')"
                     href="#"
                   >
-                    <span class="d-block d-sm-none"><i class="fas fa-history"></i></span>
+                    <span class="d-block d-sm-none"
+                      ><i class="fas fa-history"></i
+                    ></span>
                     <span class="d-none d-sm-block">Histórico de Pedidos</span>
                   </a>
                 </li>
@@ -36,7 +43,9 @@
                     @click="changeTab('pedido')"
                     href="#"
                   >
-                    <span class="d-block d-sm-none"><i class="fas fa-shopping-cart"></i></span>
+                    <span class="d-block d-sm-none"
+                      ><i class="fas fa-shopping-cart"></i
+                    ></span>
                     <span class="d-none d-sm-block">Finalizar Pedido</span>
                   </a>
                 </li>
@@ -50,7 +59,7 @@
                 </div>
 
                 <!-- Histórico Tab -->
-                <div v-show="activeTab === 'historico'">
+                <div v-if="activeTab === 'historico'">
                   <HistoricoPedidos />
                 </div>
 
@@ -68,12 +77,12 @@
 </template>
 
 <script>
-import { ref, onMounted } from 'vue';
-import { useRouter, useRoute } from 'vue-router';
-import TemplateAdmin from '@/views/roleAdmin/TemplateAdmin.vue';
-import ProductSearch from '@/components/roleSolicitante/ProductSearch.vue';
-import HistoricoPedidos from '@/components/roleSolicitante/HistoricoPedidos.vue';
-import FinalizarPedidoTab from '@/components/roleSolicitante/FinalizarPedidoTab.vue';
+import { ref, onMounted, watch } from "vue";
+import { useRouter, useRoute } from "vue-router";
+import TemplateAdmin from "@/views/roleAdmin/TemplateAdmin.vue";
+import ProductSearch from "@/components/roleSolicitante/ProductSearch.vue";
+import HistoricoPedidos from "@/components/roleSolicitante/HistoricoPedidos.vue";
+import FinalizarPedidoTab from "@/components/roleSolicitante/FinalizarPedidoTab.vue";
 
 export default {
   name: "ItensView",
@@ -86,7 +95,7 @@ export default {
   setup() {
     const router = useRouter();
     const route = useRoute();
-    const activeTab = ref('itens');
+    const activeTab = ref("itens");
 
     const changeTab = (tab) => {
       const normalized = normalizeTab(tab);
@@ -94,16 +103,16 @@ export default {
 
       // Atualizar URL mantendo outros query params
       try {
-        window.history.replaceState({}, '', `${route.path}?tab=${normalized}`);
+        window.history.replaceState({}, "", `${route.path}?tab=${normalized}`);
       } catch (e) {
-        console.warn('Não foi possível atualizar a URL com a tab:', e);
+        console.warn("Não foi possível atualizar a URL com a tab:", e);
       }
     };
 
     const normalizeTab = (tab) => {
-      const allowed = ['itens', 'historico', 'pedido'];
-      if (!tab || typeof tab !== 'string') return 'itens';
-      return allowed.includes(tab) ? tab : 'itens';
+      const allowed = ["itens", "historico", "pedido"];
+      if (!tab || typeof tab !== "string") return "itens";
+      return allowed.includes(tab) ? tab : "itens";
     };
 
     const initTabFromRoute = () => {
@@ -112,7 +121,11 @@ export default {
 
       // garantir que a URL contenha o param
       try {
-        window.history.replaceState({}, '', `${route.path}?tab=${activeTab.value}`);
+        window.history.replaceState(
+          {},
+          "",
+          `${route.path}?tab=${activeTab.value}`
+        );
       } catch (e) {
         /* ignore */
       }
@@ -121,6 +134,16 @@ export default {
     onMounted(() => {
       initTabFromRoute();
     });
+
+    // Watch para mudanças na query da rota
+    watch(
+      () => route.query.tab,
+      (newTab) => {
+        if (newTab && normalizeTab(newTab) !== activeTab.value) {
+          activeTab.value = normalizeTab(newTab);
+        }
+      }
+    );
 
     return {
       activeTab,

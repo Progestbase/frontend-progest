@@ -55,6 +55,16 @@
         </router-link>
 
         <router-link
+          v-if="setoresConsumidores.length > 0"
+          class="menu-item"
+          to="/setores-consumidores"
+          title="Setores Consumidores"
+        >
+          <span class="material-icons menu-icon">store</span>
+          <span class="menu-text">Setores Consumidores</span>
+        </router-link>
+
+        <router-link
           v-if="isAdminUser"
           class="menu-item"
           to="/users"
@@ -137,45 +147,6 @@
           </transition>
         </div>
       </template>
-    </nav>
-
-    <!-- Divider -->
-    <div v-if="setoresConsumidores.length > 0" class="menu-divider"></div>
-
-    <!-- Setores Consumidores Section -->
-    <nav v-if="setoresConsumidores.length > 0" class="menu-section">
-      <div class="submenu-section">
-        <button
-          class="menu-item submenu-toggle"
-          @click="toggleConsumidoresSubmenu"
-          title="Setores Consumidores"
-        >
-          <span class="material-icons menu-icon">store</span>
-          <span class="menu-text">Setores Consumidores</span>
-          <span
-            class="material-icons expand-icon"
-            :class="{ open: consumidoresSubmenuOpen }"
-          >
-            expand_more
-          </span>
-        </button>
-
-        <!-- Consumidores Submenu Items -->
-        <transition name="submenu-transition">
-          <div v-show="consumidoresSubmenuOpen" class="submenu-items">
-            <a
-              v-for="consumidor in setoresConsumidores"
-              :key="consumidor.id"
-              class="submenu-item"
-              @click="navigateToSetor(consumidor.id)"
-              :title="consumidor.nome"
-            >
-              <span class="material-icons menu-icon">store</span>
-              <span class="menu-text">{{ consumidor.nome }}</span>
-            </a>
-          </div>
-        </transition>
-      </div>
     </nav>
   </aside>
 </template>
@@ -323,16 +294,12 @@ const loadSetoresConsumidores = async () => {
   }
 };
 
-// Navegar para outro setor
+// Navegar para outro setor (Visualização Read-Only)
 const navigateToSetor = async (setorId) => {
   try {
-    // Atualizar cookie do setor
-    document.cookie = `setor_id=${setorId}; path=/; max-age=31536000`;
-
-    // Recarregar a página para atualizar todos os dados do setor
-    window.location.href = "/setor-atual";
+    router.push(`/setores-consumidores/${setorId}`);
   } catch (error) {
-    console.error("Erro ao navegar para setor:", error);
+    console.error("Erro ao navegar para setor consumidor:", error);
   }
 };
 

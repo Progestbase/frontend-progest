@@ -13,41 +13,64 @@
       </DialogHeader>
 
       <form @submit.prevent="finalizarSolicitacao" novalidate>
-        <!-- Setor Origem -->
-        <div class="mb-4">
-          <Label for="setorOrigem">
-            Setor Origem (Destribuidor)
-            <span class="text-danger">*</span>
-          </Label>
-          <Select
-            v-model="form.setorOrigemId"
-            @update:modelValue="onSetorOrigemChange"
-          >
-            <SelectTrigger
-              id="setorOrigem"
-              :class="{ 'border-red-500': erros.setorOrigem }"
+        <!-- Setor Origem (Distribuidor) -> Setor Destino flow -->
+        <div class="flex flex-wrap items-center gap-4 mb-4">
+          <!-- Setor Origem (Distribuidor) -->
+          <div class="flex-grow md:flex-grow-0 md:w-[300px]">
+            <Label
+              for="setorOrigem"
+              class="text-xs text-muted-foreground block mb-1"
             >
-              <SelectValue placeholder="Selecione o setor fornecedor" />
-            </SelectTrigger>
-            <SelectContent class="z-[9999]">
-              <SelectItem
-                v-for="fornecedor in fornecedoresDisponiveis"
-                :key="fornecedor.id"
-                :value="String(fornecedor.id)"
+              Setor Distribuidor <span class="text-danger">*</span>
+            </Label>
+            <Select
+              v-model="form.setorOrigemId"
+              @update:modelValue="onSetorOrigemChange"
+            >
+              <SelectTrigger
+                id="setorOrigem"
+                :class="{ 'border-red-500': erros.setorOrigem }"
               >
-                {{ fornecedor.tipo }} — {{ fornecedor.nome }}
-              </SelectItem>
-            </SelectContent>
-          </Select>
-          <div v-if="erros.setorOrigem" class="text-red-500 text-sm mt-1">
-            {{ erros.setorOrigem }}
+                <SelectValue placeholder="Selecione o setor distribuidor" />
+              </SelectTrigger>
+              <SelectContent class="z-[9999]">
+                <SelectItem
+                  v-for="fornecedor in fornecedoresDisponiveis"
+                  :key="fornecedor.id"
+                  :value="String(fornecedor.id)"
+                >
+                  {{ fornecedor.tipo }} — {{ fornecedor.nome }}
+                </SelectItem>
+              </SelectContent>
+            </Select>
+            <div v-if="erros.setorOrigem" class="text-red-500 text-sm mt-1">
+              {{ erros.setorOrigem }}
+            </div>
+            <div
+              v-if="fornecedoresDisponiveis.length === 0"
+              class="text-amber-600 text-sm mt-1"
+            >
+              <i class="mdi mdi-alert-outline"></i>
+              Nenhum distribuidor configurado para este setor.
+            </div>
           </div>
-          <div
-            v-if="fornecedoresDisponiveis.length === 0"
-            class="text-amber-600 text-sm mt-1"
-          >
-            <i class="mdi mdi-alert-outline"></i>
-            Nenhum fornecedor configurado para este setor.
+
+          <!-- Seta visual (hidden on mobile) -->
+          <div class="hidden md:flex items-center pt-3">
+            <i class="mdi mdi-arrow-right text-2xl text-muted-foreground"></i>
+          </div>
+
+          <!-- Setor Destino (Você) -->
+          <div class="flex-shrink-0">
+            <label class="text-xs text-muted-foreground block mb-1"
+              >Setor de Destino (Você)</label
+            >
+            <div
+              class="p-2 px-3 bg-muted rounded-lg flex items-center gap-2 border h-10"
+            >
+              <i class="mdi mdi-map-marker text-primary"></i>
+              <span class="font-medium text-sm">{{ setorDestinoNome }}</span>
+            </div>
           </div>
         </div>
 
@@ -75,40 +98,76 @@
           </p>
 
           <div class="row g-3 p-3 border rounded bg-light align-items-end">
-            <div class="col-md-6">
-              <Label for="produtoSelect">
+            <div class="col-md-6 relative">
+              <Label for="produtoSearch">
                 Produto
                 <span class="text-danger">*</span>
               </Label>
-              <Select
-                v-model="itemAtual.produtoId"
-                :disabled="!form.setorOrigemId"
+              <div class="relative">
+                <Input
+                  id="produtoSearch"
+                  v-model="produtoSearch"
+                  placeholder="Digite para buscar um produto..."
+                  :disabled="!form.setorOrigemId"
+                  @focus="showProdutoList = true"
+                  @input="showProdutoList = true"
+                  class="pr-8"
+                  :class="{
+                    'border-red-500':
+                      !itemAtual.produtoId && produtoSearch && !showProdutoList,
+                  }"
+                  autocomplete="off"
+                />
+                <i
+                  v-if="itemAtual.produtoId"
+                  class="mdi mdi-close-circle absolute right-2 top-1/2 transform -translate-y-1/2 cursor-pointer text-muted-foreground hover:text-red-500"
+                  @click="limparSelecaoProduto"
+                  title="Limpar seleção"
+                ></i>
+                <i
+                  v-else
+                  class="mdi mdi-magnify absolute right-2 top-1/2 transform -translate-y-1/2 text-muted-foreground pointer-events-none"
+                ></i>
+              </div>
+
+              <!-- Dropdown List -->
+              <div
+                v-if="showProdutoList && form.setorOrigemId"
+                class="absolute z-50 w-full mt-1 bg-white border rounded-md shadow-lg max-h-60 overflow-y-auto"
               >
-                <SelectTrigger
-                  id="produtoSelect"
-                  :class="{ 'opacity-50': !form.setorOrigemId }"
+                <div v-if="loadingProdutos" class="p-3 text-center text-muted">
+                  <span class="spinner-border spinner-border-sm me-2"></span>
+                  Carregando...
+                </div>
+                <ul
+                  v-else-if="filteredProdutos.length > 0"
+                  class="py-1 m-0 list-none"
                 >
-                  <SelectValue
-                    :placeholder="
-                      form.setorOrigemId
-                        ? 'Selecione um produto'
-                        : 'Selecione o setor origem primeiro'
-                    "
-                  />
-                </SelectTrigger>
-                <SelectContent class="z-[9999]">
-                  <SelectItem
-                    v-for="produto in produtosDisponiveis"
+                  <li
+                    v-for="produto in filteredProdutos"
                     :key="produto.id"
-                    :value="String(produto.id)"
+                    class="px-3 py-2 cursor-pointer hover:bg-gray-100 flex flex-col"
+                    @click="selecionarProduto(produto)"
                   >
-                    {{ produto.nome }}
-                    <span v-if="produto.marca" class="text-muted">
-                      - {{ produto.marca }}</span
+                    <span class="font-medium text-sm">{{ produto.nome }}</span>
+                    <span
+                      v-if="produto.marca"
+                      class="text-xs text-muted-foreground"
+                      >{{ produto.marca }}</span
                     >
-                  </SelectItem>
-                </SelectContent>
-              </Select>
+                  </li>
+                </ul>
+                <div v-else class="p-3 text-center text-muted small">
+                  Nenhum produto encontrado.
+                </div>
+              </div>
+
+              <!-- Clique fora para fechar (backdrop transparente simples) -->
+              <div
+                v-if="showProdutoList"
+                class="fixed inset-0 z-40 bg-transparent"
+                @click="showProdutoList = false"
+              ></div>
             </div>
 
             <div class="col-md-3">
@@ -309,6 +368,8 @@ export default {
       },
       erros: {},
       tipoSetorOrigem: null,
+      produtoSearch: "",
+      showProdutoList: false,
     };
   },
   computed: {
@@ -327,6 +388,21 @@ export default {
         this.form.setorOrigemId && this.form.itens.length > 0 && !this.loading
       );
     },
+    filteredProdutos() {
+      if (!this.produtoSearch) {
+        // Se vazio e nenhum produto selecionado, mostra todos (ou limita a 20 pra performance)
+        return this.produtosDisponiveis.slice(0, 50);
+      }
+      const term = this.produtoSearch.toLowerCase();
+      return this.produtosDisponiveis
+        .filter((p) => {
+          return (
+            p.nome.toLowerCase().includes(term) ||
+            (p.marca && p.marca.toLowerCase().includes(term))
+          );
+        })
+        .slice(0, 50); // Limit results
+    },
   },
   watch: {
     open(newVal) {
@@ -337,6 +413,16 @@ export default {
     },
   },
   methods: {
+    selecionarProduto(produto) {
+      this.itemAtual.produtoId = produto.id;
+      this.produtoSearch = produto.nome; // Mostrar nome selecionado
+      this.showProdutoList = false;
+    },
+    limparSelecaoProduto() {
+      this.itemAtual.produtoId = "";
+      this.produtoSearch = "";
+      this.showProdutoList = false;
+    },
     async carregarFornecedores() {
       if (!this.setorId) return;
 
@@ -401,7 +487,7 @@ export default {
     onSetorOrigemChange(value) {
       // Limpar itens ao trocar fornecedor
       this.form.itens = [];
-      this.itemAtual.produtoId = "";
+      this.limparSelecaoProduto(); // Limpar seleção atual também
 
       // Encontrar o tipo do setor selecionado
       const fornecedor = this.fornecedoresDisponiveis.find(
@@ -443,7 +529,7 @@ export default {
       }
 
       // Reset item atual
-      this.itemAtual.produtoId = "";
+      this.limparSelecaoProduto();
       this.itemAtual.quantidade = 1;
     },
 

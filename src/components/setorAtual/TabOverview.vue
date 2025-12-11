@@ -63,7 +63,7 @@
       </div>
 
       <div class="col-md-4">
-        <Card class="mb-4" v-if="!isSolicitante">
+        <Card class="mb-4" v-if="!isSolicitante && !readOnly">
           <CardHeader>
             <CardTitle class="flex items-center gap-2">
               <i class="mdi mdi-cog-outline"></i>
@@ -96,7 +96,11 @@
                 <i class="mdi mdi-truck-delivery-outline"></i>
                 Setor Distribuidor
               </CardTitle>
-              <Dialog v-if="!isSolicitante" :open="isAddModalOpen" @update:open="isAddModalOpen = $event">
+              <Dialog
+                v-if="!isSolicitante && !readOnly"
+                :open="isAddModalOpen"
+                @update:open="isAddModalOpen = $event"
+              >
                 <DialogTrigger as-child>
                   <Button variant="outline" size="sm" @click="openAddModal">
                     <i class="mdi mdi-plus"></i>
@@ -104,10 +108,12 @@
                 </DialogTrigger>
                 <DialogContent>
                   <DialogHeader>
-                    <DialogTitle>Adicionar Fornecedor</DialogTitle>
+                    <DialogTitle>Adicionar Distribuidor</DialogTitle>
                   </DialogHeader>
                   <div class="py-4">
-                    <Label class="mb-2 block">Selecione o Setor Fornecedor</Label>
+                    <Label class="mb-2 block"
+                      >Selecione o Setor Distribuidor</Label
+                    >
                     <Select v-model="selectedFornecedorId">
                       <SelectTrigger>
                         <SelectValue placeholder="Selecione um setor..." />
@@ -124,9 +130,14 @@
                     </Select>
                   </div>
                   <div class="flex justify-end gap-2">
-                    <Button variant="ghost" @click="isAddModalOpen = false">Cancelar</Button>
-                    <Button @click="handleAddFornecedor" :disabled="!selectedFornecedorId || loadingAdd">
-                      {{ loadingAdd ? 'Adicionando...' : 'Adicionar' }}
+                    <Button variant="ghost" @click="isAddModalOpen = false"
+                      >Cancelar</Button
+                    >
+                    <Button
+                      @click="handleAddFornecedor"
+                      :disabled="!selectedFornecedorId || loadingAdd"
+                    >
+                      {{ loadingAdd ? "Adicionando..." : "Adicionar" }}
                     </Button>
                   </div>
                 </DialogContent>
@@ -135,7 +146,10 @@
           </CardHeader>
           <CardContent>
             <div
-              v-if="setor.fornecedores_relacionados && setor.fornecedores_relacionados.length > 0"
+              v-if="
+                setor.fornecedores_relacionados &&
+                setor.fornecedores_relacionados.length > 0
+              "
             >
               <div
                 v-for="rel in setor.fornecedores_relacionados"
@@ -160,12 +174,12 @@
                       {{ rel.fornecedor?.tipo || "-" }}
                     </Badge>
                     <Button
-                      v-if="!isSolicitante"
+                      v-if="!isSolicitante && !readOnly"
                       variant="ghost"
                       size="icon"
                       class="h-6 w-6 text-destructive hover:text-destructive/90"
                       @click="handleRemoveFornecedor(rel.id)"
-                      title="Remover fornecedor"
+                      title="Remover distribuidor"
                     >
                       <i class="mdi mdi-trash-can-outline"></i>
                     </Button>
@@ -174,7 +188,7 @@
               </div>
             </div>
             <div v-else class="text-center text-muted-foreground py-4">
-              Nenhum fornecedor vinculado.
+              Nenhum distribuidor vinculado.
             </div>
           </CardContent>
         </Card>
@@ -219,6 +233,10 @@ const props = defineProps({
   setor: {
     type: Object,
     required: true,
+  },
+  readOnly: {
+    type: Boolean,
+    default: false,
   },
 });
 
@@ -309,12 +327,15 @@ const handleAddFornecedor = async () => {
   if (!selectedFornecedorId.value) return;
 
   loadingAdd.value = true;
-  const result = await addFornecedor(props.setor.id, selectedFornecedorId.value);
+  const result = await addFornecedor(
+    props.setor.id,
+    selectedFornecedorId.value
+  );
 
   if (result.success) {
     toast({
       title: "Sucesso",
-      description: "Fornecedor adicionado com sucesso.",
+      description: "Distribuidor adicionado com sucesso.",
     });
     isAddModalOpen.value = false;
     // Reload sector details to update the list
@@ -330,14 +351,14 @@ const handleAddFornecedor = async () => {
 };
 
 const handleRemoveFornecedor = async (relationId) => {
-  if (!confirm("Tem certeza que deseja remover este fornecedor?")) return;
+  if (!confirm("Tem certeza que deseja remover este distribuidor?")) return;
 
   const result = await removeFornecedor(relationId);
 
   if (result.success) {
     toast({
       title: "Sucesso",
-      description: "Fornecedor removido com sucesso.",
+      description: "Distribuidor removido com sucesso.",
     });
     // Reload sector details to update the list
     await reloadSetorDetails();
@@ -352,9 +373,9 @@ const handleRemoveFornecedor = async (relationId) => {
 
 const reloadSetorDetails = async () => {
   const result = await buscarSetorPorId(props.setor.id);
-  
+
   if (result.success) {
-     store.commit("setSetorDetails", result.data);
+    store.commit("setSetorDetails", result.data);
   }
 };
 </script>

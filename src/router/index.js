@@ -138,6 +138,18 @@ const router = createRouter({
         return isAuthenticated ? "/dashboard" : "/login";
       },
     },
+    {
+      path: "/setores-consumidores",
+      name: "SetoresConsumidoresList",
+      component: () => import("../views/SetoresConsumidoresListView.vue"),
+      meta: { requiresAuth: true, requiresSector: true },
+    },
+    {
+      path: "/setores-consumidores/:id",
+      name: "SetorConsumidor",
+      component: () => import("../views/SetorConsumidorView.vue"),
+      meta: { requiresAuth: true, requiresSector: true },
+    },
   ],
 });
 

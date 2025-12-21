@@ -1,0 +1,70 @@
+name: CD Frontend - Deploy with Docker
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: Production
+    steps:
+      - name: ⚙️ Checkout do Repositório
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 🛑 Parar containers antigos
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          password: ${{ secrets.SSH_PASSWORD }}
+          port: ${{ secrets.SSH_PORT }}
+          script: |
+            if [ -d "./progest/frontend-progest" ]; then
+              cd ./progest/frontend-progest
+              echo "🛑 Parando containers..."
+              docker-compose down || true
+            fi
+
+      - name: 📦 Transferir arquivos via SCP
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          password: ${{ secrets.SSH_PASSWORD }}
+          port: ${{ secrets.SSH_PORT }}
+          source: "."
+          target: "./progest/frontend-progest"
+          overwrite: true
+          strip_components: 0
+
+      - name: 🚀 Executar Deploy
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          password: ${{ secrets.SSH_PASSWORD }}
+          port: ${{ secrets.SSH_PORT }}
+          script: |
+            cd ./progest/frontend-progest
+
+            echo "📋 Arquivos transferidos:"
+            ls -la
+
+            echo "📋 Verificando Makefile..."
+            if [ ! -f Makefile ]; then
+              echo "❌ Makefile não encontrado!"
+              ls -la
+              exit 1
+            fi
+
+            echo "🚀 Executando make deploy..."
+            make deploy
+
+            echo "📊 Containers ativos:"
+            docker ps | grep progest || echo "Nenhum container rodando ainda..."
+
+            echo "✅ Deploy do Frontend concluído com sucesso!"

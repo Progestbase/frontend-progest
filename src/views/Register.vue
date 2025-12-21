@@ -1,10 +1,14 @@
 <template>
   <div class="flex items-center justify-center min-h-screen bg-gray-50">
     <div class="w-full max-w-sm p-6 bg-white rounded-lg shadow-md">
-      <h2 class="text-xl font-semibold text-center text-gray-800 mb-4">Cadastro de Usuário</h2>
+      <h2 class="text-xl font-semibold text-center text-gray-800 mb-4">
+        Cadastro de Usuário
+      </h2>
       <form @submit.prevent="submitForm" class="space-y-4">
         <div>
-          <label for="name" class="block text-sm font-medium text-gray-700">Nome</label>
+          <label for="name" class="block text-sm font-medium text-gray-700"
+            >Nome</label
+          >
           <input
             type="text"
             id="name"
@@ -16,7 +20,9 @@
         </div>
 
         <div>
-          <label for="email" class="block text-sm font-medium text-gray-700">E-mail</label>
+          <label for="email" class="block text-sm font-medium text-gray-700"
+            >E-mail</label
+          >
           <input
             type="email"
             id="email"
@@ -28,7 +34,9 @@
         </div>
 
         <div>
-          <label for="password" class="block text-sm font-medium text-gray-700">Senha</label>
+          <label for="password" class="block text-sm font-medium text-gray-700"
+            >Senha</label
+          >
           <input
             type="password"
             id="password"
@@ -40,7 +48,11 @@
         </div>
 
         <div>
-          <label for="password_confirmation" class="block text-sm font-medium text-gray-700">Confirmar Senha</label>
+          <label
+            for="password_confirmation"
+            class="block text-sm font-medium text-gray-700"
+            >Confirmar Senha</label
+          >
           <input
             type="password"
             id="password_confirmation"
@@ -59,7 +71,10 @@
         </button>
       </form>
       <div class="mt-4 text-center">
-        <p class="text-sm text-gray-600">Já tem uma conta? <a href="/login" class="text-blue-600 hover:underline">Faça login</a></p>
+        <p class="text-sm text-gray-600">
+          Já tem uma conta?
+          <a href="/login" class="text-blue-600 hover:underline">Faça login</a>
+        </p>
       </div>
     </div>
   </div>
@@ -67,6 +82,7 @@
 
 <script>
 import axios from "axios";
+import { API_URL } from "@/config";
 
 export default {
   data() {
@@ -87,7 +103,7 @@ export default {
       };
 
       try {
-        await axios.post("http://localhost:8000/api/register", formData);
+        await axios.post(`${API_URL}/register`, formData);
         this.$router.push("/login");
       } catch (error) {
         console.error("Erro ao registrar usuário", error.response.data);
@@ -99,11 +115,13 @@ export default {
 
 <style scoped>
 /* Estilos simplificados */
-input, button {
+input,
+button {
   transition: all 0.3s ease;
 }
 
-input:focus, button:hover {
+input:focus,
+button:hover {
   transform: scale(1.03);
 }
 </style>

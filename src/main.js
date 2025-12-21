@@ -11,11 +11,12 @@ import "bootstrap/dist/js/bootstrap.bundle.min";
 import VueTheMask from "vue-the-mask";
 import { initSetorContext } from "@/init/loadSetorData";
 import { setorCookie } from "@/utils/setorCookie";
+import { API_URL } from "@/config";
 
 const app = createApp(App);
 
-// Configuração do Axios
-axios.defaults.baseURL = "http://localhost:8000/api";
+// Configuração do Axios - usando variável de ambiente
+axios.defaults.baseURL = API_URL;
 app.use(VueAxios, axios);
 app.config.globalProperties.$axios = axios;
 

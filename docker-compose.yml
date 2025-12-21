@@ -5,7 +5,7 @@ services:
       context: .
       dockerfile: Dockerfile
       args:
-        VITE_API_URL: "https://hgvcprogrest-api.davidjunior.dev.br"
+        VITE_API_URL: "https://hgvcprogrest-api.davidjunior.dev.br/api"
     image: progest-web:latest
     networks:
       - traefik-public

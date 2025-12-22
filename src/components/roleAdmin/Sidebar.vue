@@ -158,7 +158,8 @@ import { useRouter } from "vue-router";
 import axios from "axios";
 import { API_URL } from "@/config";
 
-// Importar logo para funcionar em produção
+// Importar logos para funcionar em produção
+import logoHorizontal from "@/assets/logo-horizontal.png";
 import logoIcon from "@/assets/logo-icon.png";
 
 const store = useStore();
@@ -262,8 +263,13 @@ const getUnidadeImage = (nomeUnidade) => {
 
 // Computed para a logo atual
 const currentLogoSrc = computed(() => {
-  // Usando logo-icon para ambos os estados
-  return logoIcon;
+  if (is_expanded.value) {
+    // Quando expandida, mostrar logo horizontal
+    return logoHorizontal;
+  } else {
+    // Quando recolhida, mostrar o ícone
+    return logoIcon;
+  }
 });
 
 // Carregar setores consumidores

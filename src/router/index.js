@@ -59,8 +59,8 @@ const router = createRouter({
     {
       path: "/dashboard",
       name: "dashboard",
-      component: DashboardView,
-      meta: { requiresAuth: true, requiresSector: true },
+      // Temporariamente desativado - redireciona para setor-atual
+      redirect: "/setor-atual",
     },
     {
       path: "/setor-atual",
@@ -135,7 +135,7 @@ const router = createRouter({
       path: "/:pathMatch(.*)*",
       redirect: (to) => {
         const isAuthenticated = localStorage.getItem("token");
-        return isAuthenticated ? "/dashboard" : "/login";
+        return isAuthenticated ? "/setor-atual" : "/login";
       },
     },
     {
@@ -223,8 +223,8 @@ router.beforeEach(async (to, from, next) => {
   // Se está autenticado e tenta acessar login/register, redirecionar para seleção de setor ou dashboard
   if (isAuthenticated && (to.path === "/login" || to.path === "/register")) {
     if (hasSector) {
-      // Redireciona para dashboard independente do perfil
-      next("/dashboard");
+      // Redireciona para setor-atual
+      next("/setor-atual");
     } else {
       next("/setor-selection");
     }
@@ -298,7 +298,7 @@ router.beforeEach(async (to, from, next) => {
       to.meta.requiresSector &&
       !allowedForSolicitante.includes(to.path)
     ) {
-      next("/dashboard");
+      next("/setor-atual");
       return;
     }
   }

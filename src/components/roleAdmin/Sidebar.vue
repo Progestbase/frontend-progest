@@ -15,10 +15,12 @@
 
     <!-- Menu Principal -->
     <nav class="menu-section">
-      <router-link class="menu-item" to="/dashboard" title="Tela Inicial">
+      <!-- Dashboard desativado temporariamente -->
+      <div class="menu-item disabled" title="Em breve">
         <span class="material-icons menu-icon">home</span>
         <span class="menu-text">Tela Inicial</span>
-      </router-link>
+        <span v-if="is_expanded" class="badge-soon">Em breve</span>
+      </div>
     </nav>
 
     <!-- Divider -->
@@ -477,6 +479,22 @@ watch(
       border-left: 3px solid #64b5f6;
       padding-left: calc(1rem - 3px);
       font-weight: 500;
+    }
+
+    &.disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      pointer-events: none;
+    }
+
+    .badge-soon {
+      font-size: 0.65rem;
+      background: rgba(255, 193, 7, 0.3);
+      color: #ffc107;
+      padding: 2px 6px;
+      border-radius: 4px;
+      margin-left: auto;
+      white-space: nowrap;
     }
   }
 

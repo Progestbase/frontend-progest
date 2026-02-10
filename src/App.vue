@@ -1,19 +1,17 @@
 <template>
-  <ToastProvider>
-    <div id="app">
-      <router-view />
-    </div>
+  <div id="app">
+    <router-view />
     <Toaster />
-  </ToastProvider>
+  </div>
 </template>
+
 <script>
 import { defineComponent } from "vue";
-import { ToastProvider, Toaster } from "@/components/ui/toast";
+import { Toaster } from "@/components/ui/toast";
 
 export default defineComponent({
   name: "App",
   components: {
-    ToastProvider,
     Toaster,
   },
 });

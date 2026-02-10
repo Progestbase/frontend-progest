@@ -12,6 +12,7 @@ import VueTheMask from "vue-the-mask";
 import { initSetorContext } from "@/init/loadSetorData";
 import { setorCookie } from "@/utils/setorCookie";
 import { API_URL } from "@/config";
+import { toast } from '@/components/ui/toast'
 
 const app = createApp(App);
 
@@ -69,5 +70,34 @@ try {
   console.warn("Erro ao tentar iniciar contexto do setor:", e);
 }
 
-app.mount("#app");
+// Isso ensina o sistema que quando chamarem "$toastr.s", ele deve exibir um Toast Verde (Sucesso)
+// e quando chamarem "$toastr.e", ele deve exibir um Toast Vermelho (Erro/Destructive)
+app.config.globalProperties.$toastr = {
+  s: (mensagem) => {
+    toast({
+      title: 'Sucesso',
+      description: mensagem,
+      variant: 'default', // Pode mudar para 'success' se tiver customizado
+      duration: 4000,
+    })
+  },
+  e: (mensagem) => {
+    toast({
+      title: 'Erro',
+      description: mensagem,
+      variant: 'destructive', // Geralmente usado para erros no Shadcn
+      duration: 5000,
+    })
+  },
+  // Opcional: warning ou info
+  i: (mensagem) => {
+    toast({
+      title: 'Informação',
+      description: mensagem,
+      variant: 'default',
+    })
+  }
+}
+
+app.mount('#app');
 app.use(VueTheMask);

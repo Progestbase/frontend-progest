@@ -149,6 +149,58 @@
           </transition>
         </div>
       </template>
+
+            <!-- Submenu: Relatórios -->
+            <div class="submenu-section">
+              <button
+                class="menu-item submenu-toggle"
+                @click="toggleRelatoriosSubmenu"
+                title="Relatórios"
+              >
+                <span class="material-icons menu-icon">bar_chart</span>
+                <span class="menu-text">Relatórios</span>
+                <span
+                  class="material-icons expand-icon"
+                  :class="{ open: relatoriosSubmenuOpen }"
+                >
+                  expand_more
+                </span>
+              </button>
+
+              <transition name="submenu-transition">
+                <div v-show="relatoriosSubmenuOpen" class="submenu-items">
+                  <router-link class="submenu-item" to="/relatorios" title="Visão Geral">
+                    <span class="material-icons menu-icon">analytics</span>
+                    <span class="menu-text">Visão Geral</span>
+                  </router-link>
+
+                  <router-link class="submenu-item" to="/relatorios/movimentacoes" title="Movimentações">
+                    <span class="material-icons menu-icon">swap_horiz</span>
+                    <span class="menu-text">Movimentações</span>
+                  </router-link>
+
+                  <router-link class="submenu-item" to="/relatorios/entradas" title="Entradas">
+                    <span class="material-icons menu-icon">receipt_long</span>
+                    <span class="menu-text">Entradas</span>
+                  </router-link>
+
+                  <router-link class="submenu-item" to="/relatorios/saidas" title="Saídas">
+                    <span class="material-icons menu-icon">exit_to_app</span>
+                    <span class="menu-text">Saídas</span>
+                  </router-link>
+
+                  <router-link class="submenu-item" to="/relatorios/estoque" title="Estoque">
+                    <span class="material-icons menu-icon">inventory_2</span>
+                    <span class="menu-text">Estoque</span>
+                  </router-link>
+
+                  <router-link class="submenu-item" to="/relatorios/usuarios" title="Usuários">
+                    <span class="material-icons menu-icon">group</span>
+                    <span class="menu-text">Usuários</span>
+                  </router-link>
+                </div>
+              </transition>
+            </div>
     </nav>
   </aside>
 </template>
@@ -170,6 +222,7 @@ const router = useRouter();
 const is_expanded = ref(false);
 const submenuOpen = ref(false);
 const consumidoresSubmenuOpen = ref(false);
+const relatoriosSubmenuOpen = ref(false);
 const setoresConsumidores = ref([]);
 
 const emit = defineEmits(["toggle"]);
@@ -324,6 +377,10 @@ const toggleConsumidoresSubmenu = () => {
   consumidoresSubmenuOpen.value = !consumidoresSubmenuOpen.value;
 };
 
+const toggleRelatoriosSubmenu = () => {
+  relatoriosSubmenuOpen.value = !relatoriosSubmenuOpen.value;
+};
+
 onMounted(() => {
   const savedSubmenu = localStorage.getItem("submenuOpen");
   submenuOpen.value = savedSubmenu === "true";
@@ -332,6 +389,9 @@ onMounted(() => {
     "consumidoresSubmenuOpen"
   );
   consumidoresSubmenuOpen.value = savedConsumidoresSubmenu === "true";
+
+  const savedRelatoriosSubmenu = localStorage.getItem("relatoriosSubmenuOpen");
+  relatoriosSubmenuOpen.value = savedRelatoriosSubmenu === "true";
 
   // Carregar setores consumidores
   loadSetoresConsumidores();
@@ -343,6 +403,10 @@ watch(submenuOpen, (val) => {
 
 watch(consumidoresSubmenuOpen, (val) => {
   localStorage.setItem("consumidoresSubmenuOpen", val);
+});
+
+watch(relatoriosSubmenuOpen, (val) => {
+  localStorage.setItem("relatoriosSubmenuOpen", val);
 });
 
 // Recarregar consumidores quando o setor atual mudar

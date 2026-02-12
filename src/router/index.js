@@ -131,6 +131,31 @@ const router = createRouter({
       component: HistoricoDePedidosView,
       meta: { requiresAuth: true, requiresSector: true },
     },
+    // Relatórios (placeholders / views de relatórios)
+    {
+      path: "/relatorios",
+      name: "relatorios",
+      component: () => import("@/views/relatorios/Relatorios.vue"),
+      meta: { requiresAuth: true, requiresSector: true },
+    },
+    {
+      path: "/relatorios/entradas",
+      name: "relatoriosEntradas",
+      component: () => import("@/views/relatorios/EntradasReport.vue"),
+      meta: { requiresAuth: true, requiresSector: true },
+    },
+    {
+      path: "/relatorios/movimentacoes",
+      name: "relatoriosMovimentacoes",
+      component: () => import("@/views/relatorios/MovimentacoesReport.vue"),
+      meta: { requiresAuth: true, requiresSector: true },
+    },
+    {
+      path: "/relatorios/saidas",
+      name: "relatoriosSaidas",
+      component: () => import("@/views/relatorios/SaidasReport.vue"),
+      meta: { requiresAuth: true, requiresSector: true },
+    },
     {
       path: "/:pathMatch(.*)*",
       redirect: (to) => {

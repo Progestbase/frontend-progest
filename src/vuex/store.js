@@ -68,6 +68,10 @@ export default createStore({
     listUnidades: [],
     listPerfis: [],
     listTiposVinculo: [],
+    
+    relatorioEntradas: [],
+    relatorioMovimentacoes: [],
+    relatorioSaidas: [],
 
     // UI / Filtros
     searchFilters: [],
@@ -288,6 +292,30 @@ export default createStore({
     setUnidadesMedidaAux(state, unidades) {
       state.unidadesMedidaAux = unidades;
     },
+
+    // ============================================
+    // RELATÓRIOS
+    // ============================================
+    setRelatorioEntradas(state, entradas) {
+      state.relatorioEntradas = entradas || [];
+    },
+    clearRelatorioEntradas(state) {
+      state.relatorioEntradas = [];
+    },
+
+    setRelatorioMovimentacoes(state, movimentacoes) {
+      state.relatorioMovimentacoes = movimentacoes || [];
+    },
+    clearRelatorioMovimentacoes(state) {
+      state.relatorioMovimentacoes = [];
+    },
+
+    setRelatorioSaidas(state, saidas) {
+      state.relatorioSaidas = saidas || [];
+    },
+    clearRelatorioSaidas(state) {
+      state.relatorioSaidas = [];
+    },
   },
   actions: {
     // Você pode adicionar ações assíncronas aqui se necessário
@@ -332,5 +360,10 @@ export default createStore({
     getListUnidades: (state) => state.listUnidades,
     getListPerfis: (state) => state.listPerfis,
     getListTiposVinculo: (state) => state.listTiposVinculo,
+
+    // Relatórios
+    getRelatorioEntradas: (state) => state.relatorioEntradas,
+    getRelatorioMovimentacoes: (state) => state.relatorioMovimentacoes,
+    getRelatorioSaidas: (state) => state.relatorioSaidas,
   },
 });

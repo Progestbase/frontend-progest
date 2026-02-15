@@ -27,7 +27,7 @@
                       class="form-control text-uppercase"
                       id="unidadeMedidaNome"
                       placeholder="Digite o nome"
-                      v-model="modalData.nome"
+                      v-model="localData.nome"
                     />
                   </div>
                 </div>
@@ -39,7 +39,7 @@
                     <select
                       class="form-select"
                       id="unidadeMedidaStatus"
-                      v-model="modalData.status"
+                      v-model="localData.status"
                     >
                       <option value="A">Ativo</option>
                       <option value="I">Inativo</option>
@@ -60,7 +60,7 @@
                       id="unidadeMedidaQuantidade"
                       min="1"
                       placeholder="1"
-                      v-model.number="modalData.quantidade_unidade_minima"
+                      v-model.number="localData.quantidade_unidade_minima"
                     />
                     <small class="form-text text-muted">Mínimo: 1</small>
                   </div>
@@ -75,7 +75,7 @@
                       class="form-control"
                       id="unidadeMedidaDescricao"
                       placeholder="Digite a descrição"
-                      v-model="modalData.descricao"
+                      v-model="localData.descricao"
                     />
                   </div>
                 </div>
@@ -119,65 +119,60 @@ export default {
   name: "ModalUnidadesMedida",
   components: {
     ModalBase01,
-    Funcoes,
   },
   props: ["idModal", "functions"],
   data() {
     return {
+      // Criamos uma cópia local para o formulário poder editar à vontade
+      localData: {
+        id: null,
+        status: "A",
+        nome: "",
+        descricao: "",
+        quantidade_unidade_minima: 1,
+      },
       imagePreview: null,
     };
   },
-  mounted() {},
-  methods: {
-    add_UP_Unidades_Medida() {
-      const content = {
-        $axios: this.$axios,
-        $store: this.$store,
-        $toastr: this.$toastr,
-        modalData: JSON.parse(JSON.stringify(this.modalData)),
-      };
-      this.functions.ADD_UP(content, this.modalFunction);
-    },
-    onImageChange(event) {
-      const file = event.target.files[0];
-      if (file) {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          this.imagePreview = e.target.result;
-          // Se quiser salvar a imagem no modalData:
-          // this.modalData.imagem = e.target.result;
-        };
-        reader.readAsDataURL(file);
-      } else {
-        this.imagePreview = null;
-      }
-    },
-  },
   computed: {
-    modalTitle() {
-      return this.$store.state.modalData.modalTitle;
-    },
-    modalData() {
+    // Pegamos os dados do Vuex apenas para leitura inicial
+    storeModalData() {
       return this.$store.state.modalData.modalData;
     },
     modalFunction() {
       return this.$store.state.modalData.modalFunction;
     },
   },
-  state: {
-    modalData: {
-      status: "A",
-      nome: "",
-      descricao: "",
-      quantidade_unidade_minima: 1,
-    },
+  watch: {
+    // Sempre que o Vuex mudar (ao clicar em editar), atualizamos a cópia local
+    storeModalData: {
+      handler(newValue) {
+        if (newValue) {
+          // Clona os dados para edição local sem quebrar o Vuex
+          this.localData = JSON.parse(JSON.stringify(newValue));
+        }
+      },
+      deep: true,
+      immediate: true
+    }
   },
-  mutations: {
-    setModalData(state, payload) {
-      state.modalData = {
-        ...state.modalData,
-        ...payload,
+  methods: {
+    add_UP_Unidades_Medida() {
+      // Verificação de segurança para o Toastr
+      if (!this.$toastr) {
+        console.warn("Plugin Toastr não encontrado. Usando alert padrão.");
+      }
+
+      const content = {
+        $axios: this.$axios,
+        $store: this.$store,
+        $toastr: this.$toastr, // Passa a instância do toastr
+        // Envia os dados locais do formulário, não os do Vuex
+        modalData: this.localData, 
       };
+      
+      // Chamamos a função externa
+      Funcoes.ADD_UP(content, this.modalFunction);
     },
   },
 };

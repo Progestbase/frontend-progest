@@ -36,22 +36,29 @@ var ADD_UP = (content, funcao) => {
         }
         content.$store.commit("setModalTitle", response.data.data.name);
         content.$store.commit("setModalFunction", "UP");
-      } else if (response.data.status == false && response.data.validacao) {
-        let erros = "";
-        for (let erro of Object.values(response.data.erros)) {
-          erros += erro + "\n";
-        }
-        alert(erros);
       } else {
-        console.log(
-          "Erro ao ",
-          funcao == "ADD" ? "cadastrar" : "atualizar",
-          response
-        );
+        console.log("Erro inesperado com status 200", response);
       }
     })
     .catch(function (error) {
-      alert(error.response.data.message);
+      // NOVO TRATAMENTO DE ERROS PARA O PADRÃO LARAVEL REQUESTS (HTTP 422)
+      if (error.response && error.response.status === 422) {
+        let errosFormatados = "Corrija os seguintes campos:\n\n";
+        const mensagensDeErro = error.response.data.erros;
+        
+        // Percorre todos os campos com erro e junta as mensagens
+        for (let campo in mensagensDeErro) {
+          errosFormatados += "• " + mensagensDeErro[campo][0] + "\n";
+        }
+        alert(errosFormatados);
+      } 
+      // Tratamento para outros erros (ex: 404, 500)
+      else if (error.response && error.response.data && error.response.data.message) {
+        alert("Erro: " + error.response.data.message);
+      } else {
+        alert("Ocorreu um erro de comunicação com o servidor.");
+        console.error("Detalhes do erro:", error);
+      }
     });
 };
 

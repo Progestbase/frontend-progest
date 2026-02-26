@@ -42,6 +42,12 @@ export default createStore({
     setorConsumidorSelecionado: null,
 
     // ============================================
+    // CABEÇALHO GLOBAL DA PÁGINA (HEADER)
+    // ============================================
+    pageTitle: null,
+    pageSubtitle: null,
+
+    // ============================================
     // DADOS GLOBAIS / COMPARTILHADOS
     // ============================================
     // Lista de setores que o usuário tem acesso (para seleção inicial)
@@ -52,6 +58,7 @@ export default createStore({
       modalTitle: "",
       modalFunction: "ADD",
       modalData: {},
+      isModalOpen: false,
     },
     modalErrors: {},
 
@@ -68,7 +75,7 @@ export default createStore({
     listUnidades: [],
     listPerfis: [],
     listTiposVinculo: [],
-    
+
     relatorioEntradas: [],
     relatorioMovimentacoes: [],
     relatorioSaidas: [],
@@ -196,6 +203,18 @@ export default createStore({
     },
 
     // ============================================
+    // CABEÇALHO GLOBAL DA PÁGINA
+    // ============================================
+    setPageHeader(state, payload) {
+      state.pageTitle = payload?.title || null;
+      state.pageSubtitle = payload?.subtitle || null;
+    },
+    clearPageHeader(state) {
+      state.pageTitle = null;
+      state.pageSubtitle = null;
+    },
+
+    // ============================================
     // DADOS GLOBAIS
     // ============================================
     setSetoresComAcesso(state, setores) {
@@ -231,6 +250,9 @@ export default createStore({
     },
     setModalErrors(state, errors) {
       state.modalErrors = errors || {};
+    },
+    setModalOpen(state, isOpen) {
+      state.modalData.isModalOpen = isOpen;
     },
 
     // Usuários

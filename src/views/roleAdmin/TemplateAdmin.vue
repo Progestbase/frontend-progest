@@ -27,7 +27,6 @@ import Header from "@/components/roleAdmin/Header.vue";
 }
 
 :root {
-  --primary: #bbbfff;
   --grey: #64748b;
   --dark: rgba(0, 77, 153, 1);
   --dark-alt: #002c6b;

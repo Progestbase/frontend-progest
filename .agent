@@ -1,0 +1,27 @@
+# ProgestBase - Frontend Project Context
+
+## Tech Stack
+- **Framework**: Vue 3 (Vite)
+- **State Management**: Vuex
+- **Routing**: Vue Router
+- **Styling**: Tailwind CSS + Custom CSS (Bootstrap-like in some views)
+- **UI Components**: Shadcn Vue (Radix Vue)
+- **HTTP Client**: Axios
+
+## Project Structure
+- `src/views/`: Page components
+- `src/views/cadastros/`: Main CRUD views (Produtos, Fornecedores, etc.)
+- `src/components/ui/`: Base shadcn UI components
+- `src/components/layouts/`: Common layout components (Sidebars, Headers, etc.)
+- `src/functions/`: Business logic and API interaction functions for each module
+- `src/store/`: Vuex modules and state
+
+## Conventions
+- Views often wrap content in `TemplateAdmin`.
+- Many views use `TableBase01.vue` for listings.
+- Logic is often separated into external JS files in `src/functions/`.
+
+## Refactoring Goal
+- Replace `TableBase01.vue` usage in key modules with a standardized Shadcn-based `DataTable`.
+- Implement pagination, search, filters, and sorting.
+- Modules to refactor: Unidades (Polos), Grupo de produtos, Unidades de medidas, Fornecedores, Produtos, Usuarios.

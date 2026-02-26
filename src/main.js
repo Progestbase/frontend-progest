@@ -6,13 +6,11 @@ import store from "./vuex/store"; // Importe o store separado
 import "@mdi/font/css/materialdesignicons.min.css";
 import VueAxios from "vue-axios";
 import axios from "axios";
-import "bootstrap/dist/css/bootstrap.min.css";
-import "bootstrap/dist/js/bootstrap.bundle.min";
 import VueTheMask from "vue-the-mask";
 import { initSetorContext } from "@/init/loadSetorData";
 import { setorCookie } from "@/utils/setorCookie";
 import { API_URL } from "@/config";
-import { toast } from '@/components/ui/toast'
+import { toast } from "@/components/ui/toast";
 
 const app = createApp(App);
 
@@ -52,7 +50,7 @@ axios.interceptors.request.use(
   },
   function (error) {
     return Promise.reject(error);
-  }
+  },
 );
 
 app.use(router);
@@ -63,7 +61,7 @@ try {
   if (token && setorCookie.hasSector()) {
     // Chamar inicializador (async) — não aguardamos o término para não bloquear o mount
     initSetorContext({ axios, store }).catch((e) =>
-      console.warn("Erro no initSetorContext:", e)
+      console.warn("Erro no initSetorContext:", e),
     );
   }
 } catch (e) {
@@ -75,29 +73,29 @@ try {
 app.config.globalProperties.$toastr = {
   s: (mensagem) => {
     toast({
-      title: 'Sucesso',
+      title: "Sucesso",
       description: mensagem,
-      variant: 'default', // Pode mudar para 'success' se tiver customizado
+      variant: "default", // Pode mudar para 'success' se tiver customizado
       duration: 4000,
-    })
+    });
   },
   e: (mensagem) => {
     toast({
-      title: 'Erro',
+      title: "Erro",
       description: mensagem,
-      variant: 'destructive', // Geralmente usado para erros no Shadcn
+      variant: "destructive", // Geralmente usado para erros no Shadcn
       duration: 5000,
-    })
+    });
   },
   // Opcional: warning ou info
   i: (mensagem) => {
     toast({
-      title: 'Informação',
+      title: "Informação",
       description: mensagem,
-      variant: 'default',
-    })
-  }
-}
+      variant: "default",
+    });
+  },
+};
 
-app.mount('#app');
+app.mount("#app");
 app.use(VueTheMask);

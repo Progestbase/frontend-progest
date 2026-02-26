@@ -1,159 +1,98 @@
-<template>
-  <span>
-    <ModalBase01
-      :idModal="idModal"
-      modalClass="modal-dialog modal-lg modal-dialog-centered"
-    >
-      <div class="col-md-12">
-        <div
-          class="tab-content text-muted mt-4 mt-md-0"
-          id="v-pills-tabContent"
-        >
-          <div
-            class="tab-pane fade show active"
-            id="aba_dados"
-            role="tabanel"
-            aria-labelledby="aba_dados-tab"
-          >
-            <form autocomplete="off">
-              <div class="row">
-                <!-- Nome do Polo (Obrigatório) -->
-                <div class="col-md-8">
-                  <div class="mb-3">
-                    <label class="form-label" for="unidadeNome">
-                      Nome <span class="text-danger">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      class="form-control text-uppercase"
-                      :class="{ 'is-invalid': modalErrors.nome }"
-                      id="unidadeNome"
-                      placeholder="Digite o nome da unidade"
-                      v-model="modalData.nome"
-                    />
-                    <div v-if="modalErrors.nome" class="invalid-feedback">
-                      {{ modalErrors.nome[0] }}
-                    </div>
-                  </div>
-                </div>
+<script setup>
+import { computed, ref, watch, getCurrentInstance } from "vue";
+import { useStore } from "vuex";
+import CadastroDialog from "@/components/layouts/CadastroDialog.vue";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
 
-                <!-- Status -->
-                <div class="col-md-4">
-                  <div class="mb-3">
-                    <label class="form-label" for="unidadeStatus">Status</label>
-                    <select
-                      class="form-select"
-                      id="unidadeStatus"
-                      v-model="modalData.status"
-                    >
-                      <option value="A">Ativo</option>
-                      <option value="I">Inativo</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
-            </form>
-          </div>
-        </div>
-      </div>
-      <div class="row mmt-2">
-        <div class="col-12 text-end">
-          <div class="d-flex gap-2 justify-content-end">
-            <button
-              type="button"
-              class="btn btn-secondary btn-modal"
-              data-bs-dismiss="modal"
-            >
-              <i class="mdi mdi-close-thick me-2"></i>Fechar
-            </button>
-            <button
-              type="submit"
-              class="btn btn-success btn-modal"
-              data-bs-target="#success-btn"
-              id="btn-save-event"
-              v-on:click="add_UP_Unidade()"
-            >
-              <i class="mdi mdi-check-bold me-2"></i>
-              {{ modalFunction == "ADD" ? "Salvar" : "Atualizar" }}
-            </button>
-          </div>
-        </div>
-      </div>
-    </ModalBase01>
-  </span>
-</template>
+const props = defineProps(["idModal", "functions"]);
+const store = useStore();
+const { proxy } = getCurrentInstance();
 
-<script>
-import ModalBase01 from "@/components/layouts/ModalBase01.vue";
+const localData = ref({
+  id: null,
+  nome: "",
+  status: "A",
+});
 
-export default {
-  name: "ModalPolos",
-  components: {
-    ModalBase01,
-  },
-  props: ["idModal", "functions"],
-  data() {
-    return {};
-  },
-  computed: {
-    modalData() {
-      return this.$store.state.modalData.modalData;
-    },
-    modalFunction() {
-      return this.$store.state.modalData.modalFunction;
-    },
-    modalErrors() {
-      return this.$store.state.modalErrors;
-    },
-  },
-  methods: {
-    add_UP_Unidade() {
-      const content = {
-        $axios: this.$axios,
-        $store: this.$store,
-        $toastr: this.$toastr,
-        modalData: JSON.parse(JSON.stringify(this.modalData)),
-      };
-      this.functions.ADD_UP(content, this.modalFunction);
-    },
-  },
-  mounted() {
-    // Garantir que modalData tenha status padrão
-    if (!this.modalData.status) {
-      this.$store.commit("setModalData", { status: "A" });
+const modalDataStore = computed(() => store.state.modalData.modalData);
+const modalFunction = computed(() => store.state.modalData.modalFunction);
+const modalErrors = computed(() => store.state.modalErrors || {});
+const isModalOpen = computed({
+  get: () => store.state.modalData.isModalOpen,
+  set: (value) => store.commit("setModalOpen", value),
+});
+
+watch(
+  modalDataStore,
+  (newValue) => {
+    if (newValue) {
+      localData.value = JSON.parse(JSON.stringify(newValue));
+      if (!localData.value.status) localData.value.status = "A";
     }
   },
+  { deep: true, immediate: true },
+);
+
+const handleSave = () => {
+  const content = {
+    $axios: proxy.$axios,
+    $store: store,
+    $toastr: proxy.$toastr,
+    modalData: localData.value,
+  };
+  props.functions.ADD_UP(content, modalFunction.value);
 };
 </script>
 
-<style scoped>
-/* Estilos específicos para o modal de polos */
-.form-label {
-  font-weight: 500;
-  color: #495057;
-}
+<template>
+  <CadastroDialog
+    v-model:open="isModalOpen"
+    :title="
+      modalFunction === 'ADD' ? 'Cadastrar Polo/Unidade' : 'Editar Polo/Unidade'
+    "
+  >
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 py-2">
+      <div class="space-y-2 md:col-span-2">
+        <Label for="nome">Nome <span class="text-destructive">*</span></Label>
+        <Input
+          id="nome"
+          v-model="localData.nome"
+          placeholder="Digite o nome da unidade"
+          class="uppercase"
+        />
+        <p v-if="modalErrors.nome" class="text-xs text-destructive">
+          {{ modalErrors.nome[0] }}
+        </p>
+      </div>
 
-.text-uppercase {
-  text-transform: uppercase;
-}
+      <div class="space-y-2 md:col-span-1">
+        <Label for="status">Status</Label>
+        <Select v-model="localData.status">
+          <SelectTrigger>
+            <SelectValue placeholder="Status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="A">Ativo</SelectItem>
+            <SelectItem value="I">Inativo</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+    </div>
 
-.btn-modal {
-  border-radius: 0.375rem;
-  font-weight: 500;
-}
-
-.btn-modal i {
-  font-size: 16px;
-}
-
-.is-invalid {
-  border-color: #dc3545;
-}
-
-.invalid-feedback {
-  display: block;
-  margin-top: 0.25rem;
-  font-size: 0.875em;
-  color: #dc3545;
-}
-</style>
+    <template #footer="{ close }">
+      <Button variant="outline" @click="close"> Fechar </Button>
+      <Button @click="handleSave">
+        {{ modalFunction === "ADD" ? "Salvar" : "Atualizar" }}
+      </Button>
+    </template>
+  </CadastroDialog>
+</template>

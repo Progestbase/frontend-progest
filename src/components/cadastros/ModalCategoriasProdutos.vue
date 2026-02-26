@@ -1,222 +1,158 @@
-<template>
-  <span>
-    <ModalBase01
-      :idModal="idModal"
-      modalClass="modal-dialog modal-lg modal-dialog-centered"
-    >
-      <div class="col-md-12">
-        <div
-          class="tab-content text-muted mt-4 mt-md-0"
-          id="v-pills-tabContent"
-        >
-          <div
-            class="tab-pane fade show active"
-            id="aba_dados"
-            role="tabanel"
-            aria-labelledby="aba_dados-tab"
-          >
-            <form autocomplete="off">
-              <div class="row">
-                <div class="col-md-8">
-                  <div class="mb-3">
-                    <label class="form-label" for="produtoNome">Nome</label>
-                    <input
-                      type="text"
-                      class="form-control text-uppercase"
-                      id="produtoNome"
-                      placeholder="Digite o nome"
-                      v-model="modalData.nome"
-                    />
-                  </div>
-                </div>
-                <div class="col-md-4">
-                  <div class="mb-3">
-                    <label class="form-label" for="CategoriasProdutosStatus"
-                      >Status</label
-                    >
-                    <select
-                      class="form-select"
-                      id="CategoriasProdutosStatus"
-                      v-model="modalData.status"
-                    >
-                      <option value="A">Ativo</option>
-                      <option value="I">Inativo</option>
-                    </select>
-                  </div>
-                </div>
-                <div class="row">
-                  <div class="col-md-12">
-                    <div class="mb-3">
-                      <label
-                        class="form-label"
-                        for="CategoriasProdutosDescricao"
-                        >Descrição</label
-                      >
-                      <input
-                        type="text"
-                        class="form-control"
-                        id="CategoriasProdutosDescricao"
-                        placeholder="Digite a descrição"
-                        v-model="modalData.descricao"
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </form>
-          </div>
-        </div>
-      </div>
-      <div class="row mmt-2">
-        <div class="col-12 text-end">
-          <button
-            type="button"
-            class="btn btn-secondary"
-            data-bs-dismiss="modal"
-          >
-            <i class="mdi mdi-close-thick font-size-15"></i> Fechar
-          </button>
-          <button
-            type="submit"
-            class="btn btn-success"
-            data-bs-target="#success-btn"
-            id="btn-save-event"
-            v-on:click="add_UP_Categorias_Produtos()"
-          >
-            <i class="mdi mdi-check-bold font-size-15"></i>
-            {{ modalFunction == "ADD" ? "Salvar" : "Atualizar" }}
-          </button>
-        </div>
-      </div>
-    </ModalBase01>
-  </span>
-</template>
+<script setup>
+import { computed, ref, watch, getCurrentInstance } from "vue";
+import { useStore } from "vuex";
+import CadastroDialog from "@/components/layouts/CadastroDialog.vue";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  TagIcon,
+  BookmarkIcon,
+  ShieldCheckIcon,
+  FileTextIcon,
+} from "lucide-vue-next";
 
-<script>
-import ModalBase01 from "@/components/layouts/ModalBase01.vue";
-import Funcoes from "@/functions/cad_categorias_produtos.js";
+const props = defineProps(["idModal", "functions"]);
+const store = useStore();
+const { proxy } = getCurrentInstance();
 
-export default {
-  name: "ModalCategoriasProdutos",
-  components: {
-    ModalBase01,
-    Funcoes,
+const loading = ref(false);
+const localData = ref({
+  id: null,
+  status: "A",
+  nome: "",
+  descricao: "",
+});
+
+const modalDataStore = computed(() => store.state.modalData.modalData);
+const modalFunction = computed(() => store.state.modalData.modalFunction);
+const modalErrors = computed(() => store.state.modalErrors || {});
+const isModalOpen = computed({
+  get: () => store.state.modalData.isModalOpen,
+  set: (value) => store.commit("setModalOpen", value),
+});
+
+watch(
+  modalDataStore,
+  (newValue) => {
+    if (newValue) {
+      localData.value = JSON.parse(JSON.stringify(newValue));
+      if (!localData.value.status) localData.value.status = "A";
+    }
   },
-  props: ["idModal", "functions"],
-  data() {
-    return {
-      imagePreview: null,
-    };
-  },
-  mounted() {},
-  methods: {
-    add_UP_Categorias_Produtos() {
-      const content = {
-        $axios: this.$axios,
-        $store: this.$store,
-        $toastr: this.$toastr,
-        modalData: JSON.parse(JSON.stringify(this.modalData)),
-      };
-      this.functions.ADD_UP(content, this.modalFunction);
-    },
-    onImageChange(event) {
-      const file = event.target.files[0];
-      if (file) {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          this.imagePreview = e.target.result;
-          // Se quiser salvar a imagem no modalData:
-          // this.modalData.imagem = e.target.result;
-        };
-        reader.readAsDataURL(file);
-      } else {
-        this.imagePreview = null;
-      }
-    },
-  },
-  computed: {
-    modalTitle() {
-      return this.$store.state.modalData.modalTitle;
-    },
-    modalData() {
-      return this.$store.state.modalData.modalData;
-    },
-    modalFunction() {
-      return this.$store.state.modalData.modalFunction;
-    },
-  },
-  state: {
-    modalData: {
-      status: "A",
-      nome: "",
-      descricao: "",
-    },
-  },
-  mutations: {
-    setModalData(state, payload) {
-      state.modalData = {
-        ...state.modalData,
-        ...payload,
-      };
-    },
-  },
+  { deep: true, immediate: true },
+);
+
+const handleSave = () => {
+  store.commit("setModalErrors", {});
+  loading.value = true;
+  const content = {
+    $axios: proxy.$axios,
+    $store: store,
+    $toastr: proxy.$toastr,
+    modalData: localData.value,
+  };
+  props.functions.ADD_UP(content, modalFunction.value);
+  loading.value = false;
 };
 </script>
 
-<style scoped>
-.user-form {
-  display: grid;
-  gap: 1rem;
-  grid-template-columns: 1fr 1fr;
-}
+<template>
+  <CadastroDialog
+    v-model:open="isModalOpen"
+    :title="
+      modalFunction === 'ADD' ? 'Novo Tipo de Produto' : 'Ajustar Classificação'
+    "
+  >
+    <div class="space-y-6 py-4">
+      <!-- Header Style within Dialog Content for context -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="md:col-span-2 space-y-3">
+          <Label
+            for="cat-nome"
+            class="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1 flex items-center gap-2"
+          >
+            <TagIcon class="w-3 h-3" /> Identificação do Tipo
+            <span class="text-destructive">*</span>
+          </Label>
+          <Input
+            id="cat-nome"
+            v-model="localData.nome"
+            class="h-12 border-slate-200 rounded-2xl bg-white shadow-sm focus:ring-primary/20 text-sm font-bold uppercase"
+            placeholder="Ex: PSICOTRÓPICOS, ANTIBIÓTICOS..."
+          />
+          <p
+            v-if="modalErrors.nome"
+            class="text-[10px] text-destructive font-black uppercase tracking-tight ml-1"
+          >
+            {{ modalErrors.nome[0] }}
+          </p>
+        </div>
 
-.form-group {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
+        <div class="space-y-3">
+          <Label
+            for="cat-status"
+            class="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1 flex items-center gap-2"
+          >
+            <ShieldCheckIcon class="w-3 h-3" /> Visibilidade
+          </Label>
+          <Select v-model="localData.status">
+            <SelectTrigger
+              class="h-12 border-slate-200 rounded-2xl bg-slate-50/30"
+            >
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent class="rounded-xl border-slate-200">
+              <SelectItem value="A">Ativo</SelectItem>
+              <SelectItem value="I">Inativo</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
 
-.form-group label {
-  font-weight: 500;
-  color: #333;
-}
+      <div class="space-y-3">
+        <Label
+          for="cat-desc"
+          class="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1 flex items-center gap-2"
+        >
+          <FileTextIcon class="w-3 h-3" /> Descritivo Técnico
+        </Label>
+        <Textarea
+          id="cat-desc"
+          v-model="localData.descricao"
+          class="min-h-[100px] border-slate-200 rounded-2xl bg-white shadow-sm focus:ring-primary/20 text-sm font-medium p-4"
+          placeholder="Descreva as características deste agrupamento de produtos..."
+        />
+      </div>
+    </div>
 
-.form-group input,
-.form-group select {
-  padding: 0.5rem;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 1rem;
-}
-
-.form-group input:focus,
-.form-group select:focus {
-  outline: none;
-  border-color: #4a4a4a;
-}
-
-.btn {
-  padding: 0.5rem 1rem;
-  border-radius: 4px;
-  cursor: pointer;
-  font-weight: 500;
-}
-
-.btn-primary {
-  background-color: #4a4a4a;
-  color: white;
-  border: none;
-}
-
-.btn-secondary {
-  background-color: #f0f0f0;
-  color: #333;
-  border: 1px solid #ddd;
-}
-
-@media (max-width: 768px) {
-  .user-form {
-    grid-template-columns: 1fr;
-  }
-}
-</style>
+    <template #footer="{ close }">
+      <div class="flex gap-3 w-full sm:w-auto">
+        <Button
+          variant="ghost"
+          @click="close"
+          class="h-12 px-8 rounded-xl font-bold text-slate-400 hover:text-slate-600 transition-colors"
+        >
+          Descartar
+        </Button>
+        <Button
+          @click="handleSave"
+          :disabled="loading"
+          class="flex-1 sm:px-12 h-12 rounded-xl font-black text-xs uppercase tracking-widest shadow-lg shadow-primary/20"
+        >
+          {{
+            modalFunction === "ADD" ? "Salvar Categoria" : "Aplicar Mudanças"
+          }}
+        </Button>
+      </div>
+    </template>
+  </CadastroDialog>
+</template>

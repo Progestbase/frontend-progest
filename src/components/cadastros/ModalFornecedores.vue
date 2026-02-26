@@ -1,306 +1,184 @@
-<template>
-  <span>
-    <ModalBase01
-      :idModal="idModal"
-      modalClass="modal-dialog modal-lg modal-dialog-centered"
-    >
-      <div class="col-md-12">
-        <div
-          class="tab-content text-muted mt-4 mt-md-0"
-          id="v-pills-tabContent"
-        >
-          <div
-            class="tab-pane fade show active"
-            id="aba_dados"
-            role="tabpanel"
-            aria-labelledby="aba_dados-tab"
-          >
-            <form autocomplete="off">
-              <div class="row">
-                <div class="col-md-12">
-                  <div class="mb-3">
-                    <label class="form-label">Razão Social / Nome</label>
-                    <input
-                      type="text"
-                      class="form-control text-uppercase"
-                      v-model="modalData.razao_social_nome"
-                    />
-                    <div
-                      v-if="fieldError('razao_social_nome')"
-                      class="invalid-feedback d-block"
-                    >
-                      {{ fieldError("razao_social_nome") }}
-                    </div>
-                  </div>
-                </div>
-              </div>
+<script setup>
+import { computed, ref, watch, getCurrentInstance } from "vue";
+import { useStore } from "vuex";
+import CadastroDialog from "@/components/layouts/CadastroDialog.vue";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
 
-              <div class="row">
-                <!-- campo 'codigo' removido do formulário de Fornecedores -->
+const props = defineProps(["idModal", "functions"]);
+const store = useStore();
+const { proxy } = getCurrentInstance();
 
-                <div class="col-md-3">
-                  <div class="mb-3">
-                    <label class="form-label">Tipo Pessoa</label>
-                    <select class="form-select" v-model="modalData.tipo_pessoa">
-                      <option value="J">Pessoa Jurídica</option>
-                      <option value="F">Pessoa Física</option>
-                    </select>
-                  </div>
-                </div>
+const localData = ref({
+  id: null,
+  razao_social_nome: "",
+  tipo_pessoa: "J",
+  cnpj: "",
+  cpf: "",
+  status: "A",
+});
 
-                <div class="col-md-3">
-                  <div v-if="modalData.tipo_pessoa === 'J'">
-                    <div class="mb-3">
-                      <label class="form-label">CNPJ</label>
-                      <input
-                        type="text"
-                        class="form-control"
-                        v-model="modalData.cnpj"
-                        v-mask="'##.###.###/####-##'"
-                      />
-                      <div
-                        v-if="fieldError('cnpj')"
-                        class="invalid-feedback d-block"
-                      >
-                        {{ fieldError("cnpj") }}
-                      </div>
-                    </div>
-                  </div>
-                  <div v-else>
-                    <div class="mb-3">
-                      <label class="form-label">CPF</label>
-                      <input
-                        type="text"
-                        class="form-control"
-                        v-model="modalData.cpf"
-                        v-mask="'###.###.###-##'"
-                      />
-                      <div
-                        v-if="fieldError('cpf')"
-                        class="invalid-feedback d-block"
-                      >
-                        {{ fieldError("cpf") }}
-                      </div>
-                    </div>
-                  </div>
-                </div>
+const modalDataStore = computed(() => store.state.modalData.modalData);
+const modalFunction = computed(() => store.state.modalData.modalFunction);
+const modalErrors = computed(() => store.state.modalErrors || {});
+const isModalOpen = computed({
+  get: () => store.state.modalData.isModalOpen,
+  set: (value) => store.commit("setModalOpen", value),
+});
 
-                <div class="col-md-3">
-                  <div class="mb-3">
-                    <label class="form-label">Status</label>
-                    <select class="form-select" v-model="modalData.status">
-                      <option value="A">Ativo</option>
-                      <option value="I">Inativo</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
-            </form>
-          </div>
-        </div>
-      </div>
-
-      <div class="row mt-2">
-        <div class="col-12 text-end">
-          <div class="d-flex gap-2 justify-content-end">
-            <button
-              type="button"
-              class="btn btn-secondary btn-modal"
-              data-bs-dismiss="modal"
-            >
-              <i class="mdi mdi-close-thick me-2"></i>Fechar
-            </button>
-            <button
-              type="submit"
-              class="btn btn-success btn-modal"
-              id="btn-save-event"
-              @click="add_UP_Fornecedor"
-            >
-              <i class="mdi mdi-check-bold me-2"></i>
-              {{ modalFunction === "ADD" ? "Salvar" : "Atualizar" }}
-            </button>
-          </div>
-        </div>
-      </div>
-    </ModalBase01>
-  </span>
-</template>
-
-<script>
-import ModalBase01 from "@/components/layouts/ModalBase01.vue";
-
-export default {
-  name: "ModalFornecedores",
-  components: { ModalBase01 },
-  props: ["idModal", "functions"],
-  computed: {
-    modalData() {
-      return this.$store.state.modalData.modalData;
-    },
-    modalFunction() {
-      return this.$store.state.modalData.modalFunction;
-    },
-    modalErrors() {
-      return this.$store.state.modalErrors || {};
-    },
+watch(
+  modalDataStore,
+  (newValue) => {
+    if (newValue) {
+      localData.value = JSON.parse(JSON.stringify(newValue));
+      if (!localData.value.tipo_pessoa) localData.value.tipo_pessoa = "J";
+      if (!localData.value.status) localData.value.status = "A";
+    }
   },
-  methods: {
-    add_UP_Fornecedor() {
-      // limpa erros anteriores
-      try {
-        this.$store.commit("setModalErrors", {});
-      } catch (e) {}
-      // Validação mínima do CPF/CNPJ conforme tipo_pessoa
-      const tipo = this.modalData.tipo_pessoa || "J";
-      const onlyDigits = (s) => (s || "").toString().replace(/\D/g, "");
+  { deep: true, immediate: true },
+);
 
-      // Sanitiza e valida comprimento exato
-      const payloadData = JSON.parse(JSON.stringify(this.modalData));
-      if (payloadData.cnpj) payloadData.cnpj = onlyDigits(payloadData.cnpj);
-      if (payloadData.cpf) payloadData.cpf = onlyDigits(payloadData.cpf);
+const fieldError = (field) => {
+  const v = modalErrors.value[field];
+  if (!v) return null;
+  return Array.isArray(v) ? v[0] : v;
+};
 
-      if (tipo === "J") {
-        const cnpj = payloadData.cnpj || "";
-        if (!cnpj || cnpj.length !== 14) {
-          this.$store.commit("setModalErrors", {
-            cnpj: ["CNPJ deve ter exatamente 14 dígitos"],
-          });
-          this.$toastr.e(
-            "Informe um CNPJ válido para Pessoa Jurídica (14 dígitos)."
-          );
-          return;
-        }
-        // garante cpf vazio
-        payloadData.cpf = null;
-      } else {
-        const cpf = payloadData.cpf || "";
-        if (!cpf || cpf.length !== 11) {
-          this.$store.commit("setModalErrors", {
-            cpf: ["CPF deve ter exatamente 11 dígitos"],
-          });
-          this.$toastr.e(
-            "Informe um CPF válido para Pessoa Física (11 dígitos)."
-          );
-          return;
-        }
-        // garante cnpj vazio
-        payloadData.cnpj = null;
-      }
+const handleSave = () => {
+  // limpa erros anteriores
+  store.commit("setModalErrors", {});
 
-      // Renomeia razao_social -> razao_social_nome para obedecer à API
-      if (payloadData.razao_social) {
-        payloadData.razao_social_nome = payloadData.razao_social;
-        delete payloadData.razao_social;
-      }
+  const tipo = localData.value.tipo_pessoa || "J";
+  const onlyDigits = (s) => (s || "").toString().replace(/\D/g, "");
 
-      const content = {
-        $axios: this.$axios,
-        $store: this.$store,
-        $toastr: this.$toastr,
-        modalData: payloadData,
-      };
+  const payloadData = JSON.parse(JSON.stringify(localData.value));
+  if (payloadData.cnpj) payloadData.cnpj = onlyDigits(payloadData.cnpj);
+  if (payloadData.cpf) payloadData.cpf = onlyDigits(payloadData.cpf);
 
-      if (this.functions && this.functions.ADD_UP) {
-        this.functions.ADD_UP(
-          content,
-          this.modalFunction === "ADD" ? "ADD" : "UP"
-        );
-      }
-    },
-    fieldError(field) {
-      const errors = this.modalErrors || {};
-      if (!errors) return null;
-      // backend pode retornar { campo: ["msg1","msg2"] } ou { campo: "msg" }
-      const v = errors[field];
-      if (!v) return null;
-      if (Array.isArray(v)) return v[0];
-      return v;
-    },
-  },
+  if (tipo === "J") {
+    if (!payloadData.cnpj || payloadData.cnpj.length !== 14) {
+      store.commit("setModalErrors", { cnpj: ["CNPJ deve ter 14 dígitos"] });
+      proxy.$toastr?.e("Informe um CNPJ válido.");
+      return;
+    }
+    payloadData.cpf = null;
+  } else {
+    if (!payloadData.cpf || payloadData.cpf.length !== 11) {
+      store.commit("setModalErrors", { cpf: ["CPF deve ter 11 dígitos"] });
+      proxy.$toastr?.e("Informe um CPF válido.");
+      return;
+    }
+    payloadData.cnpj = null;
+  }
+
+  const content = {
+    $axios: proxy.$axios,
+    $store: store,
+    $toastr: proxy.$toastr,
+    modalData: payloadData,
+  };
+
+  props.functions.ADD_UP(content, modalFunction.value);
 };
 </script>
 
-<style scoped>
-.form-group {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
+<template>
+  <CadastroDialog
+    v-model:open="isModalOpen"
+    :title="
+      modalFunction === 'ADD' ? 'Cadastrar Fornecedor' : 'Editar Fornecedor'
+    "
+  >
+    <div class="grid grid-cols-1 gap-4 py-2">
+      <div class="space-y-2">
+        <Label for="razao"
+          >Razão Social / Nome <span class="text-destructive">*</span></Label
+        >
+        <Input
+          id="razao"
+          v-model="localData.razao_social_nome"
+          placeholder="Digite o nome completo"
+          class="uppercase"
+        />
+        <p
+          v-if="fieldError('razao_social_nome')"
+          class="text-xs text-destructive"
+        >
+          {{ fieldError("razao_social_nome") }}
+        </p>
+      </div>
 
-.form-group label {
-  font-weight: 500;
-  color: #333;
-}
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="space-y-2">
+          <Label for="tipo">Tipo Pessoa</Label>
+          <Select v-model="localData.tipo_pessoa">
+            <SelectTrigger>
+              <SelectValue placeholder="Selecione o tipo" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="J">Pessoa Jurídica</SelectItem>
+              <SelectItem value="F">Pessoa Física</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
 
-.form-group input,
-.form-group select {
-  padding: 0.5rem;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 1rem;
-}
+        <div class="space-y-2">
+          <template v-if="localData.tipo_pessoa === 'J'">
+            <Label for="cnpj"
+              >CNPJ <span class="text-destructive">*</span></Label
+            >
+            <Input
+              id="cnpj"
+              v-model="localData.cnpj"
+              v-mask="'##.###.###/####-##'"
+              placeholder="00.000.000/0000-00"
+            />
+            <p v-if="fieldError('cnpj')" class="text-xs text-destructive">
+              {{ fieldError("cnpj") }}
+            </p>
+          </template>
+          <template v-else>
+            <Label for="cpf">CPF <span class="text-destructive">*</span></Label>
+            <Input
+              id="cpf"
+              v-model="localData.cpf"
+              v-mask="'###.###.###-##'"
+              placeholder="000.000.000-00"
+            />
+            <p v-if="fieldError('cpf')" class="text-xs text-destructive">
+              {{ fieldError("cpf") }}
+            </p>
+          </template>
+        </div>
 
-.form-group input:focus,
-.form-group select:focus {
-  outline: none;
-  border-color: #4a4a4a;
-}
+        <div class="space-y-2">
+          <Label for="status">Status</Label>
+          <Select v-model="localData.status">
+            <SelectTrigger>
+              <SelectValue placeholder="Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="A">Ativo</SelectItem>
+              <SelectItem value="I">Inativo</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+    </div>
 
-.btn {
-  padding: 0.5rem 1rem;
-  border-radius: 4px;
-  cursor: pointer;
-  font-weight: 500;
-}
-
-.btn-primary {
-  background-color: #4a4a4a;
-  color: white;
-  border: none;
-}
-
-.btn-secondary {
-  background-color: #f0f0f0;
-  color: #333;
-  border: 1px solid #ddd;
-}
-
-@media (max-width: 768px) {
-}
-
-/* Estilos para botões dos modais */
-.btn-modal {
-  font-weight: 600;
-  font-size: 0.9rem;
-  padding: 0.6rem 1.25rem;
-  border-radius: 0.4rem;
-  text-transform: uppercase;
-  letter-spacing: 0.3px;
-  border: none;
-  min-width: 100px;
-}
-
-.btn-modal.btn-secondary {
-  background-color: #6c757d;
-  color: white;
-}
-
-.btn-modal.btn-secondary:hover {
-  background-color: #5a6268;
-  color: white;
-}
-
-.btn-modal.btn-success {
-  background-color: #28a745;
-  color: white;
-}
-
-.btn-modal.btn-success:hover {
-  background-color: #218838;
-  color: white;
-}
-
-.btn-modal i {
-  font-size: 0.9rem;
-}
-</style>
+    <template #footer="{ close }">
+      <Button variant="outline" @click="close"> Fechar </Button>
+      <Button @click="handleSave">
+        {{ modalFunction === "ADD" ? "Salvar" : "Atualizar" }}
+      </Button>
+    </template>
+  </CadastroDialog>
+</template>

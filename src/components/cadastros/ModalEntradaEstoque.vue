@@ -43,13 +43,29 @@
                     <SelectValue placeholder="Selecione um fornecedor" />
                   </SelectTrigger>
                   <SelectContent class="z-[9999]">
+                    <div
+                      class="px-2 py-2 sticky top-0 bg-white border-b z-10"
+                      @keydown.stop
+                    >
+                      <Input
+                        v-model="pesquisaFornecedor"
+                        placeholder="Pesquisar fornecedor..."
+                        class="h-8 shadow-sm text-sm"
+                      />
+                    </div>
                     <SelectItem
-                      v-for="fornecedor in fornecedoresDisponiveis"
+                      v-for="fornecedor in fornecedoresFiltrados"
                       :key="fornecedor.id"
                       :value="fornecedor.id"
                     >
                       {{ fornecedorLabel(fornecedor) }}
                     </SelectItem>
+                    <div
+                      v-if="fornecedoresFiltrados.length === 0"
+                      class="py-6 text-center text-sm text-muted-foreground"
+                    >
+                      Nenhum fornecedor encontrado.
+                    </div>
                   </SelectContent>
                 </Select>
               </div>
@@ -170,13 +186,29 @@
                       <SelectValue placeholder="Selecione um produto" />
                     </SelectTrigger>
                     <SelectContent class="z-[9999]">
+                      <div
+                        class="px-2 py-2 sticky top-0 bg-white border-b z-10"
+                        @keydown.stop
+                      >
+                        <Input
+                          v-model="pesquisaProduto"
+                          placeholder="Pesquisar produto..."
+                          class="h-8 shadow-sm text-sm"
+                        />
+                      </div>
                       <SelectItem
-                        v-for="produto in produtosDisponiveis"
+                        v-for="produto in produtosFiltrados"
                         :key="produto.id"
                         :value="produto.id"
                       >
                         {{ produtoLabel(produto) }}
                       </SelectItem>
+                      <div
+                        v-if="produtosFiltrados.length === 0"
+                        class="py-6 text-center text-sm text-muted-foreground"
+                      >
+                        Nenhum produto encontrado.
+                      </div>
                     </SelectContent>
                   </Select>
                 </div>
@@ -666,13 +698,15 @@ export default {
       salvandoFornecedorInline: false,
       salvandoProdutoInline: false,
       salvandoGrupoProdutoInline: false,
+      pesquisaFornecedor: "",
+      pesquisaProduto: "",
     };
   },
   computed: {
     fornecedoresDisponiveis() {
       const base = this.normalizarLista(this.$store.state.listFornecedores);
       const custom = this.fornecedoresCustom.filter(
-        (item) => !base.some((baseItem) => baseItem.id === item.id)
+        (item) => !base.some((baseItem) => baseItem.id === item.id),
       );
       return [...base, ...custom];
     },
@@ -682,25 +716,41 @@ export default {
       // Filtrar por tipo de grupo se setorTipo estiver definido
       if (this.setorTipo) {
         const gruposDoTipo = this.normalizarLista(
-          this.$store.state.listGrupoProdutos
+          this.$store.state.listGrupoProdutos,
         )
           .filter((grupo) => grupo.tipo === this.setorTipo)
           .map((grupo) => grupo.id);
 
         base = base.filter((produto) =>
-          gruposDoTipo.includes(produto.grupo_produto_id)
+          gruposDoTipo.includes(produto.grupo_produto_id),
         );
       }
 
       const custom = this.produtosCustom.filter(
-        (item) => !base.some((baseItem) => baseItem.id === item.id)
+        (item) => !base.some((baseItem) => baseItem.id === item.id),
       );
       return [...base, ...custom];
+    },
+    fornecedoresFiltrados() {
+      const term = this.pesquisaFornecedor.toLowerCase();
+      if (!term) return this.fornecedoresDisponiveis;
+
+      return this.fornecedoresDisponiveis.filter((f) =>
+        this.fornecedorLabel(f).toLowerCase().includes(term),
+      );
+    },
+    produtosFiltrados() {
+      const term = this.pesquisaProduto.toLowerCase();
+      if (!term) return this.produtosDisponiveis;
+
+      return this.produtosDisponiveis.filter((p) =>
+        this.produtoLabel(p).toLowerCase().includes(term),
+      );
     },
     gruposDisponiveis() {
       const base = this.normalizarLista(this.$store.state.listGrupoProdutos);
       const custom = this.gruposCustom.filter(
-        (item) => !base.some((baseItem) => baseItem.id === item.id)
+        (item) => !base.some((baseItem) => baseItem.id === item.id),
       );
       return [...base, ...custom];
     },
@@ -819,7 +869,7 @@ export default {
 
       const documentoNumerico = (this.novoFornecedor.documento || "").replace(
         /\D/g,
-        ""
+        "",
       );
 
       const isPessoaJuridica = this.novoFornecedor.tipo === "J";
@@ -1085,7 +1135,7 @@ export default {
       if (dataVenc <= hoje) {
         this.notificar(
           "A data de vencimento deve ser posterior à data atual",
-          "error"
+          "error",
         );
         return;
       }
@@ -1100,7 +1150,7 @@ export default {
       }
 
       const produto = this.produtosDisponiveis.find(
-        (item) => item.id === this.produtoSelecionadoId
+        (item) => item.id === this.produtoSelecionadoId,
       );
 
       if (!produto) {
@@ -1137,7 +1187,7 @@ export default {
     },
     removerProduto(localId) {
       this.form.itens = this.form.itens.filter(
-        (item) => item.localId !== localId
+        (item) => item.localId !== localId,
       );
     },
     editarProduto(item) {

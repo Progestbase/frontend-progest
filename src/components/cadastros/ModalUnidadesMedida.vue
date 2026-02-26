@@ -1,273 +1,161 @@
-<template>
-  <span>
-    <ModalBase01
-      :idModal="idModal"
-      modalClass="modal-dialog modal-lg modal-dialog-centered"
-    >
-      <div class="col-md-12">
-        <div
-          class="tab-content text-muted mt-4 mt-md-0"
-          id="v-pills-tabContent"
-        >
-          <div
-            class="tab-pane fade show active"
-            id="aba_dados"
-            role="tabanel"
-            aria-labelledby="aba_dados-tab"
-          >
-            <form autocomplete="off">
-              <div class="row">
-                <div class="col-md-8">
-                  <div class="mb-3">
-                    <label class="form-label" for="unidadeMedidaNome"
-                      >Nome</label
-                    >
-                    <input
-                      type="text"
-                      class="form-control text-uppercase"
-                      id="unidadeMedidaNome"
-                      placeholder="Digite o nome"
-                      v-model="localData.nome"
-                    />
-                  </div>
-                </div>
-                <div class="col-md-4">
-                  <div class="mb-3">
-                    <label class="form-label" for="unidadeMedidaStatus"
-                      >Status</label
-                    >
-                    <select
-                      class="form-select"
-                      id="unidadeMedidaStatus"
-                      v-model="localData.status"
-                    >
-                      <option value="A">Ativo</option>
-                      <option value="I">Inativo</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
-              <div class="row">
-                <div class="col-md-6">
-                  <div class="mb-3">
-                    <label class="form-label" for="unidadeMedidaQuantidade"
-                      >Quantidade Unidade Mínima
-                      <span class="text-danger">*</span></label
-                    >
-                    <input
-                      type="number"
-                      class="form-control"
-                      id="unidadeMedidaQuantidade"
-                      min="1"
-                      placeholder="1"
-                      v-model.number="localData.quantidade_unidade_minima"
-                    />
-                    <small class="form-text text-muted">Mínimo: 1</small>
-                  </div>
-                </div>
-                <div class="col-md-6">
-                  <div class="mb-3">
-                    <label class="form-label" for="unidadeMedidaDescricao"
-                      >Descrição</label
-                    >
-                    <input
-                      type="text"
-                      class="form-control"
-                      id="unidadeMedidaDescricao"
-                      placeholder="Digite a descrição"
-                      v-model="localData.descricao"
-                    />
-                  </div>
-                </div>
-              </div>
-            </form>
-          </div>
-        </div>
-      </div>
-      <div class="row mmt-2">
-        <div class="col-12 text-end">
-          <div class="d-flex gap-2 justify-content-end">
-            <button
-              type="button"
-              class="btn btn-secondary btn-modal"
-              data-bs-dismiss="modal"
-            >
-              <i class="mdi mdi-close-thick me-2"></i>Fechar
-            </button>
-            <button
-              type="submit"
-              class="btn btn-success btn-modal"
-              data-bs-target="#success-btn"
-              id="btn-save-event"
-              v-on:click="add_UP_Unidades_Medida()"
-            >
-              <i class="mdi mdi-check-bold me-2"></i>
-              {{ modalFunction == "ADD" ? "Salvar" : "Atualizar" }}
-            </button>
-          </div>
-        </div>
-      </div>
-    </ModalBase01>
-  </span>
-</template>
+<script setup>
+import { computed, ref, watch, getCurrentInstance } from "vue";
+import { useStore } from "vuex";
+import CadastroDialog from "@/components/layouts/CadastroDialog.vue";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import {
+  ScaleIcon,
+  RulerIcon,
+  ShieldCheckIcon,
+  BoxSelectIcon,
+} from "lucide-vue-next";
 
-<script>
-import ModalBase01 from "@/components/layouts/ModalBase01.vue";
-import Funcoes from "@/functions/cad_unidades_medida.js";
+const props = defineProps(["idModal", "functions"]);
+const store = useStore();
+const { proxy } = getCurrentInstance();
 
-export default {
-  name: "ModalUnidadesMedida",
-  components: {
-    ModalBase01,
-  },
-  props: ["idModal", "functions"],
-  data() {
-    return {
-      // Criamos uma cópia local para o formulário poder editar à vontade
-      localData: {
-        id: null,
-        status: "A",
-        nome: "",
-        descricao: "",
-        quantidade_unidade_minima: 1,
-      },
-      imagePreview: null,
-    };
-  },
-  computed: {
-    // Pegamos os dados do Vuex apenas para leitura inicial
-    storeModalData() {
-      return this.$store.state.modalData.modalData;
-    },
-    modalFunction() {
-      return this.$store.state.modalData.modalFunction;
-    },
-  },
-  watch: {
-    // Sempre que o Vuex mudar (ao clicar em editar), atualizamos a cópia local
-    storeModalData: {
-      handler(newValue) {
-        if (newValue) {
-          // Clona os dados para edição local sem quebrar o Vuex
-          this.localData = JSON.parse(JSON.stringify(newValue));
-        }
-      },
-      deep: true,
-      immediate: true
+const loading = ref(false);
+const localData = ref({
+  id: null,
+  status: "A",
+  nome: "",
+  quantidade_unidade_minima: 1,
+});
+
+const modalDataStore = computed(() => store.state.modalData.modalData);
+const modalFunction = computed(() => store.state.modalData.modalFunction);
+const modalErrors = computed(() => store.state.modalErrors || {});
+const isModalOpen = computed({
+  get: () => store.state.modalData.isModalOpen,
+  set: (value) => store.commit("setModalOpen", value),
+});
+
+watch(
+  modalDataStore,
+  (newValue) => {
+    if (newValue) {
+      localData.value = JSON.parse(JSON.stringify(newValue));
+      if (!localData.value.status) localData.value.status = "A";
     }
   },
-  methods: {
-    add_UP_Unidades_Medida() {
-      // Verificação de segurança para o Toastr
-      if (!this.$toastr) {
-        console.warn("Plugin Toastr não encontrado. Usando alert padrão.");
-      }
+  { deep: true, immediate: true },
+);
 
-      const content = {
-        $axios: this.$axios,
-        $store: this.$store,
-        $toastr: this.$toastr, // Passa a instância do toastr
-        // Envia os dados locais do formulário, não os do Vuex
-        modalData: this.localData, 
-      };
-      
-      // Chamamos a função externa
-      Funcoes.ADD_UP(content, this.modalFunction);
-    },
-  },
+const handleSave = () => {
+  store.commit("setModalErrors", {});
+  loading.value = true;
+  const content = {
+    $axios: proxy.$axios,
+    $store: store,
+    $toastr: proxy.$toastr,
+    modalData: localData.value,
+  };
+  props.functions.ADD_UP(content, modalFunction.value);
+  loading.value = false;
 };
 </script>
 
-<style scoped>
-.user-form {
-  display: grid;
-  gap: 1rem;
-  grid-template-columns: 1fr 1fr;
-}
+<template>
+  <CadastroDialog
+    v-model:open="isModalOpen"
+    :title="
+      modalFunction === 'ADD' ? 'Nova Unidade de Medida' : 'Ajustar Métrica'
+    "
+  >
+    <div class="space-y-6 py-4">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- Name -->
+        <div class="space-y-3">
+          <Label
+            for="uni-nome"
+            class="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1 flex items-center gap-2"
+          >
+            <RulerIcon class="w-3 h-3" /> Sigla / Nome
+            <span class="text-destructive">*</span>
+          </Label>
+          <Input
+            id="uni-nome"
+            v-model="localData.nome"
+            class="h-12 border-slate-200 rounded-2xl bg-white shadow-sm focus:ring-primary/20 text-sm font-bold uppercase"
+            placeholder="Ex: KG, UN, FRA, CX..."
+          />
+          <p
+            v-if="modalErrors.nome"
+            class="text-[10px] text-destructive font-black uppercase tracking-tight ml-1"
+          >
+            {{ modalErrors.nome[0] }}
+          </p>
+        </div>
 
-.form-group {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
+        <!-- Status -->
+        <div class="space-y-3">
+          <Label
+            for="uni-status"
+            class="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1 flex items-center gap-2"
+          >
+            <ShieldCheckIcon class="w-3 h-3" /> Estado da Métrica
+          </Label>
+          <Select v-model="localData.status">
+            <SelectTrigger
+              class="h-12 border-slate-200 rounded-2xl bg-slate-50/30"
+            >
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent class="rounded-xl border-slate-200">
+              <SelectItem value="A">Ativa para uso</SelectItem>
+              <SelectItem value="I">Inativa / Obsoleta</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
 
-.form-group label {
-  font-weight: 500;
-  color: #333;
-}
+      <!-- Quantity -->
+      <div class="space-y-3">
+        <Label
+          for="uni-qtd"
+          class="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1 flex items-center gap-2"
+        >
+          <BoxSelectIcon class="w-3 h-3" /> Quantidade Unidade Mínima
+        </Label>
+        <Input
+          id="uni-qtd"
+          type="number"
+          v-model="localData.quantidade_unidade_minima"
+          class="h-12 border-slate-200 rounded-2xl bg-white shadow-sm focus:ring-primary/20 text-sm font-bold"
+          placeholder="Ex: 1"
+        />
+        <p class="text-[10px] text-slate-400 font-medium ml-1">
+          Define o multiplicador base para fracionamento de itens.
+        </p>
+      </div>
+    </div>
 
-.form-group input,
-.form-group select {
-  padding: 0.5rem;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 1rem;
-}
-
-.form-group input:focus,
-.form-group select:focus {
-  outline: none;
-  border-color: #4a4a4a;
-}
-
-.btn {
-  padding: 0.5rem 1rem;
-  border-radius: 4px;
-  cursor: pointer;
-  font-weight: 500;
-}
-
-.btn-primary {
-  background-color: #4a4a4a;
-  color: white;
-  border: none;
-}
-
-.btn-secondary {
-  background-color: #f0f0f0;
-  color: #333;
-  border: 1px solid #ddd;
-}
-
-@media (max-width: 768px) {
-  .user-form {
-    grid-template-columns: 1fr;
-  }
-}
-
-/* Estilos para botões dos modais */
-.btn-modal {
-  font-weight: 600;
-  font-size: 0.9rem;
-  padding: 0.6rem 1.25rem;
-  border-radius: 0.4rem;
-  text-transform: uppercase;
-  letter-spacing: 0.3px;
-  border: none;
-  min-width: 100px;
-}
-
-.btn-modal.btn-secondary {
-  background-color: #6c757d;
-  color: white;
-}
-
-.btn-modal.btn-secondary:hover {
-  background-color: #5a6268;
-  color: white;
-}
-
-.btn-modal.btn-success {
-  background-color: #28a745;
-  color: white;
-}
-
-.btn-modal.btn-success:hover {
-  background-color: #218838;
-  color: white;
-}
-
-.btn-modal i {
-  font-size: 0.9rem;
-}
-</style>
+    <template #footer="{ close }">
+      <div class="flex gap-3 w-full sm:w-auto">
+        <Button
+          variant="ghost"
+          @click="close"
+          class="h-12 px-8 rounded-xl font-bold text-slate-400 hover:text-slate-600"
+        >
+          Cancelar
+        </Button>
+        <Button
+          @click="handleSave"
+          :disabled="loading"
+          class="flex-1 sm:px-12 h-12 rounded-xl font-black text-xs uppercase tracking-widest shadow-lg shadow-primary/20"
+        >
+          {{ modalFunction === "ADD" ? "Criar Métrica" : "Salvar Mudanças" }}
+        </Button>
+      </div>
+    </template>
+  </CadastroDialog>
+</template>

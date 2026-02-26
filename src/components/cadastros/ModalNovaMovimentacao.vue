@@ -34,13 +34,29 @@
                 <SelectValue placeholder="Selecione o setor distribuidor" />
               </SelectTrigger>
               <SelectContent class="z-[9999]">
+                <div
+                  class="px-2 py-2 sticky top-0 bg-white border-b z-10"
+                  @keydown.stop
+                >
+                  <Input
+                    v-model="pesquisaFornecedor"
+                    placeholder="Pesquisar fornecedor..."
+                    class="h-8 shadow-sm text-sm"
+                  />
+                </div>
                 <SelectItem
-                  v-for="fornecedor in fornecedoresDisponiveis"
+                  v-for="fornecedor in fornecedoresFiltrados"
                   :key="fornecedor.id"
                   :value="String(fornecedor.id)"
                 >
                   {{ fornecedor.tipo }} — {{ fornecedor.nome }}
                 </SelectItem>
+                <div
+                  v-if="fornecedoresFiltrados.length === 0"
+                  class="py-6 text-center text-sm text-muted-foreground"
+                >
+                  Nenhum fornecedor encontrado.
+                </div>
               </SelectContent>
             </Select>
             <div v-if="erros.setorOrigem" class="text-red-500 text-sm mt-1">
@@ -370,6 +386,7 @@ export default {
       tipoSetorOrigem: null,
       produtoSearch: "",
       showProdutoList: false,
+      pesquisaFornecedor: "",
     };
   },
   computed: {
@@ -402,6 +419,18 @@ export default {
           );
         })
         .slice(0, 50); // Limit results
+    },
+    fornecedoresFiltrados() {
+      const term = this.pesquisaFornecedor.toLowerCase();
+      if (!term) return this.fornecedoresDisponiveis;
+
+      return this.fornecedoresDisponiveis.filter((f) => {
+        const nome = f.nome || "";
+        const tipo = f.tipo || "";
+        return (
+          nome.toLowerCase().includes(term) || tipo.toLowerCase().includes(term)
+        );
+      });
     },
   },
   watch: {
@@ -436,7 +465,7 @@ export default {
               Authorization: "Bearer " + this.$store.getters.getUserToken,
               "Content-Type": "application/json",
             },
-          }
+          },
         );
 
         if (response.data?.status) {
@@ -468,7 +497,7 @@ export default {
               Authorization: "Bearer " + this.$store.getters.getUserToken,
               "Content-Type": "application/json",
             },
-          }
+          },
         );
 
         if (response.data?.status) {
@@ -491,7 +520,7 @@ export default {
 
       // Encontrar o tipo do setor selecionado
       const fornecedor = this.fornecedoresDisponiveis.find(
-        (f) => String(f.id) === String(value)
+        (f) => String(f.id) === String(value),
       );
 
       if (fornecedor) {
@@ -507,14 +536,14 @@ export default {
       if (!this.podeAdicionarItem) return;
 
       const produto = this.produtosDisponiveis.find(
-        (p) => String(p.id) === String(this.itemAtual.produtoId)
+        (p) => String(p.id) === String(this.itemAtual.produtoId),
       );
 
       if (!produto) return;
 
       // Verificar se já existe
       const existente = this.form.itens.find(
-        (item) => String(item.produtoId) === String(this.itemAtual.produtoId)
+        (item) => String(item.produtoId) === String(this.itemAtual.produtoId),
       );
 
       if (existente) {

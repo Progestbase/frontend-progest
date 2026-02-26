@@ -1,294 +1,244 @@
-<template>
-  <span>
-    <ModalBase01
-      :idModal="idModal"
-      modalClass="modal-dialog modal-lg modal-dialog-centered"
-    >
-      <div class="col-md-12">
-        <div
-          class="tab-content text-muted mt-4 mt-md-0"
-          id="v-pills-tabContent"
-        >
-          <div
-            class="tab-pane fade show active"
-            id="aba_dados"
-            role="tabanel"
-            aria-labelledby="aba_dados-tab"
-          >
-            <form autocomplete="off">
-              <div class="row">
-                <div class="col-md-3">
-                  <div class="mb-3">
-                    <div class="form-label">Status</div>
-                    <select class="form-select" v-model="modalData.status">
-                      <option value="A">Ativo</option>
-                      <option value="I">Inativo</option>
-                    </select>
-                  </div>
-                </div>
-                <div class="col-md-3">
-                  <div class="mb-3">
-                    <div class="form-label">Tipo</div>
-                    <select class="form-select" v-model="modalData.tipo">
-                      <option :value="null">Selecionar tipo</option>
-                      <option value="Material">Material</option>
-                      <option value="Medicamento">Medicamento</option>
-                    </select>
-                  </div>
-                </div>
-                <div class="col-md-3">
-                  <div class="mb-3">
-                    <div class="form-label">Controla estoque</div>
-                    <select class="form-select" v-model="modalData.estoque">
-                      <option :value="null">
-                        Selecionar controle de estoque
-                      </option>
-                      <option :value="true">Com controle</option>
-                      <option :value="false">Sem controle</option>
-                    </select>
-                  </div>
-                </div>
-                <div class="col-md-3">
-                  <div class="mb-3">
-                    <label class="form-label">Unidade</label>
-                    <select
-                      class="form-select"
-                      v-model="modalData.unidade_id"
-                      :class="{ 'is-invalid': errors.unidade_id }"
-                    >
-                      <option value="">Selecionar Unidade</option>
-                      <option
-                        v-for="p in unidadesList"
-                        :key="p.id"
-                        :value="p.id"
-                      >
-                        {{ p.nome }}
-                      </option>
-                    </select>
-                    <div v-if="errors.unidade_id" class="invalid-feedback">
-                      {{ errors.unidade_id[0] }}
-                    </div>
-                  </div>
-                </div>
-                <div class="col-md-12 col-12">
-                  <div class="mb-3">
-                    <label class="form-label" for="UnidadeNome">Nome</label>
-                    <input
-                      type="text"
-                      class="form-control"
-                      id="UnidadeNome"
-                      placeholder="Digite o nome"
-                      v-model="modalData.nome"
-                      :class="{ 'is-invalid': errors.nome }"
-                    />
-                    <div v-if="errors.nome" class="invalid-feedback">
-                      {{ errors.nome[0] }}
-                    </div>
-                  </div>
-                </div>
-
-                <!-- duplicata de 'Polo' removida; campo mantido na primeira linha -->
-                <div class="col-md-12">
-                  <div class="mb-3">
-                    <label class="form-label" for="UnidadeDescricao"
-                      >Descrição</label
-                    >
-                    <textarea
-                      class="form-control"
-                      id="UnidadeDescricao"
-                      rows="3"
-                      placeholder="Digite a descrição"
-                      v-model="modalData.descricao"
-                    ></textarea>
-                  </div>
-                </div>
-              </div>
-            </form>
-          </div>
-        </div>
-      </div>
-      <div class="row mmt-2">
-        <div class="col-12 text-end">
-          <div class="d-flex gap-2 justify-content-end">
-            <button
-              type="button"
-              class="btn btn-secondary btn-modal"
-              data-bs-dismiss="modal"
-            >
-              <i class="mdi mdi-close-thick me-2"></i>Fechar
-            </button>
-            <button
-              type="submit"
-              class="btn btn-success btn-modal"
-              data-bs-target="#success-btn"
-              id="btn-save-event"
-              v-on:click="add_UP_Unidades()"
-              :disabled="loading"
-            >
-              <i class="mdi mdi-check-bold me-2"></i>
-              {{ modalFunction == "ADD" ? "Salvar" : "Atualizar" }}
-            </button>
-          </div>
-        </div>
-      </div>
-    </ModalBase01>
-  </span>
-</template>
-
-<script>
-import ModalBase01 from "@/components/layouts/ModalBase01.vue";
+<script setup>
+import { computed, ref, watch, getCurrentInstance, onMounted } from "vue";
+import { useStore } from "vuex";
+import CadastroDialog from "@/components/layouts/CadastroDialog.vue";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  BuildingIcon,
+  InfoIcon,
+  ShieldCheckIcon,
+  PackageCheckIcon,
+} from "lucide-vue-next";
 import Funcoes from "@/functions/cad_setores.js";
 import cadPolos from "@/functions/cad_polos.js";
 
-export default {
-  name: "ModalUnidades",
-  components: {
-    ModalBase01,
-    Funcoes,
-  },
-  props: ["idModal", "functions"],
-  data() {
-    return {
-      loading: false,
-    };
-  },
-  mounted() {
-    this.ensurePolosLoaded();
-  },
-  methods: {
-    async ensurePolosLoaded() {
-      const storePolos =
-        this.$store.state.listUnidades || this.$store.state.listPolos || {};
-      const arr = Array.isArray(storePolos.data) ? storePolos.data : [];
-      if (arr.length === 0) {
-        try {
-          if (cadPolos && cadPolos.listAll) {
-            cadPolos.listAll(this);
-          }
-        } catch (e) {
-          console.warn(
-            "Não foi possível carregar unidades automaticamente:",
-            e
-          );
-        }
-      }
-    },
-    showNotification(message, type = "success") {
-      if (this.$toastr) {
-        if (type === "success") {
-          this.$toastr.success(message);
-        } else {
-          this.$toastr.error(message);
-        }
-      } else {
-        alert(message);
-      }
-    },
+const props = defineProps(["idModal", "functions"]);
+const store = useStore();
+const { proxy } = getCurrentInstance();
 
-    add_UP_Unidades() {
-      console.log("=== INICIANDO SALVAMENTO ===");
-      console.log("modalData:", this.modalData);
-      console.log("modalFunction:", this.modalFunction);
-      console.log("functions:", this.functions);
+const loading = ref(false);
+const localData = ref({
+  id: null,
+  status: "A",
+  tipo: "Material",
+  estoque: false,
+  unidade_id: "",
+  nome: "",
+  descricao: "",
+});
 
-      // Limpar erros anteriores no store
-      this.$store.commit("setModalErrors", {});
-      this.loading = true;
+const modalDataStore = computed(() => store.state.modalData.modalData);
+const modalFunction = computed(() => store.state.modalData.modalFunction);
+const modalErrors = computed(() => store.state.modalErrors || {});
+const isModalOpen = computed({
+  get: () => store.state.modalData.isModalOpen,
+  set: (value) => store.commit("setModalOpen", value),
+});
 
-      const self = this;
-      const content = {
-        $axios: this.$axios,
-        $store: this.$store,
-        modalData: JSON.parse(JSON.stringify(this.modalData)),
-        $toastr: {
-          success: (msg) => {
-            self.showNotification(msg, "success");
-            self.loading = false;
-          },
-          error: (msg) => {
-            self.showNotification(msg, "error");
-            self.loading = false;
-          },
-        },
-      };
+const unidadesList = computed(() => {
+  const list = store.state.listUnidades || {};
+  return Array.isArray(list.data) ? list.data : [];
+});
 
-      console.log("content criado:", content);
-      this.functions.ADD_UP(content, this.modalFunction);
-    },
+watch(
+  modalDataStore,
+  (newValue) => {
+    if (newValue) {
+      localData.value = JSON.parse(JSON.stringify(newValue));
+      if (!localData.value.status) localData.value.status = "A";
+      if (!localData.value.tipo) localData.value.tipo = "Material";
+      if (localData.value.unidade_id)
+        localData.value.unidade_id = localData.value.unidade_id.toString();
+    }
   },
-  computed: {
-    modalTitle() {
-      return this.$store.state.modalData.modalTitle;
-    },
-    modalData() {
-      return this.$store.state.modalData.modalData;
-    },
-    modalFunction() {
-      return this.$store.state.modalData.modalFunction;
-    },
-    errors() {
-      return this.$store.state.modalErrors || {};
-    },
-    polosList() {
-      const storePolos =
-        this.$store.state.listUnidades || this.$store.state.listPolos || {};
-      return Array.isArray(storePolos.data) ? storePolos.data : [];
-    },
-    unidadesList() {
-      const storeUnidades =
-        this.$store.state.listUnidades || this.$store.state.listPolos || {};
-      return Array.isArray(storeUnidades.data) ? storeUnidades.data : [];
-    },
-  },
+  { deep: true, immediate: true },
+);
+
+onMounted(() => {
+  if (unidadesList.value.length === 0) {
+    cadPolos.listAll({ $axios: proxy.$axios, $store: store });
+  }
+});
+
+const handleSave = () => {
+  store.commit("setModalErrors", {});
+  loading.value = true;
+  const content = {
+    $axios: proxy.$axios,
+    $store: store,
+    $toastr: proxy.$toastr,
+    modalData: localData.value,
+  };
+  props.functions.ADD_UP(content, modalFunction.value);
+  loading.value = false;
 };
 </script>
 
-<style scoped>
-.is-invalid {
-  border-color: #dc3545;
-}
+<template>
+  <CadastroDialog
+    v-model:open="isModalOpen"
+    :title="
+      modalFunction === 'ADD'
+        ? 'Cadastrar Unidade Interna'
+        : 'Editar Unidade Interna'
+    "
+  >
+    <div class="space-y-6 py-4">
+      <!-- Row 1: Status and Classification -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="space-y-3">
+          <Label
+            class="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1 flex items-center gap-2"
+          >
+            <ShieldCheckIcon class="w-3 h-3" /> Status Operacional
+          </Label>
+          <Select v-model="localData.status">
+            <SelectTrigger
+              class="h-12 border-slate-200 rounded-2xl bg-slate-50/30"
+            >
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent class="rounded-xl border-slate-200">
+              <SelectItem value="A">Ativo</SelectItem>
+              <SelectItem value="I">Inativo</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
 
-.invalid-feedback {
-  display: block;
-  width: 100%;
-  margin-top: 0.25rem;
-  font-size: 0.875em;
-  color: #dc3545;
-}
+        <div class="space-y-3">
+          <Label
+            class="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1 flex items-center gap-2"
+          >
+            <InfoIcon class="w-3 h-3" /> Tipo de Gestão
+          </Label>
+          <Select v-model="localData.tipo">
+            <SelectTrigger
+              class="h-12 border-slate-200 rounded-2xl bg-slate-50/30"
+            >
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent class="rounded-xl border-slate-200">
+              <SelectItem value="Material">Material de Consumo</SelectItem>
+              <SelectItem value="Medicamento"
+                >Medicamento / Farmácia</SelectItem
+              >
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
 
-/* Estilos para botões dos modais */
-.btn-modal {
-  font-weight: 600;
-  font-size: 0.9rem;
-  padding: 0.6rem 1.25rem;
-  border-radius: 0.4rem;
-  text-transform: uppercase;
-  letter-spacing: 0.3px;
-  border: none;
-  min-width: 100px;
-}
+      <!-- Row 2: Inventory Control and Regional Unit -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="space-y-3">
+          <Label
+            class="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1 flex items-center gap-2"
+          >
+            <PackageCheckIcon class="w-3 h-3" /> Controle de Estoque
+          </Label>
+          <Select v-model="localData.estoque">
+            <SelectTrigger
+              class="h-12 border-slate-200 rounded-2xl bg-slate-50/30"
+            >
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent class="rounded-xl border-slate-200">
+              <SelectItem :value="true">Sim, monitorar saldo</SelectItem>
+              <SelectItem :value="false">Não, apenas fluxo</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
 
-.btn-modal.btn-secondary {
-  background-color: #6c757d;
-  color: white;
-}
+        <div class="space-y-3">
+          <Label
+            class="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1 flex items-center gap-2"
+          >
+            <BuildingIcon class="w-3 h-3" /> Polo / Unidade Superior
+          </Label>
+          <Select v-model="localData.unidade_id">
+            <SelectTrigger
+              class="h-12 border-slate-200 rounded-2xl bg-slate-50/30"
+            >
+              <SelectValue placeholder="Selecione o polo" />
+            </SelectTrigger>
+            <SelectContent class="rounded-xl border-slate-200">
+              <SelectItem
+                v-for="u in unidadesList"
+                :key="u.id"
+                :value="u.id.toString()"
+              >
+                {{ u.nome }}
+              </SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
 
-.btn-modal.btn-secondary:hover {
-  background-color: #5a6268;
-  color: white;
-}
+      <!-- Row 3: Name -->
+      <div class="space-y-3">
+        <Label
+          for="uni-nome"
+          class="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1 flex items-center gap-2"
+        >
+          Nome da Unidade <span class="text-destructive">*</span>
+        </Label>
+        <Input
+          id="uni-nome"
+          v-model="localData.nome"
+          class="h-12 border-slate-200 rounded-2xl bg-white shadow-sm focus:ring-primary/20 transition-all text-sm font-bold"
+          placeholder="Ex: Farmácia do PS, Setor de Limpeza..."
+        />
+        <p
+          v-if="modalErrors.nome"
+          class="text-[10px] text-destructive font-black uppercase tracking-tight ml-1"
+        >
+          {{ modalErrors.nome[0] }}
+        </p>
+      </div>
 
-.btn-modal.btn-success {
-  background-color: #28a745;
-  color: white;
-}
+      <!-- Row 4: Description -->
+      <div class="space-y-3">
+        <Label
+          for="uni-desc"
+          class="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1"
+        >
+          Descrição e Notas Adicionais
+        </Label>
+        <Textarea
+          id="uni-desc"
+          v-model="localData.descricao"
+          class="min-h-[100px] border-slate-200 rounded-2xl bg-white shadow-sm focus:ring-primary/20 text-sm font-medium p-4"
+          placeholder="Descreva a finalidade desta unidade ou observações internas..."
+        />
+      </div>
+    </div>
 
-.btn-modal.btn-success:hover {
-  background-color: #218838;
-  color: white;
-}
-
-.btn-modal i {
-  font-size: 0.9rem;
-}
-</style>
+    <template #footer="{ close }">
+      <div class="flex gap-3 w-full sm:w-auto">
+        <Button
+          variant="ghost"
+          @click="close"
+          class="flex-1 sm:px-8 h-12 rounded-xl font-bold text-slate-400 hover:text-slate-600"
+        >
+          Cancelar
+        </Button>
+        <Button
+          @click="handleSave"
+          :disabled="loading"
+          class="flex-1 sm:px-12 h-12 rounded-xl font-black text-xs uppercase tracking-widest shadow-lg shadow-primary/20"
+        >
+          {{ modalFunction === "ADD" ? "Criar Unidade" : "Salvar Alterações" }}
+        </Button>
+      </div>
+    </template>
+  </CadastroDialog>
+</template>

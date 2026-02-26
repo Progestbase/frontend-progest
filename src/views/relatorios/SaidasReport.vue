@@ -41,7 +41,8 @@
                   </select>
                 </div>
                 <div class="col-md-4 d-flex align-items-end justify-content-end">
-                  <button class="btn btn-outline-success me-2" @click="exportCsv" :disabled="exits.length===0">Exportar CSV</button>
+                  <button class="btn btn-outline-success me-2" @click="exportExcel" :disabled="exits.length===0">Exportar Excel</button>
+                  <button class="btn btn-outline-danger" @click="exportPdf" :disabled="exits.length===0">Exportar PDF</button>
                 </div>
               </div>
             </div>
@@ -137,6 +138,9 @@
 <script>
 import TemplateAdmin from '@/views/roleAdmin/TemplateAdmin.vue'
 import functionsRelatorios from '@/functions/cad_relatorios.js'
+import * as XLSX from 'xlsx'
+import jsPDF from 'jspdf'
+import autoTable from 'jspdf-autotable'
 
 export default {
   name: 'SaidasReport',
@@ -227,15 +231,20 @@ export default {
       if (parts.length<3) return d;
       return `${parts[2]}/${parts[1]}/${parts[0]}`;
     },
-    exportCsv() {
+    exportExcel() {
       if (!this.exits || this.exits.length===0) return;
-      const rows = [];
-      rows.push(['ID','Data','Nota Fiscal','Fornecedor','Setor','Qtd','Produto','Cód.SIMPRAS','Cód.Barras','Lote','Fabricação','Vencimento']);
+      
+      // Preparar dados para o Excel
+      const data = [];
+      
+      // Cabeçalho
+      data.push(['ID','Data','Nota Fiscal','Fornecedor','Setor','Qtd','Produto','Cód.SIMPRAS','Cód.Barras','Lote','Fabricação','Vencimento']);
+      
+      // Dados
       for (const e of this.exits) {
-        // Cada item vira uma linha no CSV
         if (e.itens && e.itens.length > 0) {
           e.itens.forEach(item => {
-            rows.push([
+            data.push([
               e.id,
               this.formatDate(e.created_at),
               e.nota_fiscal || '',
@@ -251,7 +260,7 @@ export default {
             ]);
           });
         } else {
-          rows.push([
+          data.push([
             e.id,
             this.formatDate(e.created_at),
             e.nota_fiscal || '',
@@ -267,14 +276,122 @@ export default {
           ]);
         }
       }
-      const csvContent = rows.map(r => r.map(c => '"'+String(c).replace(/"/g,'""')+'"').join(',')).join('\n');
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `relatorio_saidas_${new Date().toISOString().slice(0,10)}.csv`;
-      a.click();
-      URL.revokeObjectURL(url);
+      
+      // Criar workbook e worksheet
+      const ws = XLSX.utils.aoa_to_sheet(data);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Saídas');
+      
+      // Ajustar largura das colunas
+      const colWidths = [
+        { wch: 8 },  // ID
+        { wch: 12 }, // Data
+        { wch: 18 }, // Nota Fiscal
+        { wch: 35 }, // Fornecedor
+        { wch: 20 }, // Setor
+        { wch: 8 },  // Qtd
+        { wch: 30 }, // Produto
+        { wch: 15 }, // Cód.SIMPRAS
+        { wch: 15 }, // Cód.Barras
+        { wch: 15 }, // Lote
+        { wch: 12 }, // Fabricação
+        { wch: 12 }  // Vencimento
+      ];
+      ws['!cols'] = colWidths;
+      
+      // Baixar arquivo
+      XLSX.writeFile(wb, `relatorio_saidas_${new Date().toISOString().slice(0,10)}.xlsx`);
+    },
+    exportPdf() {
+      if (!this.exits || this.exits.length===0) return;
+      
+      // Criar documento PDF em paisagem (landscape)
+      const doc = new jsPDF('landscape', 'mm', 'a4');
+      
+      // Cabeçalho
+      doc.setFontSize(16);
+      doc.text('Relatorio de Saidas', 14, 15);
+      
+      doc.setFontSize(10);
+      const periodo = `Periodo: ${this.formatDate(this.filters.date_from) || 'Todos'} ate ${this.formatDate(this.filters.date_to) || 'Todos'}`;
+      doc.text(periodo, 14, 22);
+      
+      // Preparar dados da tabela
+      const tableData = [];
+      for (const e of this.exits) {
+        if (e.itens && e.itens.length > 0) {
+          e.itens.forEach((item, idx) => {
+            tableData.push([
+              idx === 0 ? e.id : '',
+              idx === 0 ? this.formatDate(e.created_at) : '',
+              idx === 0 ? (e.nota_fiscal || '-') : '',
+              idx === 0 ? this.formatFornecedor(e.fornecedor) : '',
+              idx === 0 ? (e.setor?.nome || '-') : '',
+              item.quantidade || '',
+              item.produto?.nome || `Produto #${item.produto_id}`,
+              item.produto?.codigo_simpras || '',
+              item.produto?.codigo_barras || '',
+              item.lote || '',
+              this.formatDate(item.data_fabricacao),
+              this.formatDate(item.data_vencimento)
+            ]);
+          });
+        } else {
+          tableData.push([
+            e.id,
+            this.formatDate(e.created_at),
+            e.nota_fiscal || '-',
+            this.formatFornecedor(e.fornecedor),
+            e.setor?.nome || '-',
+            '',
+            'Sem itens',
+            '',
+            '',
+            '',
+            '',
+            ''
+          ]);
+        }
+      }
+      
+      // Gerar tabela
+      autoTable(doc, {
+        startY: 28,
+        head: [['ID', 'Data', 'NF', 'Fornecedor', 'Setor', 'Qtd', 'Produto', 'Cod.SIMPRAS', 'Cod.Barras', 'Lote', 'Fabric.', 'Venc.']],
+        body: tableData,
+        theme: 'striped',
+        headStyles: { fillColor: [13, 110, 253], fontSize: 8, fontStyle: 'bold' },
+        bodyStyles: { fontSize: 7 },
+        columnStyles: {
+          0: { cellWidth: 10 },
+          1: { cellWidth: 18 },
+          2: { cellWidth: 20 },
+          3: { cellWidth: 50 },
+          4: { cellWidth: 30 },
+          5: { cellWidth: 12 },
+          6: { cellWidth: 45 },
+          7: { cellWidth: 20 },
+          8: { cellWidth: 20 },
+          9: { cellWidth: 18 },
+          10: { cellWidth: 16 },
+          11: { cellWidth: 16 }
+        },
+        margin: { left: 14, right: 14 },
+        didDrawPage: (data) => {
+          // Rodapé com número de página
+          const pageCount = doc.internal.getNumberOfPages();
+          doc.setFontSize(8);
+          doc.text(
+            `Pagina ${data.pageNumber} de ${pageCount}`,
+            doc.internal.pageSize.width / 2,
+            doc.internal.pageSize.height - 10,
+            { align: 'center' }
+          );
+        }
+      });
+      
+      // Salvar PDF
+      doc.save(`relatorio_saidas_${new Date().toISOString().slice(0,10)}.pdf`);
     }
   }
 }

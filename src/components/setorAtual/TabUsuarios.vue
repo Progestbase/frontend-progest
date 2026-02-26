@@ -1,274 +1,168 @@
-<template>
-  <div>
-    <div
-      class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-3"
-    >
-      <div>
-        <h2 class="text-2xl font-bold flex items-center gap-2">
-          <i class="mdi mdi-account-multiple text-xl text-blue-600"></i>
-          Usuários do Setor
-        </h2>
-        <p class="text-sm text-muted-foreground">
-          Lista de usuários vinculados a este setor.
-        </p>
-      </div>
-      <div>
-        <Button
-          @click.prevent="abrirModalAdicionarUsuario"
-          :disabled="!setorId"
-          size="default"
-        >
-          <i class="mdi mdi-plus me-2"></i>Adicionar usuário
-        </Button>
-      </div>
-    </div>
-
-    <div v-if="listUsuariosSetor.length > 0" class="table-responsive">
-      <table class="table table-striped align-middle mb-0">
-        <thead>
-          <tr>
-            <th class="text-start">#</th>
-            <th class="text-start">Nome</th>
-            <th class="text-start">E-mail</th>
-            <th class="text-center">Perfil</th>
-            <th class="text-center">Ações</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="u in listUsuariosSetor" :key="u.id">
-            <td class="text-start">{{ u.id }}</td>
-            <td class="text-start">{{ u.name }}</td>
-            <td class="text-start">{{ u.email }}</td>
-            <td class="text-center">
-              {{ u.perfil || (u.pivot && u.pivot.perfil) || "-" }}
-            </td>
-            <td class="text-center">
-              <div class="d-flex gap-2 justify-content-center">
-                <Button
-                  variant="outline"
-                  size="icon-sm"
-                  @click.prevent="abrirModalEditarUsuario(u)"
-                  title="Editar"
-                >
-                  <i class="mdi mdi-pencil"></i>
-                </Button>
-                <Button
-                  variant="destructive"
-                  size="icon-sm"
-                  @click.prevent="abrirAlertRemocao(u)"
-                  title="Remover"
-                >
-                  <i class="mdi mdi-trash-can"></i>
-                </Button>
-              </div>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-    <div v-else class="text-center py-5">
-      <div class="d-flex flex-column align-items-center">
-        <i class="mdi mdi-account-multiple display-4 text-muted mb-3"></i>
-        <h5>Nenhum usuário vinculado</h5>
-        <p class="text-muted mb-0">
-          Clique em "Adicionar usuário" para criar o vínculo.
-        </p>
-      </div>
-    </div>
-
-    <!-- Modal gerenciar vínculo usuário-setor -->
-    <ModalUsuarioSetor
-      ref="modalUsuarioSetor"
-      idModal="modalUsuarioSetor"
-      :setorId="setorId"
-      :mode="modalMode"
-      :initialData="modalInitialData"
-      @changed="recarregarUsuarios"
-    />
-
-    <!-- Alert Dialog para confirmar remoção -->
-    <AlertDialog :open="showAlertRemocao">
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>Confirmar Remoção</AlertDialogTitle>
-          <AlertDialogDescription>
-            Tem certeza que deseja remover o vínculo de
-            <strong>{{ usuarioParaRemover?.name }}</strong> com este setor? Esta
-            ação não pode ser desfeita.
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <Button variant="outline" @click="showAlertRemocao = false">
-            Cancelar
-          </Button>
-          <Button variant="delete" @click="executarRemocao">
-            <i class="mdi mdi-trash-can me-2"></i>Remover
-          </Button>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
-  </div>
-</template>
-
 <script setup>
-import { defineProps, ref, computed, inject } from "vue";
-import ModalUsuarioSetor from "@/components/cadastros/ModalUsuarioSetor.vue";
-import usuarioSetorFunctions from "@/functions/cad_usuario_setor.js";
-import { useToast } from "@/composables/useToast";
+import { computed, inject, ref } from "vue";
+import { useStore } from "vuex";
+import axios from "axios";
 import { Button } from "@/components/ui/button";
-import * as bootstrap from "bootstrap";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
 import {
-  AlertDialog,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-
-const { success, error } = useToast();
+  UsersIcon,
+  UserPlusIcon,
+  Trash2Icon,
+  ShieldCheckIcon,
+  MailIcon,
+  UserCircleIcon,
+} from "lucide-vue-next";
+import { Input } from "@/components/ui/input";
+import { useToast } from "@/components/ui/toast/use-toast";
 
 const props = defineProps({
-  setorId: {
-    type: Number,
-    required: true,
-  },
+  setorId: { type: Number, required: true },
 });
 
-// Receber dados do componente pai (SetorAtualView) via provide/inject
+const store = useStore();
+const { toast } = useToast();
+
 const parentData = inject("setorAtualData", {
   usuariosItems: [],
 });
 
-// Receber contexto do pai para operações (axios, store, etc)
-const parentContext = inject("setorAtualContext", {
-  $axios: null,
-  $store: null,
-  $toastr: undefined,
+const filterSearch = ref("");
+
+const listUsuarios = computed(() => {
+  const items =
+    parentData.usuariosItems?.value || parentData.usuariosItems || [];
+  if (!filterSearch.value.trim()) return items;
+  const term = filterSearch.value.toLowerCase();
+  return items.filter((u) => {
+    const name = (u.name || u.usuario?.name || "").toLowerCase();
+    const email = (u.email || u.usuario?.email || "").toLowerCase();
+    return name.includes(term) || email.includes(term);
+  });
 });
 
-const modalMode = ref("ADD");
-const modalInitialData = ref({});
-const modalUsuarioSetor = ref(null);
-
-// Estados para AlertDialog
-const showAlertRemocao = ref(false);
-const usuarioParaRemover = ref(null);
-
-const listUsuariosSetor = computed(() => {
-  const items = parentData.usuariosItems;
-  // Se for uma ref (Composition API), usar .value
-  return items?.value || items || [];
-});
-
-const recarregarUsuarios = async () => {
-  if (!props.setorId) return;
-  loadUsuariosSetor();
+const getPerfilBadge = (perfil) => {
+  const p = (perfil || "").toLowerCase();
+  if (p.includes("admin"))
+    return { label: "Administrador", variant: "destructive" };
+  if (p.includes("gerente")) return { label: "Gerente", variant: "default" };
+  return { label: "Solicitante", variant: "secondary" };
 };
 
-const loadUsuariosSetor = async () => {
-  if (!props.setorId) return;
+const handleDesvincular = async (usuarioId) => {
+  if (!confirm("Tem certeza que deseja remover este usuário desta unidade?"))
+    return;
+
   try {
-    // Usar contexto do parent (sem .value)
-    const context = {
-      $axios: parentContext.$axios,
-      $store: parentContext.$store,
-      $toastr: parentContext.$toastr,
-    };
-
-    const data = await usuarioSetorFunctions.listBySetor(
-      context,
-      props.setorId
-    );
-
-    // Mapear dados para garantir estrutura consistente
-    const usuariosMapeados = (data || []).map((u) => ({
-      id: u.id,
-      name: u.name || u.nome || "",
-      email: u.email || "",
-      perfil: u.perfil || (u.pivot && u.pivot.perfil) || "",
-      pivot: u.pivot || {},
-    }));
-
-    // Atualizar a ref do parent
-    if (parentData.usuariosItems?.value !== undefined) {
-      parentData.usuariosItems.value = usuariosMapeados;
-    } else if (parentData.usuariosItems !== undefined) {
-      Object.assign(parentData, { usuariosItems: usuariosMapeados });
-    }
-  } catch (err) {
-    console.error("Erro ao carregar usuários:", err);
-  }
-};
-
-const abrirModalAdicionarUsuario = () => {
-  modalMode.value = "ADD";
-  modalInitialData.value = {};
-  // Usar novo sistema de Dialog (ref)
-  if (modalUsuarioSetor.value) {
-    modalUsuarioSetor.value.openModal();
-  }
-};
-
-const abrirModalEditarUsuario = (u) => {
-  modalMode.value = "UP";
-  modalInitialData.value = { usuario_id: u.id, perfil: u.perfil };
-  // Usar novo sistema de Dialog (ref)
-  if (modalUsuarioSetor.value) {
-    modalUsuarioSetor.value.openModal();
-  }
-};
-
-const abrirAlertRemocao = (u) => {
-  usuarioParaRemover.value = u;
-  showAlertRemocao.value = true;
-};
-
-const executarRemocao = () => {
-  showAlertRemocao.value = false;
-  if (!usuarioParaRemover.value) return;
-
-  const context = {
-    $axios: parentContext.$axios,
-    $store: parentContext.$store,
-    $toastr: parentContext.$toastr,
-  };
-
-  usuarioSetorFunctions
-    .remove(context, {
-      usuario_id: usuarioParaRemover.value.id,
-      setor_id: props.setorId,
-    })
-    .then((resp) => {
-      if (resp && resp.status) {
-        success("Sucesso!", "Vínculo removido com sucesso");
-        recarregarUsuarios();
-      } else {
-        const msg = resp?.message || "Erro ao remover vínculo";
-        error("Erro!", msg);
-      }
-    })
-    .catch((err) => {
-      const status = err?.response?.status;
-      const errMsg =
-        status === 403 ? "Permissão negada" : "Erro ao remover vínculo";
-      error("Erro!", errMsg);
+    await axios.delete(`/usuarios-setor/${usuarioId}`, {
+      headers: { Authorization: "Bearer " + store.getters.getUserToken },
     });
+    toast({ title: "Sucesso", description: "Usuário removido da unidade." });
+    location.reload();
+  } catch (e) {
+    toast({
+      title: "Erro",
+      description: "Falha ao desvincular usuário.",
+      variant: "destructive",
+    });
+  }
 };
 </script>
 
-<style scoped>
-.table-responsive {
-  border-radius: 0.25rem;
-  border: 1px solid #e9ecef;
-}
+<template>
+  <div class="flex flex-col gap-8 pb-10">
+    <!-- Header -->
+    <div class="flex flex-col md:flex-row md:items-center justify-end gap-6">
+      <div class="flex items-center gap-3">
+        <div class="relative hidden sm:block">
+          <Input
+            v-model="filterSearch"
+            placeholder="Buscar usuário..."
+            class="px-4 h-10 w-64 bg-white"
+          />
+        </div>
+        <Button class="gap-2 shadow-lg shadow-primary/20">
+          <UserPlusIcon class="w-4 h-4" /> Vincular Usuário
+        </Button>
+      </div>
+    </div>
 
-.table {
-  margin-bottom: 0;
-}
+    <!-- User Grid -->
+    <div
+      v-if="listUsuarios.length > 0"
+      class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4"
+    >
+      <Card
+        v-for="user in listUsuarios"
+        :key="user.id"
+        class="border-slate-200 shadow-sm hover:shadow-md transition-all overflow-hidden group"
+      >
+        <CardContent class="p-6">
+          <div class="flex items-start justify-between mb-4">
+            <div class="flex items-center gap-4">
+              <div
+                class="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-400 group-hover:bg-primary/10 group-hover:text-primary transition-colors"
+              >
+                <UserCircleIcon class="w-7 h-7" />
+              </div>
+              <div class="flex flex-col">
+                <span class="font-black text-slate-800 leading-tight">{{
+                  user.name || user.usuario?.name || "Usuário"
+                }}</span>
+                <span
+                  class="text-xs text-slate-500 flex items-center gap-1 mt-1 font-medium"
+                >
+                  <MailIcon class="w-3 h-3" />
+                  {{ user.email || user.usuario?.email || "-" }}
+                </span>
+              </div>
+            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              @click="handleDesvincular(user.id)"
+              class="h-8 w-8 text-slate-300 hover:text-destructive hover:bg-destructive/10"
+            >
+              <Trash2Icon class="w-4 h-4" />
+            </Button>
+          </div>
 
-.btn-sm {
-  padding: 0.25rem 0.5rem;
-  font-size: 0.875rem;
-}
-</style>
+          <div
+            class="flex items-center justify-between pt-4 border-t border-slate-50"
+          >
+            <div class="flex items-center gap-2">
+              <ShieldCheckIcon class="w-3.5 h-3.5 text-slate-400" />
+              <Badge
+                :variant="
+                  getPerfilBadge(user.perfil || user.pivot?.perfil).variant
+                "
+                class="text-[10px] font-black uppercase px-2 py-0"
+              >
+                {{ getPerfilBadge(user.perfil || user.pivot?.perfil).label }}
+              </Badge>
+            </div>
+            <span
+              class="text-[10px] font-bold text-slate-300 uppercase tracking-widest"
+              >Acesso Ativo</span
+            >
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+
+    <!-- Empty State -->
+    <div
+      v-else
+      class="flex flex-col items-center justify-center py-20 bg-slate-50/50 border-2 border-dashed border-slate-200 rounded-3xl"
+    >
+      <div class="p-6 bg-white rounded-full shadow-sm mb-4">
+        <UsersIcon class="w-12 h-12 text-slate-300" />
+      </div>
+      <h3 class="text-slate-800 font-bold text-lg">Sem Usuários Vinculados</h3>
+      <p class="text-slate-500 text-sm max-w-xs text-center mt-2">
+        Nenhum colaborador foi designado para esta unidade. Use o botão acima
+        para começar.
+      </p>
+    </div>
+  </div>
+</template>

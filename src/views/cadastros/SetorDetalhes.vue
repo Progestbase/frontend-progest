@@ -1,949 +1,347 @@
+<script setup>
+import { ref, onMounted, provide, computed, watch } from "vue";
+import { useRoute, useRouter } from "vue-router";
+import { useStore } from "vuex";
+import axios from "axios";
+import TemplateAdmin from "@/views/roleAdmin/TemplateAdmin.vue";
+import TabOverview from "@/components/setorAtual/TabOverview.vue";
+import TabEstoque from "@/components/setorAtual/TabEstoque.vue";
+import TabMovimentacoes from "@/components/setorAtual/TabMovimentacoes.vue";
+import TabEntrada from "@/components/setorAtual/TabEntrada.vue";
+import TabUsuarios from "@/components/setorAtual/TabUsuarios.vue";
+import ModalSetor from "@/components/cadastros/ModalSetor.vue";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  InfoIcon,
+  BoxesIcon,
+  ArrowLeftRightIcon,
+  DownloadIcon,
+  UsersIcon,
+  AlertTriangleIcon,
+  ChevronLeftIcon,
+  LayoutDashboardIcon,
+} from "lucide-vue-next";
+import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+
+// Funções de carregamento
+import functionsEstoque from "@/functions/cad_estoque";
+import functionsMovimentacao from "@/functions/cad_movimentacao";
+import functionsEntrada from "@/functions/cad_entradas";
+import functionsSetor from "@/functions/cad_setores";
+import functionsUsuarioSetor from "@/functions/cad_usuario_setor";
+
+const route = useRoute();
+const router = useRouter();
+const store = useStore();
+
+const setor = ref({});
+const loading = ref(true);
+const activeTab = ref("overview");
+const showDeleteDialog = ref(false);
+
+// Refs de dados para as abas (mesma estrutura de provide/inject da SetorAtualView)
+const estoqueItems = ref([]);
+const resumoEstoque = ref({});
+const setorEstoque = ref({});
+const movimentacoesItems = ref([]);
+const entradasItems = ref([]);
+const usuariosItems = ref([]);
+
+// Provide para as abas filhas (completando compatibilidade)
+provide("setorAtualData", {
+  estoqueItems,
+  resumoEstoque,
+  setorEstoque,
+  movimentacoesItems,
+  entradasItems,
+  usuariosItems,
+});
+
+const context = {
+  $axios: axios,
+  $store: store,
+  $toastr: undefined,
+  estoqueItems,
+  resumoEstoque,
+  setorEstoque,
+  movimentacoesItems,
+  entradasItems,
+  usuariosItems,
+};
+provide("setorAtualContext", context);
+
+const carregarDadosOperacionais = async () => {
+  if (!setor.value.id) return;
+  const ctx = { ...context, loading: false };
+
+  if (setor.value.estoque) await functionsEstoque.listAll(ctx);
+  // Backend esperado: listBySetor ou listAll que use o store.state.setorDetails
+  await functionsMovimentacao.listAll(ctx); // Assume que usa o setor carregado
+  await functionsEntrada.listAll(ctx);
+  if (functionsUsuarioSetor.listAll) await functionsUsuarioSetor.listAll(ctx);
+};
+
+const carregarSetor = async () => {
+  try {
+    loading.value = true;
+    const setorId = route.params.id;
+    const response = await axios.post(
+      `/setores/listData`,
+      { id: setorId },
+      {
+        headers: { Authorization: "Bearer " + store.getters.getUserToken },
+      },
+    );
+
+    setor.value = response.data.data;
+    store.commit("setSetorDetails", setor.value);
+
+    await carregarDadosOperacionais();
+
+    if (route.query.tab) activeTab.value = route.query.tab;
+  } catch (error) {
+    console.error("Erro ao carregar setor:", error);
+  } finally {
+    loading.value = false;
+  }
+};
+
+const changeTab = (tab) => {
+  activeTab.value = tab;
+  router.replace({ query: { ...route.query, tab } });
+};
+
+const editarSetor = () => {
+  store.commit("setModalData", { ...setor.value });
+  store.commit("setModalFunction", "UP");
+  store.commit("setModalOpen", true);
+};
+
+const confirmarExclusaoSetor = async () => {
+  try {
+    // Lógica real de exclusão via API
+    await axios.delete(`/setores/${setor.value.id}`, {
+      headers: { Authorization: "Bearer " + store.getters.getUserToken },
+    });
+    router.push("/setores");
+  } catch (e) {
+    console.error("Erro ao excluir:", e);
+  }
+  showDeleteDialog.value = false;
+};
+
+onMounted(carregarSetor);
+</script>
+
 <template>
   <TemplateAdmin>
-    <div class="main-content">
-      <div class="page-content">
-        <div class="container-fluid">
-          <div class="row">
-            <div class="col-12">
-              <!-- Loading -->
-              <div v-if="loading" class="text-center py-5">
-                <div class="spinner-border text-primary" role="status">
-                  <span class="visually-hidden">Carregando...</span>
-                </div>
-              </div>
-
-              <!-- Conteúdo -->
-              <div v-else-if="setor.id" class="card">
-                <div class="card-body">
-                  <!-- Tabs Navigation -->
-                  <ul
-                    class="nav nav-tabs nav-tabs-custom nav-justified"
-                    role="tablist"
-                  >
-                    <li class="nav-item">
-                      <a
-                        class="nav-link"
-                        :class="{ active: activeTab === 'overview' }"
-                        @click="changeTab('overview')"
-                        href="#"
-                      >
-                        <span class="d-block d-sm-none"
-                          ><i class="fas fa-info-circle"></i
-                        ></span>
-                        <span class="d-none d-sm-block">Overview</span>
-                      </a>
-                    </li>
-                    <li class="nav-item" v-if="setor.estoque">
-                      <a
-                        class="nav-link"
-                        :class="{ active: activeTab === 'estoque' }"
-                        @click="changeTab('estoque')"
-                        href="#"
-                      >
-                        <span class="d-block d-sm-none"
-                          ><i class="fas fa-boxes"></i
-                        ></span>
-                        <span class="d-none d-sm-block">Estoque</span>
-                      </a>
-                    </li>
-                    <li class="nav-item">
-                      <a
-                        class="nav-link"
-                        :class="{ active: activeTab === 'movimentacoes' }"
-                        @click="changeTab('movimentacoes')"
-                        href="#"
-                      >
-                        <span class="d-block d-sm-none"
-                          ><i class="mdi mdi-swap-horizontal"></i
-                        ></span>
-                        <span class="d-none d-sm-block">Movimentações</span>
-                      </a>
-                    </li>
-                    <li class="nav-item">
-                      <a
-                        class="nav-link"
-                        :class="{ active: activeTab === 'entrada' }"
-                        @click="changeTab('entrada')"
-                        href="#"
-                      >
-                        <span class="d-block d-sm-none"
-                          ><i class="mdi mdi-tray-arrow-down"></i
-                        ></span>
-                        <span class="d-none d-sm-block">Entrada</span>
-                      </a>
-                    </li>
-                    <li class="nav-item">
-                      <a
-                        class="nav-link"
-                        :class="{ active: activeTab === 'usuarios' }"
-                        @click="changeTab('usuarios')"
-                        href="#"
-                      >
-                        <span class="d-block d-sm-none"
-                          ><i class="mdi mdi-account-multiple"></i
-                        ></span>
-                        <span class="d-none d-sm-block">Usuários</span>
-                      </a>
-                    </li>
-                  </ul>
-
-                  <!-- Tab Content -->
-                  <div class="tab-content p-3 text-muted">
-                    <!-- Overview Tab -->
-                    <div v-show="activeTab === 'overview'">
-                      <div class="row">
-                        <div class="col-md-8">
-                          <div class="card border">
-                            <div class="card-header">
-                              <h5 class="card-title mb-0">
-                                <i class="mdi mdi-information-outline me-2"></i>
-                                Informações do Setor
-                              </h5>
-                            </div>
-                            <div class="card-body">
-                              <div class="row">
-                                <div class="col-md-6">
-                                  <div class="mb-3">
-                                    <label class="form-label">Nome:</label>
-                                    <p class="form-control-plaintext">
-                                      {{ setor.nome }}
-                                    </p>
-                                  </div>
-                                </div>
-                                <div class="col-md-6">
-                                  <div class="mb-3">
-                                    <label class="form-label">Tipo:</label>
-                                    <span
-                                      class="badge"
-                                      :class="
-                                        setor.tipo === 'Medicamento'
-                                          ? 'bg-info'
-                                          : 'bg-primary'
-                                      "
-                                    >
-                                      {{ setor.tipo }}
-                                    </span>
-                                  </div>
-                                </div>
-                                <div class="col-md-6">
-                                  <div class="mb-3">
-                                    <label class="form-label">Status:</label>
-                                    <span
-                                      class="badge"
-                                      :class="
-                                        setor.status === 'A'
-                                          ? 'bg-success'
-                                          : 'bg-secondary'
-                                      "
-                                    >
-                                      {{
-                                        setor.status === "A"
-                                          ? "Ativo"
-                                          : "Inativo"
-                                      }}
-                                    </span>
-                                  </div>
-                                </div>
-                                <div class="col-md-6">
-                                  <div class="mb-3">
-                                    <label class="form-label"
-                                      >Controla Estoque:</label
-                                    >
-                                    <span
-                                      class="badge"
-                                      :class="
-                                        setor.estoque
-                                          ? 'bg-warning'
-                                          : 'bg-light text-dark'
-                                      "
-                                    >
-                                      {{ setor.estoque ? "Sim" : "Não" }}
-                                    </span>
-                                  </div>
-                                </div>
-                                <div class="col-12" v-if="setor.descricao">
-                                  <div class="mb-3">
-                                    <label class="form-label">Descrição:</label>
-                                    <p class="form-control-plaintext">
-                                      {{ setor.descricao }}
-                                    </p>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                        <div class="col-md-4">
-                          <div class="card border">
-                            <div class="card-header">
-                              <h5 class="card-title mb-0">
-                                <i class="mdi mdi-cog-outline me-2"></i>
-                                Ações
-                              </h5>
-                            </div>
-                            <div class="card-body">
-                              <div class="d-grid gap-2">
-                                <button
-                                  class="btn btn-primary"
-                                  @click="editarSetor"
-                                >
-                                  <i class="mdi mdi-pencil me-2"></i>
-                                  Editar Setor
-                                </button>
-                                <button
-                                  class="btn btn-danger"
-                                  @click="confirmarExclusao"
-                                >
-                                  <i class="mdi mdi-delete me-2"></i>
-                                  Excluir Setor
-                                </button>
-                              </div>
-                            </div>
-                          </div>
-
-                          <!-- Informações adicionais -->
-                          <!-- Setor Distribuidor (novo card) -->
-                          <div
-                            v-if="
-                              setor.fornecedores_relacionados &&
-                              setor.fornecedores_relacionados.length > 0
-                            "
-                            class="card border mt-3"
-                          >
-                            <div class="card-header">
-                              <h5 class="card-title mb-0">
-                                <i
-                                  class="mdi mdi-truck-delivery-outline me-2"
-                                ></i>
-                                Setor Distribuidor
-                              </h5>
-                            </div>
-                            <div class="card-body">
-                              <div
-                                v-for="rel of setor.fornecedores_relacionados"
-                                :key="rel.id"
-                                class="mb-3 border rounded p-2"
-                              >
-                                <div
-                                  class="d-flex justify-content-between align-items-start"
-                                >
-                                  <div>
-                                    <div class="fw-bold">
-                                      {{
-                                        rel.fornecedor?.nome ||
-                                        rel.fornecedor?.razao_social_nome ||
-                                        rel.fornecedor?.razao_social ||
-                                        "Fornecedor desconhecido"
-                                      }}
-                                    </div>
-                                    <div class="text-muted small">
-                                      {{ rel.fornecedor?.descricao || "" }}
-                                    </div>
-                                  </div>
-                                  <div class="text-end">
-                                    <span
-                                      class="badge"
-                                      :class="
-                                        rel.tipo_produto === 'Medicamento'
-                                          ? 'bg-info'
-                                          : 'bg-primary'
-                                      "
-                                    >
-                                      {{
-                                        rel.tipo_produto ||
-                                        rel.fornecedor?.tipo ||
-                                        "-"
-                                      }}
-                                    </span>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-
-                          <div class="card border mt-3">
-                            <div class="card-header">
-                              <h5 class="card-title mb-0">
-                                <i class="mdi mdi-calendar-outline me-2"></i>
-                                Datas
-                              </h5>
-                            </div>
-                            <div class="card-body">
-                              <div class="mb-2">
-                                <small class="text-muted">Criado em:</small>
-                                <p class="mb-1">
-                                  {{ formatarData(setor.created_at) }}
-                                </p>
-                              </div>
-                              <div class="mb-0">
-                                <small class="text-muted">Atualizado em:</small>
-                                <p class="mb-0">
-                                  {{ formatarData(setor.updated_at) }}
-                                </p>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    <!-- Estoque Tab -->
-                    <div v-show="activeTab === 'estoque'">
-                      <EstoqueSetor
-                        v-if="setor.id"
-                        :setorId="setor.id"
-                        :key="setor.id"
-                      />
-                    </div>
-
-                    <!-- Movimentações Tab -->
-                    <div v-show="activeTab === 'movimentacoes'">
-                      <div
-                        class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3 mb-3"
-                      >
-                        <div>
-                          <h5 class="mb-1">
-                            <i class="mdi mdi-swap-horizontal me-2"></i>
-                            Movimentações
-                          </h5>
-                          <p class="text-muted mb-0">
-                            Solicitações, saídas e devoluções relacionadas a
-                            esta unidade.
-                          </p>
-                        </div>
-                        <div class="d-flex gap-2">
-                          <button
-                            class="btn btn-outline-primary"
-                            title="Fazer requisição"
-                            @click.prevent="abrirSolicitacao"
-                          >
-                            <i class="mdi mdi-file-plus me-2"></i>
-                            Fazer requisição
-                          </button>
-                          <button
-                            class="btn btn-outline-danger"
-                            title="Registrar saída"
-                            @click.prevent
-                          >
-                            <i class="mdi mdi-truck-delivery me-2"></i>
-                            Registrar saída
-                          </button>
-                          <button
-                            class="btn btn-outline-secondary"
-                            title="Devolução"
-                            @click.prevent
-                          >
-                            <i class="mdi mdi-archive-arrow-up me-2"></i>
-                            Devolução
-                          </button>
-                        </div>
-                      </div>
-
-                      <div
-                        v-if="listMovimentacoes.length > 0"
-                        class="table-responsive"
-                      >
-                        <table class="table table-striped align-middle mb-0">
-                          <thead>
-                            <tr>
-                              <th class="text-start">ID</th>
-                              <th class="text-start">Criada em</th>
-                              <th class="text-start">Tipo</th>
-                              <th class="text-start">Status</th>
-                              <th class="text-center">Itens</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            <tr
-                              v-for="mov in listMovimentacoes"
-                              :key="mov.id"
-                              style="cursor: pointer"
-                              class="hover-row"
-                            >
-                              <td class="text-start">{{ mov.id }}</td>
-                              <td class="text-start">
-                                {{ formatarData(mov.created_at) }}
-                              </td>
-                              <td class="text-start">
-                                {{ formatarTipo(mov.tipo) }}
-                              </td>
-                              <td class="text-start">
-                                {{ traduzStatus(mov.status_solicitacao) }}
-                              </td>
-                              <td class="text-center">
-                                {{ mov.itens?.length || 0 }}
-                              </td>
-                            </tr>
-                          </tbody>
-                        </table>
-                      </div>
-                      <div v-else class="text-center py-5">
-                        <div class="d-flex flex-column align-items-center">
-                          <i
-                            class="mdi mdi-swap-horizontal display-4 text-muted mb-3"
-                          ></i>
-                          <h5>Nenhuma movimentação registrada</h5>
-                          <p class="text-muted mb-0">
-                            Ainda não há movimentações para esta unidade.
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-
-                    <!-- Entrada Tab -->
-                    <div v-show="activeTab === 'entrada'">
-                      <div
-                        class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3 mb-3"
-                      >
-                        <div>
-                          <h5 class="mb-1">
-                            <i class="mdi mdi-tray-arrow-down me-2"></i>
-                            Entradas de Estoque
-                          </h5>
-                          <p class="text-muted mb-0">
-                            Registros de entradas já lançadas para este setor.
-                          </p>
-                        </div>
-                        <button
-                          class="btn btn-success"
-                          @click="abrirModalEntrada"
-                          :disabled="!setor.id"
-                        >
-                          <i class="mdi mdi-plus me-2"></i>
-                          Registrar Entrada
-                        </button>
-                      </div>
-
-                      <div
-                        v-if="listEntradas.length > 0"
-                        class="table-responsive"
-                      >
-                        <table class="table table-striped align-middle mb-0">
-                          <thead>
-                            <tr>
-                              <th class="text-start">ID</th>
-                              <th class="text-start">Lançada em</th>
-                              <th class="text-start">Nota Fiscal</th>
-                              <th class="text-center">Itens diferentes</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            <tr
-                              v-for="entrada in listEntradas"
-                              :key="entrada.id"
-                              @click="visualizarEntrada(entrada)"
-                              style="cursor: pointer"
-                              class="hover-row"
-                            >
-                              <td class="text-start">{{ entrada.id }}</td>
-                              <td class="text-start">
-                                {{ formatarData(entrada.created_at) }}
-                              </td>
-                              <td class="text-start">
-                                {{ entrada.nota_fiscal }}
-                              </td>
-                              <td class="text-center">
-                                {{ entrada.itens?.length || 0 }}
-                              </td>
-                            </tr>
-                          </tbody>
-                        </table>
-                      </div>
-                      <div v-else class="text-center py-5">
-                        <div class="d-flex flex-column align-items-center">
-                          <i
-                            class="mdi mdi-tray-arrow-down-outline display-4 text-muted mb-3"
-                          ></i>
-                          <h5>Nenhuma entrada registrada</h5>
-                          <p class="text-muted mb-0">
-                            Ainda não há registros de entrada para esta unidade.
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-
-                    <!-- Usuários Tab -->
-                    <div v-show="activeTab === 'usuarios'">
-                      <div
-                        class="d-flex justify-content-between align-items-center mb-3"
-                      >
-                        <div>
-                          <h5 class="mb-1">
-                            <i class="mdi mdi-account-multiple me-2"></i
-                            >Usuários do Setor
-                          </h5>
-                          <p class="text-muted mb-0">
-                            Lista de usuários vinculados a este setor (pivot
-                            usuario_setor).
-                          </p>
-                        </div>
-                        <div>
-                          <button
-                            class="btn btn-success"
-                            @click.prevent="abrirModalAdicionarUsuario"
-                            :disabled="!setor.id"
-                          >
-                            <i class="mdi mdi-plus me-2"></i>Adicionar usuário
-                          </button>
-                        </div>
-                      </div>
-
-                      <div
-                        v-if="listUsuariosSetor.length > 0"
-                        class="table-responsive"
-                      >
-                        <table class="table table-striped align-middle mb-0">
-                          <thead>
-                            <tr>
-                              <th class="text-start">#</th>
-                              <th class="text-start">Nome</th>
-                              <th class="text-start">E-mail</th>
-                              <th class="text-center">Perfil</th>
-                              <th class="text-center">Ações</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            <tr v-for="u in listUsuariosSetor" :key="u.id">
-                              <td class="text-start">{{ u.id }}</td>
-                              <td class="text-start">{{ u.name }}</td>
-                              <td class="text-start">{{ u.email }}</td>
-                              <td class="text-center">
-                                {{
-                                  u.perfil || (u.pivot && u.pivot.perfil) || "-"
-                                }}
-                              </td>
-                              <td class="text-center">
-                                <button
-                                  class="btn btn-sm btn-primary me-2"
-                                  @click.prevent="abrirModalEditarUsuario(u)"
-                                >
-                                  Editar
-                                </button>
-                                <button
-                                  class="btn btn-sm btn-danger"
-                                  @click.prevent="confirmarRemoverUsuario(u)"
-                                >
-                                  Remover
-                                </button>
-                              </td>
-                            </tr>
-                          </tbody>
-                        </table>
-                      </div>
-                      <div v-else class="text-center py-5">
-                        <div class="d-flex flex-column align-items-center">
-                          <i
-                            class="mdi mdi-account-multiple display-4 text-muted mb-3"
-                          ></i>
-                          <h5>Nenhum usuário vinculado</h5>
-                          <p class="text-muted mb-0">
-                            Clique em "Adicionar usuário" para criar o vínculo.
-                          </p>
-                        </div>
-                      </div>
-
-                      <!-- Modal gerenciar vínculo usuário-setor -->
-                      <ModalUsuarioSetor
-                        idModal="modalUsuarioSetor"
-                        :setorId="setor.id"
-                        :mode="modalMode"
-                        :initialData="modalInitialData"
-                        @changed="loadUsuariosSetor"
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Erro -->
-              <div v-else class="text-center py-5">
-                <i
-                  class="mdi mdi-alert-circle-outline display-4 text-danger mb-3"
-                ></i>
-                <h5>Setor n</h5>
-              </div>
+    <div class="px-6 py-6 w-full h-full flex flex-col gap-6">
+      <!-- Premium Header Section -->
+      <div
+        class="flex flex-col md:flex-row md:items-center justify-between gap-6"
+      >
+        <div class="flex items-center gap-5">
+          <div
+            class="p-4 bg-primary/10 rounded-[2rem] text-primary shadow-sm border border-primary/20"
+          >
+            <LayoutDashboardIcon class="w-10 h-10" />
+          </div>
+          <div>
+            <h1
+              class="text-3xl font-black text-slate-900 tracking-tight leading-tight uppercase"
+            >
+              {{ setor.nome }}
+            </h1>
+            <div class="flex items-center gap-2 text-slate-500 font-medium">
+              <span
+                class="text-xs font-black uppercase tracking-widest text-primary/70"
+                >Gestão de Unidade</span
+              >
+              <div class="w-1 h-1 rounded-full bg-slate-300"></div>
+              <p class="text-xs">
+                Acompanhe as informações fundamentais e gerencie as
+                configurações do setor.
+              </p>
             </div>
           </div>
         </div>
+
+        <Button
+          variant="outline"
+          @click="router.push('/setores')"
+          class="rounded-full px-6 border-slate-200 h-11 font-bold text-xs uppercase tracking-widest text-slate-500 hover:text-primary transition-all"
+        >
+          <ChevronLeftIcon class="w-4 h-4 mr-2" />
+          Voltar
+        </Button>
       </div>
+
+      <!-- Loading State -->
+      <div
+        v-if="loading"
+        class="flex-1 flex items-center justify-center min-h-[400px]"
+      >
+        <div class="flex flex-col items-center gap-4">
+          <LoadingSpinner size="lg" />
+          <p class="text-slate-500 font-medium">
+            Carregando dados da unidade...
+          </p>
+        </div>
+      </div>
+
+      <!-- Main Content -->
+      <div v-else-if="setor.id" class="flex-1 flex flex-col gap-6">
+        <Tabs v-model="activeTab" class="w-full flex flex-col gap-6">
+          <div
+            class="bg-white p-1 rounded-xl border border-slate-200 shadow-sm inline-flex self-start"
+          >
+            <TabsList class="bg-transparent border-none">
+              <TabsTrigger
+                value="overview"
+                class="gap-2 px-6 data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-primary/20 transition-all duration-300 rounded-lg"
+              >
+                <InfoIcon class="w-4 h-4" />
+                <span>Overview</span>
+              </TabsTrigger>
+
+              <TabsTrigger
+                v-if="setor.estoque"
+                value="estoque"
+                class="gap-2 px-6 data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-primary/20 transition-all duration-300 rounded-lg"
+              >
+                <BoxesIcon class="w-4 h-4" />
+                <span>Estoque</span>
+              </TabsTrigger>
+
+              <TabsTrigger
+                value="movimentacoes"
+                class="gap-2 px-6 data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-primary/20 transition-all duration-300 rounded-lg"
+              >
+                <ArrowLeftRightIcon class="w-4 h-4" />
+                <span>Movimentações</span>
+              </TabsTrigger>
+
+              <TabsTrigger
+                value="entrada"
+                class="gap-2 px-6 data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-primary/20 transition-all duration-300 rounded-lg"
+              >
+                <DownloadIcon class="w-4 h-4" />
+                <span>Entrada</span>
+              </TabsTrigger>
+
+              <TabsTrigger
+                value="usuarios"
+                class="gap-2 px-6 data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-primary/20 transition-all duration-300 rounded-lg"
+              >
+                <UsersIcon class="w-4 h-4" />
+                <span>Equipe</span>
+              </TabsTrigger>
+            </TabsList>
+          </div>
+
+          <div
+            class="flex-1 translate-y-0 opacity-100 transition-all duration-300"
+          >
+            <TabsContent value="overview" class="mt-0 outline-none">
+              <TabOverview
+                :setor="setor"
+                @editar-setor="editarSetor"
+                @excluir-setor="showDeleteDialog = true"
+              />
+            </TabsContent>
+
+            <TabsContent value="estoque" class="mt-0 outline-none">
+              <TabEstoque @reload-estoque="carregarDadosOperacionais" />
+            </TabsContent>
+
+            <TabsContent value="movimentacoes" class="mt-0 outline-none">
+              <TabMovimentacoes :setorId="setor.id" />
+            </TabsContent>
+
+            <TabsContent value="entrada" class="mt-0 outline-none">
+              <TabEntrada
+                :setorId="setor.id"
+                @reload-estoque="carregarDadosOperacionais"
+              />
+            </TabsContent>
+
+            <TabsContent value="usuarios" class="mt-0 outline-none">
+              <TabUsuarios :setorId="setor.id" />
+            </TabsContent>
+          </div>
+        </Tabs>
+      </div>
+
+      <!-- Sector Not Found -->
+      <div
+        v-else
+        class="flex-1 flex flex-col items-center justify-center py-20 bg-slate-50/50 border border-slate-200 border-dashed rounded-3xl"
+      >
+        <div class="p-6 bg-white rounded-full shadow-sm mb-4">
+          <AlertTriangleIcon class="w-12 h-12 text-amber-500" />
+        </div>
+        <h5 class="text-slate-800 font-bold text-lg">Unidade não encontrada</h5>
+        <p class="text-slate-500 text-sm max-w-xs text-center mt-2">
+          Não foi possível carregar os detalhes do setor informado. Verifique o
+          ID ou se ele ainda existe no sistema.
+        </p>
+        <Button @click="router.push('/setores')" variant="outline" class="mt-6">
+          Voltar para Lista de Setores
+        </Button>
+      </div>
+
+      <!-- Unified Modals -->
+      <ModalSetor :functions="functionsSetor" />
+
+      <AlertDialog
+        :open="showDeleteDialog"
+        @update:open="showDeleteDialog = $event"
+      >
+        <AlertDialogContent class="rounded-3xl p-8 border-none shadow-2xl">
+          <AlertDialogHeader>
+            <div
+              class="w-14 h-14 bg-red-100 rounded-2xl flex items-center justify-center text-red-600 mb-4"
+            >
+              <AlertTriangleIcon class="w-8 h-8" />
+            </div>
+            <AlertDialogTitle
+              class="text-2xl font-black text-slate-900 tracking-tight"
+              >Confirmar Exclusão Definitiva?</AlertDialogTitle
+            >
+            <AlertDialogDescription
+              class="text-slate-500 text-base leading-relaxed"
+            >
+              Você está prestes a remover o setor
+              <span class="font-bold text-slate-900">"{{ setor.nome }}"</span>.
+              Esta ação apagará permanentemente o registro e poderá afetar o
+              histórico de movimentações vinculadas.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter class="mt-8 gap-3">
+            <AlertDialogCancel
+              class="font-bold border-slate-200 text-slate-500 h-12 rounded-xl"
+              >Não, Cancelar</AlertDialogCancel
+            >
+            <AlertDialogAction
+              @click="confirmarExclusaoSetor"
+              class="bg-red-600 hover:bg-red-700 text-white font-bold h-12 rounded-xl px-8 shadow-lg shadow-red-200"
+            >
+              Sim, Excluir Unidade
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
-
-    <!-- Modal de Entrada de Estoque -->
-    <ModalEntradaEstoque idModal="modalEntradaEstoque" :unidade="setor" />
-
-    <!-- Modal de Visualização de Entrada -->
-    <ModalVisualizarEntrada
-      ref="modalVisualizarEntrada"
-      :entrada="entradaSelecionada"
-    />
-    <!-- Modal de Solicitação de Movimentação -->
-    <ModalSolicitacaoMovimentacao
-      ref="modalSolicitacaoMovimentacao"
-      idModal="modalSolicitacaoMovimentacao"
-      :unidade-atual="setor"
-      :fornecedores-relacionados="setor.fornecedores_relacionados || []"
-      :produtos="produtosDisponiveis"
-    />
-    <!-- Modal de Edição/Cadastro de Setor (instância local para este view) -->
-    <ModalSetor idModal="addUPSetor" :functions="functions" />
   </TemplateAdmin>
 </template>
-
-<script>
-import TemplateAdmin from "@/views/roleAdmin/TemplateAdmin.vue";
-import EstoqueSetor from "./EstoqueSetor.vue";
-import ModalEntradaEstoque from "@/components/cadastros/ModalEntradaEstoque.vue";
-import ModalVisualizarEntrada from "@/components/cadastros/ModalVisualizarEntrada.vue";
-import ModalSetor from "@/components/cadastros/ModalSetor.vue";
-import ModalSolicitacaoMovimentacao from "@/components/cadastros/ModalSolicitacaoMovimentacao.vue";
-import functions from "@/functions/cad_setores.js";
-import functionsMovimentacao from "@/functions/cad_movimentacao.js";
-import functionsEntradas from "@/functions/cad_entradas.js";
-import ModalUsuarioSetor from "@/components/cadastros/ModalUsuarioSetor.vue";
-import usuarioSetorFunctions from "@/functions/cad_usuario_setor.js";
-
-export default {
-  name: "SetorDetalhesView",
-  components: {
-    TemplateAdmin,
-    EstoqueSetor,
-    ModalEntradaEstoque,
-    ModalVisualizarEntrada,
-    ModalSetor,
-    ModalSolicitacaoMovimentacao,
-    ModalUsuarioSetor,
-  },
-  data() {
-    return {
-      setor: {},
-      loading: true,
-      error: null,
-      activeTab: "overview",
-      entradaSelecionada: null,
-      functions: functions,
-      // lista local de usuários vinculados a este setor
-      listUsuariosSetor: [],
-      modalMode: "ADD",
-      modalInitialData: {},
-      usuarioSetorFunctions: usuarioSetorFunctions,
-    };
-  },
-  computed: {
-    setorNomeAtual() {
-      return this.setor?.nome || "Carregando...";
-    },
-    listEntradas() {
-      const entradas = this.$store.getters.getListEntradas;
-      console.log("listEntradas computed:", entradas);
-      return entradas;
-    },
-    listMovimentacoes() {
-      return this.$store.getters.getListMovimentacoes || [];
-    },
-    unidades() {
-      return this.$store.getters.getListSetores || [];
-    },
-    produtosDisponiveis() {
-      return this.$store.getters.getListProdutos || [];
-    },
-  },
-  mounted() {
-    this.initTabFromRoute();
-    // Observar mudanças na query 'tab' (back/forward do browser)
-    this.$watch(
-      () => this.$route.query.tab,
-      (newTab) => {
-        const tab = this.normalizeTab(newTab);
-        this.activeTab = tab;
-      }
-    );
-
-    this.carregarSetor();
-  },
-  methods: {
-    async carregarSetor() {
-      try {
-        this.loading = true;
-        const setorId = this.$route.params.id;
-        console.log("carregarSetor: solicitando setor id=", setorId);
-        const response = await this.$axios.post(
-          `/setores/listData`,
-          {
-            id: setorId,
-          },
-          {
-            headers: {
-              Authorization: "Bearer " + this.$store.getters.getUserToken,
-            },
-          }
-        );
-        this.setor = response.data.data;
-        // DEBUG: inspeciona o payload retornado do backend para este setor
-        console.log("carregarSetor response.data:", response.data);
-        console.log("carregarSetor setor (data):", this.setor);
-        // se existir fornecedores relacionados no payload, logar especificamente
-        if (this.setor.fornecedores_relacionados) {
-          console.log(
-            "fornecedores_relacionados:",
-            this.setor.fornecedores_relacionados
-          );
-        }
-        if (this.setor.fornecedores) {
-          console.log("fornecedores:", this.setor.fornecedores);
-        }
-        this.$store.commit("setSetorAtual", this.setor);
-
-        // Carregar entradas do setor
-        await this.carregarEntradas();
-      } catch (error) {
-        // Log detalhado para ajudar diagnóstico (inclui response.data quando disponível)
-        console.error("Erro ao carregar setor:", error);
-        if (error && error.response) {
-          console.error("Erro response status:", error.response.status);
-          try {
-            console.error("Erro response data:", error.response.data);
-          } catch (e) {}
-          // Detecção específica de problema conhecido: backend ainda referenciando relação 'polo'
-          const respData = error.response.data || {};
-          const serverMsg = respData.message || "";
-          const serverException = respData.exception || "";
-          if (
-            typeof serverException === "string" &&
-            serverException.includes("RelationNotFoundException") &&
-            typeof serverMsg === "string" &&
-            serverMsg.toLowerCase().includes("polo")
-          ) {
-            this.error =
-              "Incompatibilidade no backend: relação 'polo' não encontrada. Atualize o backend para expor 'unidade' ou adicione um alias 'polo' (compatibilidade).";
-          } else {
-            this.error = `Erro ao carregar dados do setor (status ${error.response.status})`;
-          }
-        } else {
-          this.error = "Erro ao carregar dados do setor";
-        }
-      } finally {
-        this.loading = false;
-      }
-    },
-    abrirModalEntrada() {
-      // Abrir modal de entrada de estoque usando Dialog do shadcn
-      const modalComponent = this.$refs.modalEntradaEstoque;
-      if (modalComponent) {
-        modalComponent.dialogOpen = true;
-      } else {
-        console.error("Modal component não encontrado");
-      }
-    },
-    async carregarEntradas() {
-      if (this.setor?.id) {
-        await functionsEntradas.listByUnidade(this, this.setor.id);
-        // Carregar também movimentações da unidade
-        await functionsMovimentacao.listBySetor(this, this.setor.id);
-      }
-    },
-    abrirSolicitacao() {
-      // prefer to call the child component's abrirModal if available
-      const comp = this.$refs.modalSolicitacaoMovimentacao;
-      if (comp && typeof comp.abrirModal === "function") {
-        // before opening, set default origin based on fornecedores_relacionados in setor
-        if (this.setor && this.setor.fornecedores_relacionados) {
-          // pass current fornecedor relationships to the modal via a public prop or method
-          try {
-            comp.setFornecedoresRelacionados(
-              this.setor.fornecedores_relacionados || [],
-              this.setor
-            );
-          } catch (e) {
-            /* ignore */
-          }
-        }
-        comp.abrirModal();
-        return;
-      }
-
-      const modalEl = document.getElementById("modalSolicitacaoMovimentacao");
-      if (modalEl) {
-        const modal = new bootstrap.Modal(modalEl);
-        modal.show();
-      }
-    },
-    formatarTipo(tipo) {
-      switch (tipo) {
-        case "T":
-          return "Transferência";
-        case "D":
-          return "Devolução";
-        case "S":
-          return "Saída";
-        default:
-          return tipo || "-";
-      }
-    },
-    traduzStatus(status) {
-      switch (status) {
-        case "A":
-          return "Aprovado";
-        case "R":
-          return "Reprovado";
-        case "P":
-          return "Pendente";
-        case "C":
-          return "Rascunho";
-        default:
-          return status || "-";
-      }
-    },
-    visualizarEntrada(entrada) {
-      console.log("Visualizar entrada:", entrada);
-      this.entradaSelecionada = entrada;
-      // Abrir modal de visualização
-      if (this.$refs.modalVisualizarEntrada) {
-        this.$refs.modalVisualizarEntrada.dialogOpen = true;
-      }
-    },
-    formatarData(data) {
-      if (!data) return null;
-
-      // Se o backend retornar um timestamp com 'T', pegar apenas a parte da data
-      let dataStr = String(data);
-      if (dataStr.includes("T")) {
-        dataStr = dataStr.split("T")[0];
-      }
-
-      const parts = dataStr.split("-");
-      if (parts.length < 3) return null;
-      const [ano, mes, dia] = parts;
-      // Retornar no formato dd/mm/yyyy
-      return `${dia}/${mes}/${ano}`;
-    },
-    changeTab(tab) {
-      const normalized = this.normalizeTab(tab);
-      this.activeTab = normalized;
-
-      // Quando trocar para a aba de usuários, carregar os vínculos
-      if (this.activeTab === "usuarios" && this.setor && this.setor.id) {
-        this.loadUsuariosSetor();
-      }
-
-      // Atualizar URL mantendo outros query params
-      try {
-        const newQuery = Object.assign({}, this.$route.query || {});
-        newQuery.tab = normalized;
-        // usar replace para não poluir histórico quando a mudança for automática
-        this.$router
-          .push({ path: this.$route.path, query: newQuery })
-          .catch(() => {});
-      } catch (e) {
-        console.warn("Não foi possível atualizar a URL com a tab:", e);
-      }
-    },
-    // Garante valores válidos e fallback para 'overview'
-    normalizeTab(tab) {
-      const allowed = [
-        "overview",
-        "estoque",
-        "movimentacoes",
-        "entrada",
-        "usuarios",
-      ];
-      if (!tab || typeof tab !== "string") return "overview";
-      return allowed.includes(tab) ? tab : "overview";
-    },
-    initTabFromRoute() {
-      const queryTab = this.$route.query?.tab;
-      this.activeTab = this.normalizeTab(queryTab);
-      // garantir que a URL contenha o param (substitui sem adicionar entrada no histórico)
-      try {
-        const newQuery = Object.assign({}, this.$route.query || {});
-        newQuery.tab = this.activeTab;
-        this.$router
-          .replace({ path: this.$route.path, query: newQuery })
-          .catch(() => {});
-      } catch (e) {
-        /* ignore */
-      }
-    },
-    editarSetor() {
-      // Prepara e abre o modal de edição do setor atual
-      this.$store.commit("SET_MODAL_DATA", {
-        modalTitle: "Editar Setor",
-        modalData: { ...this.setor },
-        modalFunction: "UP",
-      });
-
-      // Mostrar o modal (id usado pelo componente ModalSetor)
-      const modalEl = document.getElementById("addUPSetor");
-      if (modalEl) {
-        const modal = new bootstrap.Modal(modalEl);
-        modal.show();
-      } else {
-        console.warn("Modal addUPSetor não encontrado no DOM");
-      }
-    },
-    loadUsuariosSetor() {
-      if (!this.setor || !this.setor.id) return;
-      this.usuarioSetorFunctions
-        .listBySetor(this, this.setor.id)
-        .then((data) => {
-          // data é um array de usuários com campo perfil (ou contendo pivot.perfil)
-          this.listUsuariosSetor = (data || []).map((u) => ({
-            id: u.id,
-            name: u.name || u.nome || "",
-            email: u.email || "",
-            perfil: u.perfil || (u.pivot && u.pivot.perfil) || "",
-          }));
-        });
-    },
-    abrirModalAdicionarUsuario() {
-      this.modalMode = "ADD";
-      this.modalInitialData = {};
-      // abrir o modal bootstrap
-      const modalEl = document.getElementById("modalUsuarioSetor");
-      if (modalEl) {
-        const m = new bootstrap.Modal(modalEl);
-        m.show();
-      }
-    },
-    abrirModalEditarUsuario(u) {
-      this.modalMode = "UP";
-      this.modalInitialData = { usuario_id: u.id, perfil: u.perfil };
-      const modalEl = document.getElementById("modalUsuarioSetor");
-      if (modalEl) {
-        const m = new bootstrap.Modal(modalEl);
-        m.show();
-      }
-    },
-    confirmarRemoverUsuario(u) {
-      if (
-        !confirm(
-          "Tem certeza que deseja remover o vínculo deste usuário com o setor?"
-        )
-      )
-        return;
-      this.usuarioSetorFunctions
-        .remove(this, { usuario_id: u.id, setor_id: this.setor.id })
-        .then((resp) => {
-          if (resp && resp.status) {
-            if (this.$toastr) this.$toastr.s("Vínculo removido com sucesso");
-            else alert("Vínculo removido com sucesso");
-            this.loadUsuariosSetor();
-          } else {
-            const msg = resp?.message || "Erro ao remover vínculo";
-            if (this.$toastr) this.$toastr.e(msg);
-            else alert(msg);
-          }
-        })
-        .catch((err) => {
-          const status = err?.response?.status;
-          if (status === 403) {
-            if (this.$toastr) this.$toastr.e("Permissão negada");
-            else alert("Permissão negada");
-          } else {
-            if (this.$toastr) this.$toastr.e("Erro ao remover vínculo");
-            else alert("Erro ao remover vínculo");
-          }
-        });
-    },
-  },
-};
-</script>

@@ -1,249 +1,232 @@
+<script setup>
+import { computed, onMounted, getCurrentInstance } from "vue";
+import { useStore } from "vuex";
+import LinkModal01 from "@/components/layouts/LinkModal01.vue";
+import TemplateAdmin from "@/views/roleAdmin/TemplateAdmin.vue";
+import ModalProdutos from "@/components/cadastros/ModalProdutos.vue";
+import DataTable from "@/components/ui/data-table/DataTable.vue";
+import { Badge } from "@/components/ui/badge";
+import { PackageIcon, LayersIcon, BoxSelectIcon } from "lucide-vue-next";
+import functions from "@/functions/cad_produtos.js";
+
+const store = useStore();
+const { proxy } = getCurrentInstance();
+
+const titleModal = "Cadastro de Produtos";
+const varsModalData = {
+  status: "A",
+  nome: "",
+  marca: "",
+  codigo_simpras: "",
+  codigo_barras: "",
+  grupo_produto_id: "",
+  unidade_medida_id: "",
+};
+
+const columns = [
+  { key: "id", label: "#", align: "center", sortable: true },
+  { key: "nome", label: "Produto", sortable: true },
+  { key: "marca", label: "Marca", sortable: true },
+  { key: "grupo_produto", label: "Grupo" },
+  { key: "unidade_medida", label: "Unidade", align: "center" },
+  { key: "status", label: "Status", align: "center" },
+];
+
+const listProdutos = computed(() => store.state.listProdutos?.data || []);
+const pagination = computed(() => {
+  const list = store.state.listProdutos;
+  if (list && list.current_page) {
+    return {
+      current_page: list.current_page,
+      last_page: list.last_page,
+      per_page: list.per_page,
+      total: list.total,
+    };
+  }
+  return null;
+});
+
+const formattedProdutos = computed(() => {
+  return listProdutos.value.map((produto) => ({
+    id: produto.id,
+    nome: produto.nome,
+    marca: produto.marca || "N/A",
+    grupo_produto: produto.grupo_produto?.nome || "Material",
+    unidade_medida:
+      produto.unidade_medida?.sigla || produto.unidade_medida?.nome || "UN",
+    status: produto.status === "A" ? "Ativo" : "Inativo",
+  }));
+});
+
+const listAllProdutos = (url = null) => {
+  functions.listAll(
+    { $axios: proxy.$axios, $store: store, $toastr: proxy.$toastr },
+    url,
+  );
+};
+
+const handleSearch = (query) => {
+  store.state.searchFilters = query ? [{ nome: query }] : [{}];
+  listAllProdutos();
+};
+
+const handlePaginate = (page) => {
+  let url = typeof page === "number" ? `/produtos/list?page=${page}` : page;
+  listAllProdutos(url);
+};
+
+const handleEdit = (item) => {
+  functions.listData({
+    idData: item.id,
+    $axios: proxy.$axios,
+    $store: store,
+    $toastr: proxy.$toastr,
+    callback: () => {
+      store.commit("setModalFunction", "UP");
+      store.commit("setModalOpen", true);
+    },
+  });
+};
+
+const handleDelete = (id) => {
+  functions.deleteData(
+    { $axios: proxy.$axios, $store: store, $toastr: proxy.$toastr },
+    id,
+  );
+};
+
+onMounted(() => {
+  listAllProdutos();
+  // Ensure aux data is loaded
+  const grupos =
+    store.state.listGrupoProdutos?.data || store.state.listGrupoProdutos || [];
+  if (grupos.length === 0) {
+    proxy.$axios
+      .post("/grupoProduto/list", { filters: [{}], per_page: 500 })
+      .then(
+        (r) =>
+          r.data?.status && store.commit("setListGrupoProdutos", r.data.data),
+      );
+  }
+});
+</script>
+
 <template>
   <TemplateAdmin>
-    <div class="main-content">
-      <div class="page-content">
-        <div class="container-fluid">
-          <div class="row">
-            <div class="col-12">
-              <div class="card">
-                <div class="card-body">
-                  <LinkModal01
-                    :idModalInsertUP="'#addUPProduto'"
-                    :label="'NOVO'"
-                    :titleModal="titleModal"
-                    :varsModalData="varsModalData"
-                  >
-                  </LinkModal01>
-                  <div class="mt-5">
-                    <!-- Loading -->
-                    <div
-                      v-if="$store.state.isSearching"
-                      class="w-full min-h-[300px] flex items-center justify-center"
-                    >
-                      <LoadingSpinner size="lg" />
-                    </div>
+    <div class="px-6 py-6 w-full h-full flex flex-col gap-6">
+      <!-- Inventory Table Card -->
+      <div
+        class="bg-white rounded-[2.5rem] border border-slate-200 shadow-2xl shadow-slate-200/40 overflow-hidden flex-1 flex flex-col"
+      >
+        <div class="p-8 flex-1 flex flex-col">
+          <DataTable
+            :columns="columns"
+            :data="formattedProdutos"
+            :loading="store.state.isSearching"
+            :pagination="pagination"
+            @search="handleSearch"
+            @paginate="handlePaginate"
+            @edit="handleEdit"
+            @delete="handleDelete"
+          >
+            <!-- Actions Slot -->
+            <template #actions>
+              <LinkModal01
+                label="CADASTRAR PRODUTO"
+                :titleModal="titleModal"
+                :varsModalData="varsModalData"
+                class="shrink-0"
+              />
+            </template>
 
-                    <!-- Tabela com dados -->
-                    <TBLBASE01
-                      v-else-if="listProdutos && listProdutos.length > 0"
-                      :list="formattedProdutos"
-                      :titles="[
-                        '#',
-                        'Nome',
-                        'Marca',
-                        'Grupo',
-                        'Unidade',
-                        'Status',
-                      ]"
-                      :align="[
-                        'text-center',
-                        'text-left',
-                        'text-left',
-                        'text-left',
-                        'text-center',
-                        'text-center',
-                      ]"
-                      :indexLink="1"
-                      :idModalUP="'#addUPProduto'"
-                      :functions="functions"
-                      classColTable="12"
-                    />
+            <!-- Custom Cell Templates -->
+            <template #cell-status="{ item }">
+              <Badge
+                :variant="item.status === 'Ativo' ? 'default' : 'destructive'"
+                class="font-black px-3.5 py-1 text-[10px] uppercase tracking-widest rounded-full"
+              >
+                {{ item.status }}
+              </Badge>
+            </template>
 
-                    <!-- Mensagem quando não há produtos -->
-                    <div
-                      v-else-if="!$store.state.isSearching"
-                      class="text-center mt-5"
-                    >
-                      <div class="d-flex flex-column align-items-center">
-                        <i
-                          class="mdi mdi-package-variant display-4 text-muted mb-3"
-                        ></i>
-                        <h5>Nenhum produto encontrado</h5>
-                        <p class="text-muted">
-                          Crie seu primeiro produto clicando no botão "NOVO"
-                        </p>
-                      </div>
-                    </div>
+            <template #cell-nome="{ item }">
+              <div class="flex flex-col">
+                <span
+                  class="font-bold text-slate-800 text-sm tracking-tight capitalize"
+                  >{{ item.nome.toLowerCase() }}</span
+                >
+                <span
+                  class="text-[10px] text-slate-400 font-medium uppercase tracking-tighter"
+                  >{{ item.id }} • SKU IDENTIFIER</span
+                >
+              </div>
+            </template>
+
+            <template #cell-marca="{ item }">
+              <Badge
+                variant="outline"
+                class="border-slate-200 text-slate-500 font-bold text-[10px] px-2 py-0"
+              >
+                {{ item.marca }}
+              </Badge>
+            </template>
+
+            <template #cell-grupo_produto="{ item }">
+              <div class="flex items-center gap-2">
+                <LayersIcon class="w-3.5 h-3.5 text-slate-300" />
+                <span class="text-xs font-semibold text-slate-600">{{
+                  item.grupo_produto
+                }}</span>
+              </div>
+            </template>
+
+            <template #cell-unidade_medida="{ item }">
+              <div
+                class="inline-flex px-2 py-0.5 bg-slate-100 rounded text-slate-600 font-black text-[10px]"
+              >
+                {{ item.unidade_medida }}
+              </div>
+            </template>
+
+            <!-- Empty State -->
+            <template #empty>
+              <div
+                class="flex flex-col items-center justify-center py-24 gap-6"
+              >
+                <div class="relative">
+                  <div
+                    class="absolute inset-0 bg-primary/20 blur-3xl rounded-full"
+                  ></div>
+                  <div class="relative p-8 bg-white rounded-full shadow-xl">
+                    <BoxSelectIcon class="w-16 h-16 text-slate-300" />
                   </div>
                 </div>
+                <div class="text-center max-w-sm">
+                  <h3 class="text-slate-900 font-black text-xl">
+                    Nenhum produto em catálogo
+                  </h3>
+                  <p class="text-slate-500 text-sm mt-2 leading-relaxed">
+                    Sua lista de produtos está vazia. Comece adicionando novos
+                    itens clicando no botão de cadastro.
+                  </p>
+                </div>
               </div>
-            </div>
-
-            <ModalProdutos
-              idModal="addUPProduto"
-              :functions="functions"
-            ></ModalProdutos>
-          </div>
+            </template>
+          </DataTable>
         </div>
       </div>
+
+      <!-- Modals -->
+      <ModalProdutos :functions="functions" />
     </div>
   </TemplateAdmin>
 </template>
 
-<script>
-import LinkModal01 from "@/components/layouts/LinkModal01.vue";
-import TemplateAdmin from "@/views/roleAdmin/TemplateAdmin.vue";
-import ModalProdutos from "@/components/cadastros/ModalProdutos.vue";
-import TBLBASE01 from "@/components/layouts/TableBase01.vue";
-import { LoadingSpinner } from "@/components/ui/loading-spinner";
-
-import functions from "../../functions/cad_produtos.js";
-
-export default {
-  name: "ProdutosView",
-  components: {
-    LinkModal01,
-    TemplateAdmin,
-    ModalProdutos,
-    TBLBASE01,
-    LoadingSpinner,
-  },
-  data() {
-    return {
-      isCreateModalProdutoOpen: false,
-      produto_data: null,
-      functions: functions,
-      choice_filters: null,
-      titleModal: "Cadastro de Produtos",
-      varsModalData: {
-        status: "A",
-        nome: "",
-        marca: "",
-        codigo_simpras: "",
-        codigo_barras: "",
-        grupo_produto_id: "",
-        unidade_medida_id: "",
-      },
-    };
-  },
-  methods: {
-    openCreateProdutoModal() {
-      this.isCreateProdutoModalOpen = true;
-    },
-    listAllProdutos() {
-      functions.listAll(this);
-    },
-    carregarDadosAuxiliares() {
-      // Garantir que dados auxiliares estejam carregados para uso no modal
-      const gruposExistentes =
-        this.$store.state.listGrupoProdutos?.data ||
-        this.$store.state.listGrupoProdutos ||
-        [];
-      const unidadesExistentes =
-        this.$store.state.listUnidadesMedida?.data ||
-        this.$store.state.listUnidadesMedida ||
-        [];
-
-      // Se não existirem dados no store, carregar
-      if (gruposExistentes.length === 0) {
-        this.carregarGruposProdutos();
-      }
-
-      if (unidadesExistentes.length === 0) {
-        this.carregarUnidadesMedida();
-      }
-    },
-    carregarGruposProdutos() {
-      this.$axios
-        .post(
-          "/grupoProduto/list",
-          {
-            filters: [{}],
-            per_page: 100,
-          },
-          {
-            headers: {
-              Authorization: "Bearer " + this.$store.getters.getUserToken,
-              "Content-Type": "application/json",
-            },
-          }
-        )
-        .then((response) => {
-          if (response.data && response.data.status && response.data.data) {
-            const grupos = response.data.data.data || response.data.data;
-            this.$store.commit("setListGrupoProdutos", response.data.data);
-          }
-        })
-        .catch((error) => {
-          console.warn("Não foi possível carregar grupos de produtos:", error);
-        });
-    },
-    carregarUnidadesMedida() {
-      this.$axios
-        .post(
-          "/unidadeMedida/list",
-          {
-            filters: [{}],
-            per_page: 100,
-          },
-          {
-            headers: {
-              Authorization: "Bearer " + this.$store.getters.getUserToken,
-              "Content-Type": "application/json",
-            },
-          }
-        )
-        .then((response) => {
-          if (response.data && response.data.status && response.data.data) {
-            this.$store.commit("setListUnidadesMedida", response.data.data);
-          }
-        })
-        .catch((error) => {
-          console.warn("Não foi possível carregar unidades de medida:", error);
-        });
-    },
-  },
-  computed: {
-    listProdutos() {
-      return this.$store.state.listProdutos?.data || [];
-    },
-    formattedProdutos() {
-      return this.listProdutos.map((produto) => ({
-        id: produto.id,
-        nome: produto.nome,
-        marca: produto.marca || "N/A",
-        grupo_produto: produto.grupo_produto?.nome || "N/A",
-        unidade_medida:
-          produto.unidade_medida?.sigla ||
-          produto.unidade_medida?.nome ||
-          "N/A",
-        status: produto.status === "A" ? "Ativo" : "Inativo",
-      }));
-    },
-  },
-  created() {
-    this.listAllProdutos();
-    this.carregarDadosAuxiliares();
-  },
-  mounted() {
-    this.listAllProdutos();
-    this.carregarDadosAuxiliares();
-  },
-};
-</script>
-
-<style>
-.modal-title {
-  font-size: 1.5rem;
-  font-weight: bold;
-  color: #4a4a4a;
-  display: flex;
-  align-items: center;
-  margin-bottom: 1rem;
+<style scoped>
+:deep(.data-table-container) {
+  @apply border-none shadow-none p-0;
 }
-
-.form-control {
-  background-color: #f8f9fa;
-  border: 1px solid #ced4da;
-  border-radius: 0.25rem;
-  padding: 0.5rem;
-}
-
-.btn-primary {
-  background-color: var(--dark);
-  border-color: var(--dark);
-  font-size: 1rem;
-  font-weight: bold;
-  border-radius: 0.25rem;
+:deep(table biological-table-row) {
+  @apply transition-colors duration-200;
 }
 </style>

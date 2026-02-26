@@ -69,15 +69,44 @@
       <template v-else>
         <CardHeader class="space-y-2">
           <CardTitle class="text-2xl font-bold text-center">
-            Selecione seu Setor
+            Acesso ao Sistema
           </CardTitle>
           <CardDescription class="text-center">
-            Escolha o setor para acessar o sistema
+            Selecione a unidade e o setor para continuar
           </CardDescription>
         </CardHeader>
 
         <CardContent>
           <form @submit.prevent="selecionarSetor" class="space-y-6">
+            <!-- Unidade Select -->
+            <div class="space-y-2">
+              <label
+                for="unidade-select"
+                class="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+              >
+                Unidade <span class="text-red-600">*</span>
+              </label>
+              <Select
+                v-model="unidadeSelecionada"
+                @update:modelValue="onUnidadeChange"
+              >
+                <SelectTrigger id="unidade-select" class="h-10">
+                  <SelectValue placeholder="-- Selecione uma unidade --" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    <SelectItem
+                      v-for="unidade in unidades"
+                      :key="unidade.id"
+                      :value="unidade.id.toString()"
+                    >
+                      {{ unidade.nome }}
+                    </SelectItem>
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+            </div>
+
             <!-- Setor Select -->
             <div class="space-y-2">
               <label
@@ -86,25 +115,27 @@
               >
                 Setor <span class="text-red-600">*</span>
               </label>
-              <Select v-model="setorSelecionado">
+              <Select
+                v-model="setorSelecionado"
+                :disabled="!unidadeSelecionada"
+              >
                 <SelectTrigger id="setor-select" class="h-10">
-                  <SelectValue placeholder="-- Selecione um setor --" />
+                  <SelectValue
+                    :placeholder="
+                      unidadeSelecionada
+                        ? '-- Selecione um setor --'
+                        : 'Selecione primeiro a unidade'
+                    "
+                  />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectGroup>
                     <SelectItem
-                      v-for="setor in setores"
+                      v-for="setor in setoresFiltrados"
                       :key="setor.id"
                       :value="setor.id.toString()"
                     >
-                      <div
-                        class="flex items-center justify-between w-full gap-2"
-                      >
-                        <span>{{ setor.nome }}</span>
-                        <div class="flex items-center gap-2">
-                          <Badge variant="">{{ setor.unidade.nome }}</Badge>
-                        </div>
-                      </div>
+                      {{ setor.nome }}
                     </SelectItem>
                   </SelectGroup>
                 </SelectContent>
@@ -120,6 +151,9 @@
               class="bg-blue-50 border border-blue-200 rounded-md p-4"
             >
               <p class="text-sm text-gray-700">
+                <strong>Unidade:</strong> {{ getSetorSelecionado.unidade.nome }}
+              </p>
+              <p class="text-sm text-gray-700 mt-1">
                 <strong>Setor:</strong> {{ getSetorSelecionado.nome }}
               </p>
               <p
@@ -185,11 +219,39 @@ const router = useRouter();
 const store = useStore();
 
 const setores = ref([]);
+const unidadeSelecionada = ref("");
 const setorSelecionado = ref("");
 const loading = ref(true);
 const loadingEntrada = ref(false);
 const errorMessage = ref("");
 const erroValidacao = ref("");
+
+const unidades = computed(() => {
+  const map = new Map();
+  setores.value.forEach((s) => {
+    if (s.unidade && !map.has(s.unidade.id)) {
+      map.set(s.unidade.id, s.unidade);
+    }
+  });
+  return Array.from(map.values()).sort((a, b) => a.nome.localeCompare(b.nome));
+});
+
+const setoresFiltrados = computed(() => {
+  if (!unidadeSelecionada.value) return [];
+  return setores.value
+    .filter((s) => s.unidade_id == unidadeSelecionada.value)
+    .sort((a, b) => a.nome.localeCompare(b.nome));
+});
+
+const onUnidadeChange = () => {
+  setorSelecionado.value = "";
+  erroValidacao.value = "";
+
+  // Se houver apenas um setor para esta unidade, selecionar automaticamente
+  if (setoresFiltrados.value.length === 1) {
+    setorSelecionado.value = setoresFiltrados.value[0].id.toString();
+  }
+};
 
 const getSetorSelecionado = computed(() => {
   if (!setorSelecionado.value) return null;
@@ -217,6 +279,13 @@ const carregarSetores = async () => {
     if (resultado.success && resultado.data && resultado.data.length > 0) {
       console.log("✓ Setores carregados com sucesso:", resultado.data.length);
       setores.value = resultado.data;
+
+      // Auto-selecionar unidade se houver apenas uma
+      if (unidades.value.length === 1) {
+        unidadeSelecionada.value = unidades.value[0].id.toString();
+        // Disparar lógica de mudança de unidade (isso vai auto-selecionar o setor se houver apenas um também)
+        onUnidadeChange();
+      }
     } else if (!resultado.success) {
       console.warn("⚠️ Falha na API ao carregar setores");
       errorMessage.value =
@@ -224,7 +293,7 @@ const carregarSetores = async () => {
       setores.value = [];
     } else {
       console.warn(
-        "⚠️ Usuário não tem acesso a nenhum setor (resultado vazio)"
+        "⚠️ Usuário não tem acesso a nenhum setor (resultado vazio)",
       );
       errorMessage.value = "";
       setores.value = [];
@@ -344,7 +413,7 @@ const logout = () => {
     }
 
     console.log(
-      "✅ Logout concluído com sucesso, redirecionando para login..."
+      "✅ Logout concluído com sucesso, redirecionando para login...",
     );
 
     // Redirecionar para login

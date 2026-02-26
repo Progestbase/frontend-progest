@@ -3,17 +3,6 @@
     <div class="main-content">
       <div class="page-content">
         <div class="container-fluid">
-          <!-- Page Header -->
-          <div class="row mb-4">
-            <div class="col-12">
-              <div
-                class="page-title-box d-flex align-items-center justify-content-between"
-              >
-                <h4 class="mb-0 font-size-18">Setores Consumidores</h4>
-              </div>
-            </div>
-          </div>
-
           <!-- Filters & Search -->
           <div class="row mb-4">
             <div class="col-12">
@@ -23,9 +12,6 @@
                     class="flex flex-col md:flex-row gap-4 align-items-center"
                   >
                     <div class="flex-1 flex items-center gap-2">
-                      <div class="bg-gray-100 p-2 rounded-lg">
-                        <i class="mdi mdi-magnify text-xl text-gray-500"></i>
-                      </div>
                       <Input
                         v-model="searchTerm"
                         placeholder="Pesquisar setor por nome..."
@@ -112,7 +98,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, onMounted, onUnmounted } from "vue";
 import { useRouter } from "vue-router";
 import { useStore } from "vuex";
 import axios from "axios";
@@ -164,7 +150,7 @@ const loadSetoresConsumidores = async () => {
         headers: {
           Authorization: `Bearer ${store.getters.getUserToken}`,
         },
-      }
+      },
     );
 
     if (response.data.status && response.data.data) {
@@ -197,7 +183,7 @@ const loadSetoresConsumidores = async () => {
 
           const result = await functionsEstoque.listEstoqueUnidade(
             context,
-            setor.id
+            setor.id,
           );
 
           if (result && result.success && result.data && result.data.estoque) {
@@ -239,7 +225,15 @@ const navigateToSetor = (setorId) => {
 };
 
 onMounted(() => {
+  store.commit("setPageHeader", {
+    title: "Setores Consumidores",
+    subtitle: "Visualize e gerencie as unidades que recebem suprimentos.",
+  });
   loadSetoresConsumidores();
+});
+
+onUnmounted(() => {
+  store.commit("clearPageHeader");
 });
 </script>
 

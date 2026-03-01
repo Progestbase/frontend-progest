@@ -73,7 +73,7 @@ import TemplateAdmin from "@/views/roleAdmin/TemplateAdmin.vue";
 import ModalPolos from "@/components/cadastros/ModalPolos.vue";
 import TBLBASE01 from "@/components/layouts/TableBase01.vue";
 
-import functions from "../../functions/cad_polos.js";
+import functions from "../../functions/cad_unidades_polos.js";
 
 export default {
   name: "UnidadesView",

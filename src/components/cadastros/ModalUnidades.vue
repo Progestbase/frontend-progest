@@ -138,7 +138,7 @@
 <script>
 import ModalBase01 from "@/components/layouts/ModalBase01.vue";
 import Funcoes from "@/functions/cad_setores.js";
-import cadPolos from "@/functions/cad_polos.js";
+import cadPolos from "@/functions/cad_unidades_polos.js";
 
 export default {
   name: "ModalUnidades",

@@ -1,5 +1,4 @@
 // Módulo para gerenciar vínculos entre usuários e setores (usuario_setor pivot)
-// Segue padrão dos outros módulos: usa content.$axios e headers com Bearer token
 
 var listAll = (content, setorId = null) => {
   // Se setorId não foi passado, tenta pegar do store
@@ -11,16 +10,12 @@ var listAll = (content, setorId = null) => {
   }
 
   return content.$axios
-    .post(
-      "/usuarioSetor/listBySetor",
-      { setor_id: idSetor },
-      {
-        headers: {
-          Authorization: "Bearer " + content.$store.getters.getUserToken,
-          "Content-Type": "application/json",
-        },
-      }
-    )
+    .post("/usuarioSetor/listBySetor", { setor_id: idSetor }, {
+      headers: {
+        Authorization: "Bearer " + content.$store.getters.getUserToken,
+        "Content-Type": "application/json",
+      },
+    })
     .then((response) => {
       if (response.data && response.data.status) {
         const usuarios = response.data.data || [];
@@ -36,20 +31,16 @@ var listAll = (content, setorId = null) => {
         content.$store.commit("setListUsuariosSetor", usuarios);
         return { success: true, data: usuarios };
       }
-      if (content.usuariosItems?.value !== undefined) {
-        content.usuariosItems.value = [];
-      } else if (content.usuariosItems !== undefined) {
-        Object.assign(content, { usuariosItems: [] });
-      }
+      
+      if (content.usuariosItems?.value !== undefined) content.usuariosItems.value = [];
+      else if (content.usuariosItems !== undefined) Object.assign(content, { usuariosItems: [] });
+      
       return { success: false, data: [] };
     })
     .catch((error) => {
-      console.error("❌ Erro ao carregar usuários do setor:", error);
-      if (content.usuariosItems?.value !== undefined) {
-        content.usuariosItems.value = [];
-      } else if (content.usuariosItems !== undefined) {
-        Object.assign(content, { usuariosItems: [] });
-      }
+      if (content.usuariosItems?.value !== undefined) content.usuariosItems.value = [];
+      else if (content.usuariosItems !== undefined) Object.assign(content, { usuariosItems: [] });
+      
       return { success: false, data: [], error };
     });
 };
@@ -57,32 +48,23 @@ var listAll = (content, setorId = null) => {
 var listBySetor = (content, setorId) => {
   if (!setorId) return Promise.resolve([]);
   return content.$axios
-    .post(
-      "/usuarioSetor/listBySetor",
-      { setor_id: setorId },
-      {
-        headers: {
-          Authorization: "Bearer " + content.$store.getters.getUserToken,
-          "Content-Type": "application/json",
-        },
-      }
-    )
+    .post("/usuarioSetor/listBySetor", { setor_id: setorId }, {
+      headers: {
+        Authorization: "Bearer " + content.$store.getters.getUserToken,
+        "Content-Type": "application/json",
+      },
+    })
     .then((response) => {
-      if (response.data && response.data.status) {
-        return response.data.data || [];
-      }
+      if (response.data && response.data.status) return response.data.data || [];
       return [];
     })
     .catch((error) => {
       console.error("Erro ao carregar usuários do setor:", error);
-      if (content.$toastr)
-        content.$toastr.e("Erro ao carregar usuários do setor");
       return [];
     });
 };
 
 var create = (content, payload) => {
-  // payload: { usuario_id, setor_id, perfil }
   return content.$axios
     .post("/usuarioSetor/create", payload, {
       headers: {
@@ -90,17 +72,11 @@ var create = (content, payload) => {
         "Content-Type": "application/json",
       },
     })
-    .then((response) => {
-      return response.data;
-    })
-    .catch((error) => {
-      console.error("Erro ao criar vínculo usuario_setor:", error);
-      throw error;
-    });
+    .then((response) => response.data)
+    .catch((error) => { throw error; });
 };
 
 var update = (content, payload) => {
-  // payload: { usuario_id, setor_id, perfil }
   return content.$axios
     .post("/usuarioSetor/update", payload, {
       headers: {
@@ -109,14 +85,10 @@ var update = (content, payload) => {
       },
     })
     .then((response) => response.data)
-    .catch((error) => {
-      console.error("Erro ao atualizar vínculo usuario_setor:", error);
-      throw error;
-    });
+    .catch((error) => { throw error; });
 };
 
 var remove = (content, payload) => {
-  // payload: { usuario_id, setor_id }
   return content.$axios
     .post("/usuarioSetor/delete", payload, {
       headers: {
@@ -125,29 +97,19 @@ var remove = (content, payload) => {
       },
     })
     .then((response) => response.data)
-    .catch((error) => {
-      console.error("Erro ao deletar vínculo usuario_setor:", error);
-      throw error;
-    });
+    .catch((error) => { throw error; });
 };
 
-// Helpers
 var listAllUsers = (content) => {
-  // retorna todos os usuários (sem filtro) para permitir seleção ao criar vínculo
   return content.$axios
-    .post(
-      "/user/list",
-      { filters: [] },
-      {
-        headers: {
-          Authorization: "Bearer " + content.$store.getters.getUserToken,
-          "Content-Type": "application/json",
-        },
-      }
-    )
+    .post("/user/list", { filters: [] }, {
+      headers: {
+        Authorization: "Bearer " + content.$store.getters.getUserToken,
+        "Content-Type": "application/json",
+      },
+    })
     .then((response) => {
-      if (response.data && response.data.status)
-        return response.data.data || [];
+      if (response.data && response.data.status) return response.data.data || [];
       return [];
     })
     .catch((error) => {
@@ -156,7 +118,7 @@ var listAllUsers = (content) => {
     });
 };
 
-var exportFunctions = {
+export default {
   listAll: listAll,
   listBySetor: listBySetor,
   create: create,
@@ -164,5 +126,3 @@ var exportFunctions = {
   remove: remove,
   listAllUsers: listAllUsers,
 };
-
-export default exportFunctions;

@@ -41,24 +41,7 @@ var ADD_UP = (content, funcao) => {
       }
     })
     .catch(function (error) {
-      // NOVO TRATAMENTO DE ERROS PARA O PADRÃO LARAVEL REQUESTS (HTTP 422)
-      if (error.response && error.response.status === 422) {
-        let errosFormatados = "Corrija os seguintes campos:\n\n";
-        const mensagensDeErro = error.response.data.erros;
-        
-        // Percorre todos os campos com erro e junta as mensagens
-        for (let campo in mensagensDeErro) {
-          errosFormatados += "• " + mensagensDeErro[campo][0] + "\n";
-        }
-        alert(errosFormatados);
-      } 
-      // Tratamento para outros erros (ex: 404, 500)
-      else if (error.response && error.response.data && error.response.data.message) {
-        alert("Erro: " + error.response.data.message);
-      } else {
-        alert("Ocorreu um erro de comunicação com o servidor.");
-        console.error("Detalhes do erro:", error);
-      }
+      console.error("Erro capturado globalmente:", error);
     });
 };
 
@@ -89,29 +72,10 @@ var EDIT_PERFIL = (content, funcao) => {
         content.$store.commit("setListUserPerfil", response.data.data);
         sessionStorage.setItem("user", JSON.stringify(response.data.data));
         console.log("USER:", response.data.data);
-      } else if (response.data.status == false && response.data.validacao) {
-        console.log("Erros!!!");
-        let erros = "";
-        for (let erro of Object.values(response.data.erros)) {
-          erros += erro + "\n";
-        }
-        alert(erros);
-      } else {
-        console.log(
-          "Erro ao " + funcao == "ADD" ? "cadastrar" : "atualizar",
-          response
-        );
-        content.$toastr.e(
-          "Erro ao " + funcao == "ADD" ? "cadastrar" : "atualizar"
-        );
-      }
+      } 
     })
     .catch(function (error) {
-      console.log(error);
-      //alert("OPS! \nEstamos com algum problema, tente novamente mais tarde.");
-      content.$toastr.e(
-        "OPS. Pequena intermitência. Se persistir, realize um novo login."
-      );
+      console.log("Erro ao editar perfil:", error);
     });
 };
 
@@ -157,14 +121,8 @@ var listALL = (content, url = null) => {
     })
     .catch((error) => {
       console.error("Erro na chamada da API listALL:", error);
-      console.error("Response error:", error.response);
       content.$store.commit("setisSearching", false);
       content.$store.commit("setListUsers", []);
-      if (content.$toastr) {
-        content.$toastr.e(
-          "Erro ao carregar usuários. Verifique o console para mais detalhes."
-        );
-      }
     });
 };
 
@@ -199,10 +157,7 @@ var listData = (content) => {
       if (content.callback) content.callback(); // Chama o callback após carregar os dados
     })
     .catch((error) => {
-      console.error(error);
-      content.$toastr.e(
-        "OPS. Pequena intermitência. Se persistir, realize um novo login."
-      );
+      console.error("Erro capturado globalmente em listData:", error);
     });
 };
 
@@ -236,11 +191,7 @@ var toggleData = (content, idToggle, metodo, field = null, checkd = null) => {
       }
     })
     .catch((error) => {
-      console.error(error);
-      //alert("OPS! \nEstamos com algum problema, tente novamente mais tarde.");
-      content.$toastr.e(
-        "OPS. Pequena intermitência. Se persistir, realize um novo login."
-      );
+      console.error("Erro no toggleData:", error);
     });
 };
 

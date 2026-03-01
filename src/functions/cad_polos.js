@@ -195,7 +195,6 @@ var listAll = (content, url = null) => {
       // se recebeu 404/405 e usamos /unidade como primary, tenta /polo/list
       const status = error && error.response && error.response.status;
       if (!url && (status === 404 || status === 405)) {
-        // fallback para endpoint antigo
         attempt("/polo/list")
           .then(handleResponse)
           .catch((err2) => {

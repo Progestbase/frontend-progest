@@ -1,5 +1,5 @@
 // MÓDULO DE UNIDADES DE MEDIDA
-// Implementação seguindo a documentação oficial da API
+// Refatorado para usar o Interceptor Global de Erros
 
 var ADD_UP = (content, funcao) => {
   console.log(
@@ -12,8 +12,7 @@ var ADD_UP = (content, funcao) => {
   const unidadeMedidaData = {
     unidadeMedida: {
       nome: content.modalData.nome,
-      quantidade_unidade_minima:
-        parseInt(content.modalData.quantidade_unidade_minima) || 1,
+      quantidade_unidade_minima: parseInt(content.modalData.quantidade_unidade_minima) || 1,
       status: content.modalData.status || "A",
     },
   };
@@ -44,6 +43,7 @@ var ADD_UP = (content, funcao) => {
           funcao == "ADD"
             ? "Unidade de medida cadastrada com sucesso!"
             : "Unidade de medida atualizada com sucesso!";
+        
         if (content.$toastr) {
           content.$toastr.s(mensagem);
         } else {
@@ -67,44 +67,10 @@ var ADD_UP = (content, funcao) => {
         } catch (e) {
           console.warn("Não foi possível fechar o modal automaticamente:", e);
         }
-      } else if (response.data.status == false && response.data.validacao) {
-        console.log("Erros de validação:", response.data.erros);
-        let erros = "";
-        for (let campo in response.data.erros) {
-          for (let erro of response.data.erros[campo]) {
-            erros += erro + "\n";
-          }
-        }
-        if (content.$toastr) {
-          content.$toastr.e("Erro de validação:\n" + erros);
-        } else {
-          alert("Erro de validação:\n" + erros);
-        }
-      } else {
-        console.log(
-          "Erro ao " + (funcao == "ADD" ? "cadastrar" : "atualizar"),
-          response
-        );
-        const mensagem =
-          response.data.message ||
-          "Erro ao " + (funcao == "ADD" ? "cadastrar" : "atualizar");
-        if (content.$toastr) {
-          content.$toastr.e(mensagem);
-        } else {
-          alert(mensagem);
-        }
       }
     })
     .catch(function (error) {
-      console.error("Erro na requisição:", error);
-      const mensagem =
-        error.response?.data?.message ||
-        "OPS. Pequena intermitência. Se persistir, realize um novo login.";
-      if (content.$toastr) {
-        content.$toastr.e(mensagem);
-      } else {
-        alert(mensagem);
-      }
+      console.error("Erro na requisição capturado globalmente:", error);
     });
 };
 
@@ -167,15 +133,6 @@ var listAll = (content, url = null) => {
         status: false,
         data: [],
       });
-
-      const mensagem =
-        error.response?.data?.message ||
-        "Erro ao carregar unidades de medida. Verifique sua conexão.";
-      if (content.$toastr) {
-        content.$toastr.e(mensagem);
-      } else {
-        alert(mensagem);
-      }
     });
 };
 
@@ -206,25 +163,10 @@ var listData = (content) => {
         if (content.callback) content.callback();
       } else {
         console.error("Erro ao carregar dados:", response.data);
-        const mensagem =
-          response.data.message || "Unidade de medida não encontrada";
-        if (content.$toastr) {
-          content.$toastr.e(mensagem);
-        } else {
-          alert(mensagem);
-        }
       }
     })
     .catch((error) => {
       console.error("Erro na requisição listData:", error);
-      const mensagem =
-        error.response?.data?.message ||
-        "OPS. Pequena intermitência. Se persistir, realize um novo login.";
-      if (content.$toastr) {
-        content.$toastr.e(mensagem);
-      } else {
-        alert(mensagem);
-      }
     });
 };
 
@@ -257,37 +199,10 @@ var deleteData = (content, id) => {
         } else {
           alert(mensagem);
         }
-      } else {
-        console.log("Erro ao excluir", response);
-        const mensagem = response.data.message || "Erro ao excluir";
-        if (content.$toastr) {
-          content.$toastr.e(mensagem);
-        } else {
-          alert(mensagem);
-        }
       }
     })
     .catch(function (error) {
       console.error("Erro na requisição delete:", error);
-      let mensagem =
-        "OPS. Pequena intermitência. Se persistir, realize um novo login.";
-
-      // Tratar erro específico de referências existentes (422)
-      if (error.response?.status === 422 && error.response?.data?.message) {
-        mensagem = error.response.data.message;
-        if (error.response.data.references) {
-          mensagem +=
-            "\nReferências: " + error.response.data.references.join(", ");
-        }
-      } else if (error.response?.data?.message) {
-        mensagem = error.response.data.message;
-      }
-
-      if (content.$toastr) {
-        content.$toastr.e(mensagem);
-      } else {
-        alert(mensagem);
-      }
     });
 };
 

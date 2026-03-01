@@ -15,6 +15,7 @@ var ADD_UP = (content, funcao) => {
         try {
           content.$store.commit("setModalErrors", {});
         } catch (e) {}
+        
         // Atualiza a lista e mostra mensagem (toastr opcional)
         listAll(content);
         try {
@@ -64,107 +65,14 @@ var ADD_UP = (content, funcao) => {
         } catch (e) {
           // não faz nada se falhar ao fechar o modal
         }
-      } else if (response.data.status == false && response.data.validacao) {
-        // Mensagens de validação retornadas pela API (forma antiga)
-        const dataErros = response.data.erros || {};
-        // grava no store para exibição inline
-        try {
-          content.$store.commit("setModalErrors", dataErros);
-        } catch (e) {}
-        let erros = "";
-        for (let erro of Object.values(dataErros)) {
-          erros += erro + "\n";
-        }
-        try {
-          if (content.$toastr && typeof content.$toastr.e === "function")
-            content.$toastr.e(erros);
-          else alert(erros);
-        } catch (e) {}
-      } else {
-        try {
-          if (content.$toastr && typeof content.$toastr.e === "function")
-            content.$toastr.e(
-              funcao == "ADD" ? "Erro ao cadastrar" : "Erro ao atualizar"
-            );
-          else
-            alert(funcao == "ADD" ? "Erro ao cadastrar" : "Erro ao atualizar");
-        } catch (e) {}
-      }
+      } 
+      // O bloco de "Mensagens de validação retornadas pela API (forma antiga)" 
+      // foi removido daqui pois o Interceptor Global agora trata o status 422 automaticamente.
     })
     .catch(function (error) {
-      console.error(error);
-
-      const resp = error.response;
-
-      // Tratamento especial para validação 422 (já com parsing acima)
-      if (resp && resp.status === 422) {
-        try {
-          console.debug("fornecedores 422 response:", resp.data);
-        } catch (e) {}
-        const data = resp.data || {};
-        try {
-          content.$store.commit("setModalErrors", data.erros || {});
-        } catch (e) {}
-
-        let erros = "";
-        if (data.erros) {
-          for (let campo of Object.values(data.erros)) {
-            if (Array.isArray(campo)) {
-              erros += campo.join("\n") + "\n";
-            } else {
-              erros += campo + "\n";
-            }
-          }
-        } else if (data.message) {
-          erros = data.message;
-        } else {
-          erros = "Erro de validação. Verifique os campos informados.";
-        }
-
-        try {
-          if (content.$toastr && typeof content.$toastr.e === "function")
-            content.$toastr.e(erros);
-          else alert(erros);
-        } catch (e) {}
-        return;
-      }
-
-      // Se o servidor respondeu (erro HTTP diferente de 422)
-      if (resp) {
-        const statusInfo = `(${resp.status} ${resp.statusText || ""})`;
-        const serverMessage =
-          resp.data?.message || resp.data || "Erro no servidor";
-        const mensagem =
-          typeof serverMessage === "string"
-            ? `${serverMessage} ${statusInfo}`
-            : `Erro no servidor ${statusInfo}`;
-        try {
-          if (content.$toastr && typeof content.$toastr.e === "function")
-            content.$toastr.e(mensagem);
-          else alert(mensagem);
-        } catch (e) {}
-        return;
-      }
-
-      // Se não houve resposta (problema de rede / CORS / backend offline)
-      if (error.request) {
-        const mensagem =
-          "Falha de comunicação: verifique se o servidor API está acessível (backend/offline ou CORS).";
-        try {
-          if (content.$toastr && typeof content.$toastr.e === "function")
-            content.$toastr.e(mensagem);
-          else alert(mensagem);
-        } catch (e) {}
-        return;
-      }
-
-      // Fallback genérico
-      const mensagemFallback = error.message || "Ocorreu um erro inesperado.";
-      try {
-        if (content.$toastr && typeof content.$toastr.e === "function")
-          content.$toastr.e(mensagemFallback);
-        else alert(mensagemFallback);
-      } catch (e) {}
+      console.error("Erro na requisição capturado globalmente:", error);
+      // O tratamento especial para validação 422, fallback genérico e problemas 
+      // de rede foram removidos daqui e centralizados no nosso main.js
     });
 };
 
@@ -227,16 +135,9 @@ var listAll = (content, url = null) => {
       content.$store.commit("setisSearching", false);
     })
     .catch((error) => {
-      console.error(error);
+      console.error("Erro na chamada da API listAll:", error);
       content.$store.commit("setisSearching", false);
-      try {
-        if (content.$toastr && typeof content.$toastr.e === "function")
-          content.$toastr.e(
-            "OPS. Pequena intermitência. Se persistir, realize um novo login."
-          );
-      } catch (e) {
-        // fallback silencioso
-      }
+      // fallback silencioso removido, os alertas são gerenciados pelo main.js
     });
 };
 
@@ -255,17 +156,8 @@ var listData = (content) => {
       if (content.callback) content.callback(); // Chama o callback após carregar os dados
     })
     .catch((error) => {
-      console.error(error);
-      try {
-        if (content.$toastr && typeof content.$toastr.e === "function")
-          content.$toastr.e(
-            "OPS. Pequena intermitência. Se persistir, realize um novo login."
-          );
-        else
-          alert(
-            "OPS. Pequena intermitência. Se persistir, realize um novo login."
-          );
-      } catch (e) {}
+      console.error("Erro na requisição listData:", error);
+      // Aviso visual de intermitência delegado ao Interceptor Global
     });
 };
 
@@ -284,26 +176,11 @@ var deleteData = (content, id) => {
             content.$toastr.s("Removido com sucesso");
           else alert("Removido com sucesso");
         } catch (e) {}
-      } else {
-        try {
-          if (content.$toastr && typeof content.$toastr.e === "function")
-            content.$toastr.e("Erro ao remover");
-          else alert("Erro ao remover");
-        } catch (e) {}
-      }
+      } 
     })
     .catch((error) => {
-      console.error(error);
-      try {
-        if (content.$toastr && typeof content.$toastr.e === "function")
-          content.$toastr.e(
-            "OPS. Pequena intermitência. Se persistir, realize um novo login."
-          );
-        else
-          alert(
-            "OPS. Pequena intermitência. Se persistir, realize um novo login."
-          );
-      } catch (e) {}
+      console.error("Erro na requisição delete:", error);
+      // Aviso visual de intermitência delegado ao Interceptor Global
     });
 };
 

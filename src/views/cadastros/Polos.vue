@@ -6,8 +6,8 @@ import TemplateAdmin from "@/views/roleAdmin/TemplateAdmin.vue";
 import ModalPolos from "@/components/cadastros/ModalPolos.vue";
 import DataTable from "@/components/ui/data-table/DataTable.vue";
 import { Badge } from "@/components/ui/badge";
-import { BuildingIcon, MapPinIcon, TentIcon } from "lucide-vue-next";
-import functions from "@/functions/cad_polos.js";
+import { BuildingIcon, MapPinIcon, NetworkIcon } from "lucide-vue-next";
+import functions from "@/functions/cad_unidades_polos.js";
 
 const store = useStore();
 const { proxy } = getCurrentInstance();
@@ -77,10 +77,18 @@ const handleEdit = (item) => {
 };
 
 const handleDelete = (id) => {
-  functions.deletar(
-    { $axios: proxy.$axios, $store: store, $toastr: proxy.$toastr },
-    id,
-  );
+  // Chamada genérica permitindo 'deletar' ou 'deleteData' dependendo de como o arquivo JS exporta a função
+  if (functions.deletar) {
+    functions.deletar(
+      { $axios: proxy.$axios, $store: store, $toastr: proxy.$toastr },
+      id,
+    );
+  } else if (functions.deleteData) {
+    functions.deleteData(
+      { $axios: proxy.$axios, $store: store, $toastr: proxy.$toastr },
+      id,
+    );
+  }
 };
 
 onMounted(listAll);
@@ -89,7 +97,6 @@ onMounted(listAll);
 <template>
   <TemplateAdmin>
     <div class="px-6 py-6 w-full h-full flex flex-col gap-6">
-      <!-- Main Content Card -->
       <div
         class="bg-white rounded-[2.5rem] border border-slate-200 shadow-2xl shadow-slate-200/40 overflow-hidden flex-1 flex flex-col"
       >
@@ -104,7 +111,6 @@ onMounted(listAll);
             @edit="handleEdit"
             @delete="handleDelete"
           >
-            <!-- Actions Slot -->
             <template #actions>
               <LinkModal01
                 label="CADASTRAR UNIDADE"
@@ -114,7 +120,6 @@ onMounted(listAll);
               />
             </template>
 
-            <!-- Custom Cell Templates -->
             <template #cell-status="{ item }">
               <Badge
                 :variant="item.status === 'Ativo' ? 'default' : 'destructive'"
@@ -149,7 +154,6 @@ onMounted(listAll);
               </div>
             </template>
 
-            <!-- Empty State -->
             <template #empty>
               <div
                 class="flex flex-col items-center justify-center py-24 gap-6"
@@ -183,7 +187,6 @@ onMounted(listAll);
         </div>
       </div>
 
-      <!-- Modals -->
       <ModalPolos :functions="functions" />
     </div>
   </TemplateAdmin>

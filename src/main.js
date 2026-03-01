@@ -53,6 +53,50 @@ axios.interceptors.request.use(
   },
 );
 
+// Interceptor de Resposta Global para tratar erros
+axios.interceptors.response.use(
+  function (response) {
+    // Se o backend devolver sucesso (2xx), passa a resposta diretamente para o .then()
+    return response;
+  },
+  function (error) {
+    // Se o backend devolver um erro (ex: 422, 403, 500), interceptamos aqui antes de chegar ao .catch()
+
+    if (error.response && error.response.status === 422) {
+      // 1. Tratamento Global para Erros de Validação do FormRequest (Laravel)
+      let errosFormatados = "Corrija os seguintes campos:\n\n";
+
+      // O Laravel pode enviar em 'erros' (nosso BaseFormRequest) ou 'errors' (padrão nativo)
+      const mensagensDeErro = error.response.data.erros || error.response.data.errors;
+
+      if (mensagensDeErro) {
+        for (let campo in mensagensDeErro) {
+          errosFormatados += "• " + mensagensDeErro[campo][0] + "\n";
+        }
+        alert(errosFormatados); // Pode trocar por um Toast global no futuro!
+      } else if (error.response.data.message) {
+        alert(error.response.data.message);
+      }
+
+    } else if (error.response && error.response.status === 401) {
+      // 2. Opcional: Tratamento Global para Sessão Expirada (Token Inválido)
+      alert("A sua sessão expirou. Por favor, faça login novamente.");
+      // Aqui poderia adicionar: store.commit('clearAuth'); router.push('/login');
+
+    } else if (error.response && error.response.data && error.response.data.message) {
+      // 3. Tratamento Global para outros erros enviados pelo backend
+      alert("Erro: " + error.response.data.message);
+
+    } else {
+      // 4. Erros de rede genéricos (servidor offline, etc)
+      alert("Ocorreu um erro de comunicação com o servidor.");
+    }
+
+    // Devolve o erro na mesma para que o ficheiro local possa parar o "loading", se necessário
+    return Promise.reject(error);
+  }
+);
+
 app.use(router);
 app.use(store); // Use o store importado
 // Inicializar dados do setor assim que possível (não bloqueante)
@@ -79,6 +123,9 @@ app.config.globalProperties.$toastr = {
       duration: 4000,
     });
   },
+  success: function (mensagem) {
+    this.s(mensagem);
+  },
   e: (mensagem) => {
     toast({
       title: "Erro",
@@ -87,6 +134,9 @@ app.config.globalProperties.$toastr = {
       duration: 5000,
     });
   },
+  error: function (mensagem) {
+    this.e(mensagem);
+  },
   // Opcional: warning ou info
   i: (mensagem) => {
     toast({
@@ -94,6 +144,9 @@ app.config.globalProperties.$toastr = {
       description: mensagem,
       variant: "default",
     });
+  },
+  info: function (mensagem) {
+    this.i(mensagem);
   },
 };
 

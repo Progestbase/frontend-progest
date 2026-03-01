@@ -25,7 +25,7 @@
 </template>
 
 <script setup>
-import { computed } from "vue";
+import { computed, getCurrentInstance } from "vue";
 import { useStore } from "vuex";
 import { PlusIcon } from "lucide-vue-next";
 
@@ -40,6 +40,7 @@ const props = defineProps({
 });
 
 const store = useStore();
+const { proxy } = getCurrentInstance();
 
 const preencheForm = (tipo, idData = null) => {
   store.commit("setModalTitle", props.titleModal);
@@ -50,9 +51,9 @@ const preencheForm = (tipo, idData = null) => {
   } else {
     if (props.functions && props.functions.listData) {
       props.functions.listData({
-        $axios: store._state.data.axios || null, // Dependendo de como o axios está no store
+        $axios: proxy.$axios,
         $store: store,
-        $toastr: store._state.data.toastr || null,
+        $toastr: proxy.$toastr,
         idData: idData,
         callback: () => {
           store.commit("setModalFunction", "UP");
@@ -67,3 +68,4 @@ const preencheForm = (tipo, idData = null) => {
   }
 };
 </script>
+

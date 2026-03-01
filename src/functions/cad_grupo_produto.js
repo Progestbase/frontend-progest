@@ -41,7 +41,11 @@ var ADD_UP = (content, funcao) => {
           funcao == "ADD"
             ? "Grupo de produto cadastrado com sucesso!"
             : "Grupo de produto atualizado com sucesso!";
-        if (content.$toastr) content.$toastr.s(mensagem);
+        if (content.$toastr) {
+          content.$toastr.s(mensagem);
+        } else {
+          alert(mensagem);
+        }
 
         if (funcao == "ADD") {
           content.modalData.id = response.data.data.id;
@@ -60,35 +64,7 @@ var ADD_UP = (content, funcao) => {
         } catch (e) {
           console.warn("Não foi possível fechar o modal automaticamente:", e);
         }
-      } else if (response.data.status == false && response.data.validacao) {
-        console.log("Erros de validação:", response.data.erros);
-        let erros = "";
-        for (let campo in response.data.erros) {
-          for (let erro of response.data.erros[campo]) {
-            erros += erro + "\n";
-          }
-        }
-        if (content.$toastr) content.$toastr.e("Erro de validação:\n" + erros);
-        else alert("Erro de validação:\n" + erros);
-      } else {
-        console.log(
-          "Erro ao " + (funcao == "ADD" ? "cadastrar" : "atualizar"),
-          response
-        );
-        const mensagem =
-          response.data.message ||
-          "Erro ao " + (funcao == "ADD" ? "cadastrar" : "atualizar");
-        if (content.$toastr) content.$toastr.e(mensagem);
-        else alert(mensagem);
       }
-    })
-    .catch(function (error) {
-      console.error("Erro na requisição:", error);
-      const mensagem =
-        error.response?.data?.message ||
-        "OPS. Pequena intermitência. Se persistir, realize um novo login.";
-      if (content.$toastr) content.$toastr.e(mensagem);
-      else alert(mensagem);
     });
 };
 
@@ -138,11 +114,6 @@ var listAll = (content, url = null) => {
         status: false,
         data: [],
       });
-      const mensagem =
-        error.response?.data?.message ||
-        "Erro ao carregar grupos de produto. Verifique sua conexão.";
-      if (content.$toastr) content.$toastr.e(mensagem);
-      else alert(mensagem);
     });
 };
 
@@ -170,19 +141,11 @@ var listData = (content) => {
         content.$store.commit("setModalData", response.data.data);
         if (content.callback) content.callback();
       } else {
-        const mensagem =
-          response.data.message || "Grupo de produto não encontrado";
-        if (content.$toastr) content.$toastr.e(mensagem);
-        else alert(mensagem);
+        console.error("Grupo de produto não encontrado", response.data);
       }
     })
     .catch((error) => {
       console.error("Erro na requisição listData:", error);
-      const mensagem =
-        error.response?.data?.message ||
-        "OPS. Pequena intermitência. Se persistir, realize um novo login.";
-      if (content.$toastr) content.$toastr.e(mensagem);
-      else alert(mensagem);
     });
 };
 
@@ -208,28 +171,15 @@ var deleteData = (content, id) => {
       if (response.data.status) {
         listAll(content);
         const mensagem = "Grupo de produto excluído com sucesso.";
-        if (content.$toastr) content.$toastr.s(mensagem);
-        else alert(mensagem);
-      } else {
-        const mensagem = response.data.message || "Erro ao excluir";
-        if (content.$toastr) content.$toastr.e(mensagem);
-        else alert(mensagem);
+        if (content.$toastr) {
+          content.$toastr.s(mensagem);
+        } else {
+          alert(mensagem);
+        }
       }
     })
     .catch(function (error) {
-      console.error("Erro na requisição delete:", error);
-      let mensagem =
-        "OPS. Pequena intermitência. Se persistir, realize um novo login.";
-      if (error.response?.status === 422 && error.response?.data?.message) {
-        mensagem = error.response.data.message;
-        if (error.response.data.references)
-          mensagem +=
-            "\nReferências: " + error.response.data.references.join(", ");
-      } else if (error.response?.data?.message) {
-        mensagem = error.response.data.message;
-      }
-      if (content.$toastr) content.$toastr.e(mensagem);
-      else alert(mensagem);
+      console.error("Erro na requisição delete capturado globalmente:", error);
     });
 };
 

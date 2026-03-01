@@ -20,7 +20,7 @@ import {
   PackageCheckIcon,
 } from "lucide-vue-next";
 import Funcoes from "@/functions/cad_setores.js";
-import cadPolos from "@/functions/cad_polos.js";
+import cadPolos from "@/functions/cad_unidades_polos.js";
 
 const props = defineProps(["idModal", "functions"]);
 const store = useStore();

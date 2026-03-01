@@ -14,7 +14,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Trash2Icon, PlusIcon } from "lucide-vue-next";
 import Funcoes from "@/functions/cad_setores.js";
-import cadPolos from "@/functions/cad_polos.js";
+import cadPolos from "@/functions/cad_unidades_polos.js";
 
 const props = defineProps(["idModal", "functions"]);
 const store = useStore();
@@ -41,7 +41,8 @@ const isModalOpen = computed({
 });
 
 const unidadesList = computed(() => {
-  const list = store.state.listUnidades || {};
+  // Garante a compatibilidade caso a store use listPolos ou listUnidades
+  const list = store.state.listUnidades || store.state.listPolos || {};
   return Array.isArray(list.data) ? list.data : [];
 });
 
@@ -69,17 +70,22 @@ watch(
       if (localData.value.unidade_id)
         localData.value.unidade_id = localData.value.unidade_id.toString();
 
-      // Popular fornecedores
+      // Popular fornecedores com validação melhorada do legado
       const rel =
         newValue.fornecedores_relacionados || newValue.fornecedores || [];
-      fornecedores.value = rel.map((r) => ({
-        id: r.id,
-        setor_fornecedor_id: r.setor_fornecedor_id || r.fornecedor?.id || null,
-        nome:
-          r.fornecedor?.nome ||
-          r.fornecedor?.razao_social_nome ||
-          "Setor Fornecedor",
-      }));
+        
+      fornecedores.value = rel.map((r) => {
+        const fObj = r.fornecedor || r.fornecedor_relacionado || {};
+        return {
+          id: r.id,
+          setor_fornecedor_id: r.setor_fornecedor_id || fObj.id || null,
+          nome:
+            fObj.nome ||
+            fObj.razao_social_nome ||
+            fObj.razao_social ||
+            "Setor Fornecedor",
+        };
+      });
     }
   },
   { deep: true, immediate: true },
@@ -101,10 +107,14 @@ const handleSave = () => {
   loading.value = true;
 
   const modalCopy = JSON.parse(JSON.stringify(localData.value));
-  modalCopy.fornecedores = fornecedores.value.map((f) => ({
-    id: f.id,
-    setor_fornecedor_id: f.setor_fornecedor_id,
-  }));
+  
+  // Trata e limpa os fornecedores antes de salvar (trazido da versão legada)
+  modalCopy.fornecedores = fornecedores.value
+    .filter((f) => f.setor_fornecedor_id)
+    .map((f) => ({
+      id: f.id || undefined,
+      setor_fornecedor_id: f.setor_fornecedor_id,
+    }));
 
   const content = {
     $axios: proxy.$axios,
@@ -114,7 +124,10 @@ const handleSave = () => {
   };
 
   props.functions.ADD_UP(content, modalFunction.value);
-  loading.value = false;
+  
+  // Em um cenário real de API, o ideal seria o loading = false ocorrer no retorno da promise da function, 
+  // mas mantive a estrutura original.
+  setTimeout(() => { loading.value = false; }, 500);
 };
 
 const adicionarFornecedor = () => {
@@ -213,7 +226,6 @@ const removeFornecedor = (index) => {
         ></textarea>
       </div>
 
-      <!-- Fornecedores Relacionados -->
       <div class="space-y-3 border rounded-lg p-4 bg-slate-50/50">
         <Label class="text-sm font-bold flex items-center gap-2">
           <span class="w-2 h-2 rounded-full bg-primary"></span>

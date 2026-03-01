@@ -1,73 +1,199 @@
+<script setup>
+import { computed, inject, ref } from "vue";
+import { useStore } from "vuex";
+import axios from "axios";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
+import {
+  PlusIcon,
+  DownloadIcon,
+  FileTextIcon,
+  CalendarIcon,
+  UserIcon,
+  ArrowDownIcon,
+} from "lucide-vue-next";
+import ModalEntradaEstoque from "@/components/cadastros/ModalEntradaEstoque.vue";
+import ModalVisualizarEntrada from "@/components/cadastros/ModalVisualizarEntrada.vue";
+
+const emit = defineEmits(["reload-estoque"]);
+
+const props = defineProps({
+  setorId: { type: Number, required: true },
+});
+
+const store = useStore();
+const parentData = inject("setorAtualData", {
+  entradasItems: [],
+});
+
+const setorAtual = computed(() => store.state.setorDetails || {});
+const entradaSelecionada = ref(null);
+const dialogEntradaOpen = ref(false);
+const modalVisualizarEntrada = ref(null);
+
+const listEntradas = computed(() => {
+  const items =
+    parentData.entradasItems?.value || parentData.entradasItems || [];
+  return [...items].sort(
+    (a, b) => new Date(b.created_at) - new Date(a.created_at),
+  );
+});
+
+const formatarData = (data) => {
+  if (!data) return "--/--/----";
+  return new Date(data).toLocaleDateString("pt-BR");
+};
+
+const formatarHora = (data) => {
+  if (!data) return "";
+  return new Date(data).toLocaleTimeString("pt-BR", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+};
+
+const visualizarEntrada = (entrada) => {
+  entradaSelecionada.value = entrada;
+  if (modalVisualizarEntrada.value) {
+    modalVisualizarEntrada.value.dialogOpen = true;
+  }
+};
+
+const handleEntradaRegistrada = async () => {
+  const functionsEntrada = (await import("@/functions/cad_entradas")).default;
+  const context = {
+    $axios: axios,
+    $store: store,
+    entradasItems: parentData.entradasItems,
+  };
+  if (functionsEntrada.listByUnidade) {
+    await functionsEntrada.listByUnidade(context, props.setorId);
+  }
+  emit("reload-estoque");
+};
+</script>
+
 <template>
-  <div>
-    <!-- Header com Botão -->
-    <div
-      class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4"
-    >
-      <div>
-        <h2 class="text-2xl font-bold flex items-center gap-2">
-          <i class="mdi mdi-tray-arrow-down text-xl text-blue-600"></i>
-          Entradas de Estoque
-        </h2>
-        <p class="text-sm text-muted-foreground">
-          Registros de entradas já lançadas para este setor.
-        </p>
-      </div>
-      <Button @click="abrirModalEntrada" :disabled="!setorId" class="w-md">
-        <i class="mdi mdi-plus me-2"></i>
-        Registrar Entrada
+  <div class="flex flex-col gap-8 pb-10">
+    <!-- Header -->
+    <div class="flex flex-col md:flex-row md:items-center justify-end gap-6">
+      <Button
+        @click="dialogEntradaOpen = true"
+        class="gap-2 shadow-lg shadow-primary/20"
+      >
+        <PlusIcon class="w-4 h-4" /> Registrar Nova Entrada
       </Button>
     </div>
 
-    <!-- Tabela de Entradas -->
-    <div v-if="listEntradas.length > 0">
-      <table class="table table-striped align-middle mb-0" role="table">
-        <thead>
-          <tr role="row">
-            <th role="columnheader">ID</th>
-            <th role="columnheader">Lançada em</th>
-            <th role="columnheader">Nota Fiscal</th>
-            <th role="columnheader">Fornecedor</th>
-            <th role="columnheader" class="text-center">Itens</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr
-            v-for="entrada in listEntradas"
-            :key="entrada.id"
-            @click="visualizarEntrada(entrada)"
-            role="row"
-            class="cursor-pointer"
-          >
-            <td>
-              <Badge variant="outline">{{ entrada.id }}</Badge>
-            </td>
-            <td>{{ formatarData(entrada.created_at) }}</td>
-            <td class="fw-medium">{{ entrada.nota_fiscal || "-" }}</td>
-            <td>{{ entrada.fornecedor?.razao_social_nome || "-" }}</td>
-            <td class="text-center">
-              <Badge>{{ entrada.itens?.length || 0 }}</Badge>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-
-    <!-- Estado Vazio -->
-    <div v-else class="text-center py-5">
-      <div class="mb-3">
-        <i
-          class="mdi mdi-tray-arrow-down"
-          style="font-size: 3rem; color: var(--bs-secondary)"
-        ></i>
+    <!-- Table -->
+    <Card
+      v-if="listEntradas.length > 0"
+      class="border-slate-200 shadow-sm overflow-hidden"
+    >
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead class="bg-slate-50 border-b">
+            <tr>
+              <th
+                class="py-4 px-6 text-left font-bold text-slate-500 uppercase text-[10px]"
+              >
+                Protocolo
+              </th>
+              <th
+                class="py-4 px-6 text-left font-bold text-slate-500 uppercase text-[10px]"
+              >
+                Data e Hora
+              </th>
+              <th
+                class="py-4 px-6 text-left font-bold text-slate-500 uppercase text-[10px]"
+              >
+                Nota Fiscal
+              </th>
+              <th
+                class="py-4 px-6 text-left font-bold text-slate-500 uppercase text-[10px]"
+              >
+                Fornecedor
+              </th>
+              <th
+                class="py-4 px-6 text-center font-bold text-slate-500 uppercase text-[10px]"
+              >
+                Itens
+              </th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100">
+            <tr
+              v-for="entrada in listEntradas"
+              :key="entrada.id"
+              @click="visualizarEntrada(entrada)"
+              class="hover:bg-slate-50/50 transition-colors cursor-pointer group"
+            >
+              <td class="py-4 px-6">
+                <Badge
+                  variant="outline"
+                  class="font-black text-slate-400 border-slate-200"
+                  >#{{ entrada.id }}</Badge
+                >
+              </td>
+              <td class="py-4 px-6">
+                <div class="flex flex-col">
+                  <span class="font-bold text-slate-700">{{
+                    formatarData(entrada.created_at)
+                  }}</span>
+                  <span class="text-[11px] text-slate-400 font-medium">{{
+                    formatarHora(entrada.created_at)
+                  }}</span>
+                </div>
+              </td>
+              <td class="py-4 px-6 font-medium text-slate-600">
+                <div class="flex items-center gap-2">
+                  <FileTextIcon class="w-3.5 h-3.5 text-slate-300" />
+                  {{ entrada.nota_fiscal || "N/A" }}
+                </div>
+              </td>
+              <td class="py-4 px-6">
+                <div class="flex items-center gap-2">
+                  <div
+                    class="w-7 h-7 rounded-lg bg-slate-100 flex items-center justify-center text-slate-400 group-hover:bg-primary/10 group-hover:text-primary transition-colors"
+                  >
+                    <UserIcon class="w-3.5 h-3.5" />
+                  </div>
+                  <span class="font-medium text-slate-700">{{
+                    entrada.fornecedor?.razao_social_nome ||
+                    "Fornecedor Externo"
+                  }}</span>
+                </div>
+              </td>
+              <td class="py-4 px-6 text-center">
+                <div
+                  class="inline-flex h-6 px-2 items-center justify-center rounded-full bg-primary/10 text-primary font-black text-[10px]"
+                >
+                  {{ entrada.itens?.length || 0 }} SKU
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
-      <h5>Nenhuma entrada registrada</h5>
-      <small class="text-muted">
-        Ainda não há entradas de estoque para este setor.
-      </small>
+    </Card>
+
+    <!-- Empty State -->
+    <div
+      v-else
+      class="flex flex-col items-center justify-center py-20 bg-slate-50/50 border-2 border-dashed border-slate-200 rounded-3xl"
+    >
+      <div class="p-6 bg-white rounded-full shadow-sm mb-4">
+        <ArrowDownIcon class="w-12 h-12 text-slate-300" />
+      </div>
+      <h3 class="text-slate-800 font-bold text-lg">Sem Entradas Externas</h3>
+      <p class="text-slate-500 text-sm max-w-xs text-center mt-2">
+        Nenhuma nota fiscal foi lançada diretamente para este setor até o
+        momento.
+      </p>
     </div>
 
-    <!-- Modais -->
+    <!-- Modals -->
     <ModalEntradaEstoque
       v-model:open="dialogEntradaOpen"
       :unidade="{ id: setorId }"
@@ -81,95 +207,3 @@
     />
   </div>
 </template>
-
-<script setup>
-import { defineProps, computed, inject, ref } from "vue";
-import { useStore } from "vuex";
-import axios from "axios";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import ModalEntradaEstoque from "@/components/cadastros/ModalEntradaEstoque.vue";
-import ModalVisualizarEntrada from "@/components/cadastros/ModalVisualizarEntrada.vue";
-
-// Emits para comunicar com o componente pai
-const emit = defineEmits(["reload-estoque"]);
-
-const props = defineProps({
-  setorId: {
-    type: Number,
-    required: true,
-  },
-});
-
-const store = useStore();
-
-// Receber dados do componente pai (SetorAtualView) via provide/inject
-const parentData = inject("setorAtualData", {
-  entradasItems: [],
-});
-
-// Acessar o setor atual do store
-const setorAtual = computed(() => store.state.setorDetails || {});
-
-// Ref para armazenar a entrada selecionada
-const entradaSelecionada = ref(null);
-
-// Estado do Dialog de entrada
-const dialogEntradaOpen = ref(false);
-
-// Ref do modal de visualização
-const modalVisualizarEntrada = ref(null);
-
-const listEntradas = computed(() => {
-  const items = parentData.entradasItems;
-  // Se for uma ref (Composition API), usar .value
-  return items?.value || items || [];
-});
-
-const formatarData = (data) => {
-  if (!data) return null;
-
-  let dataStr = String(data);
-  if (dataStr.includes("T")) {
-    dataStr = dataStr.split("T")[0];
-  }
-
-  const parts = dataStr.split("-");
-  if (parts.length < 3) return null;
-  const [ano, mes, dia] = parts;
-  return `${dia}/${mes}/${ano}`;
-};
-
-const abrirModalEntrada = () => {
-  // Abrir modal de entrada de estoque usando Dialog do shadcn
-  dialogEntradaOpen.value = true;
-};
-
-const visualizarEntrada = (entrada) => {
-  console.log("Visualizar entrada:", entrada);
-  entradaSelecionada.value = entrada;
-  // Abrir modal de visualização
-  if (modalVisualizarEntrada.value) {
-    modalVisualizarEntrada.value.dialogOpen = true;
-  }
-};
-
-const handleEntradaRegistrada = async () => {
-  console.log("✅ Entrada registrada com sucesso!");
-  // Recarregar a listagem de entradas
-  const functionsEntrada = (await import("@/functions/cad_entradas")).default;
-  const context = {
-    $axios: axios,
-    $store: store,
-    entradasItems: parentData.entradasItems,
-  };
-
-  // Recarregar entradas do setor
-  if (functionsEntrada.listByUnidade) {
-    await functionsEntrada.listByUnidade(context, props.setorId);
-  }
-
-  // Emitir evento para o componente pai recarregar os dados do estoque
-  emit("reload-estoque");
-};
-</script>

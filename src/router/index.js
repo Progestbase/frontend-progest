@@ -59,8 +59,7 @@ const router = createRouter({
     {
       path: "/dashboard",
       name: "dashboard",
-      // Temporariamente desativado - redireciona para setor-atual
-      redirect: "/setor-atual",
+      redirect: "/home",
     },
     {
       path: "/setor-atual",
@@ -202,7 +201,7 @@ router.beforeEach(async (to, from, next) => {
         } catch (e) {
           console.warn(
             "checkIsSolicitante: erro ao carregar usuarios do setor",
-            e
+            e,
           );
         }
       }
@@ -289,7 +288,7 @@ router.beforeEach(async (to, from, next) => {
         // Usar a função getSetorDetail que carrega setor + fornecedores relacionados
         const result = await functionsSetor.getSetorDetail(
           { $axios: axios, $store: store },
-          setorId
+          setorId,
         );
 
         if (result.success) {
@@ -297,7 +296,7 @@ router.beforeEach(async (to, from, next) => {
         } else {
           console.warn(
             "Aviso: não foi possível carregar detalhes do setor:",
-            result.message
+            result.message,
           );
         }
       }

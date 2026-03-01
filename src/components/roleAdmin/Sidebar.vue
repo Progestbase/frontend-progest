@@ -16,11 +16,10 @@
     <!-- Menu Principal -->
     <nav class="menu-section">
       <!-- Dashboard desativado temporariamente -->
-      <div class="menu-item disabled" title="Em breve">
+      <router-link class="menu-item" to="/home" title="Tela Inicial">
         <span class="material-icons menu-icon">home</span>
         <span class="menu-text">Tela Inicial</span>
-        <span v-if="is_expanded" class="badge-soon">Em breve</span>
-      </div>
+      </router-link>
     </nav>
 
     <!-- Divider -->
@@ -150,57 +149,81 @@
         </div>
       </template>
 
-            <!-- Submenu: Relatórios -->
-            <div class="submenu-section">
-              <button
-                class="menu-item submenu-toggle"
-                @click="toggleRelatoriosSubmenu"
-                title="Relatórios"
-              >
-                <span class="material-icons menu-icon">bar_chart</span>
-                <span class="menu-text">Relatórios</span>
-                <span
-                  class="material-icons expand-icon"
-                  :class="{ open: relatoriosSubmenuOpen }"
-                >
-                  expand_more
-                </span>
-              </button>
+      <!-- Submenu: Relatórios -->
+      <div class="submenu-section">
+        <button
+          class="menu-item submenu-toggle"
+          @click="toggleRelatoriosSubmenu"
+          title="Relatórios"
+        >
+          <span class="material-icons menu-icon">bar_chart</span>
+          <span class="menu-text">Relatórios</span>
+          <span
+            class="material-icons expand-icon"
+            :class="{ open: relatoriosSubmenuOpen }"
+          >
+            expand_more
+          </span>
+        </button>
 
-              <transition name="submenu-transition">
-                <div v-show="relatoriosSubmenuOpen" class="submenu-items">
-                  <router-link class="submenu-item" to="/relatorios" title="Visão Geral">
-                    <span class="material-icons menu-icon">analytics</span>
-                    <span class="menu-text">Visão Geral</span>
-                  </router-link>
+        <transition name="submenu-transition">
+          <div v-show="relatoriosSubmenuOpen" class="submenu-items">
+            <router-link
+              class="submenu-item"
+              to="/relatorios"
+              title="Visão Geral"
+            >
+              <span class="material-icons menu-icon">analytics</span>
+              <span class="menu-text">Visão Geral</span>
+            </router-link>
 
-                  <router-link class="submenu-item" to="/relatorios/movimentacoes" title="Movimentações">
-                    <span class="material-icons menu-icon">swap_horiz</span>
-                    <span class="menu-text">Movimentações</span>
-                  </router-link>
+            <router-link
+              class="submenu-item"
+              to="/relatorios/movimentacoes"
+              title="Movimentações"
+            >
+              <span class="material-icons menu-icon">swap_horiz</span>
+              <span class="menu-text">Movimentações</span>
+            </router-link>
 
-                  <router-link class="submenu-item" to="/relatorios/entradas" title="Entradas">
-                    <span class="material-icons menu-icon">receipt_long</span>
-                    <span class="menu-text">Entradas</span>
-                  </router-link>
+            <router-link
+              class="submenu-item"
+              to="/relatorios/entradas"
+              title="Entradas"
+            >
+              <span class="material-icons menu-icon">receipt_long</span>
+              <span class="menu-text">Entradas</span>
+            </router-link>
 
-                  <router-link class="submenu-item" to="/relatorios/saidas" title="Saídas">
-                    <span class="material-icons menu-icon">exit_to_app</span>
-                    <span class="menu-text">Saídas</span>
-                  </router-link>
+            <router-link
+              class="submenu-item"
+              to="/relatorios/saidas"
+              title="Saídas"
+            >
+              <span class="material-icons menu-icon">exit_to_app</span>
+              <span class="menu-text">Saídas</span>
+            </router-link>
 
-                  <router-link class="submenu-item" to="/relatorios/estoque" title="Estoque">
-                    <span class="material-icons menu-icon">inventory_2</span>
-                    <span class="menu-text">Estoque</span>
-                  </router-link>
+            <router-link
+              class="submenu-item"
+              to="/relatorios/estoque"
+              title="Estoque"
+            >
+              <span class="material-icons menu-icon">inventory_2</span>
+              <span class="menu-text">Estoque</span>
+            </router-link>
 
-                  <router-link class="submenu-item" to="/relatorios/usuarios" title="Usuários">
-                    <span class="material-icons menu-icon">group</span>
-                    <span class="menu-text">Usuários</span>
-                  </router-link>
-                </div>
-              </transition>
-            </div>
+            <router-link
+              class="submenu-item"
+              to="/relatorios/usuarios"
+              title="Usuários"
+            >
+              <span class="material-icons menu-icon">group</span>
+              <span class="menu-text">Usuários</span>
+            </router-link>
+          </div>
+        </transition>
+      </div>
     </nav>
   </aside>
 </template>
@@ -340,7 +363,7 @@ const loadSetoresConsumidores = async () => {
         headers: {
           Authorization: `Bearer ${store.getters.getUserToken}`,
         },
-      }
+      },
     );
 
     if (response.data.status && response.data.data) {
@@ -386,7 +409,7 @@ onMounted(() => {
   submenuOpen.value = savedSubmenu === "true";
 
   const savedConsumidoresSubmenu = localStorage.getItem(
-    "consumidoresSubmenuOpen"
+    "consumidoresSubmenuOpen",
   );
   consumidoresSubmenuOpen.value = savedConsumidoresSubmenu === "true";
 
@@ -415,7 +438,7 @@ watch(
   () => {
     loadSetoresConsumidores();
   },
-  { deep: true }
+  { deep: true },
 );
 </script>
 

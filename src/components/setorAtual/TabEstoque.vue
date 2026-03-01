@@ -1,187 +1,555 @@
+<script setup>
+import { computed, ref, inject } from "vue";
+import { useStore } from "vuex";
+import functionsEstoque from "@/functions/cad_estoque";
+import cadEstoqueLote from "@/functions/cad_estoque_lote";
+import axios from "axios";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import ModalVisualizarLotesProduto from "@/components/cadastros/ModalVisualizarLotesProduto.vue";
+import { useToast } from "@/components/ui/toast/use-toast";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import {
+  PackageIcon,
+  AlertTriangleIcon,
+  CheckCircle2Icon,
+  BoxesIcon,
+  PencilIcon,
+  CheckIcon,
+  XIcon,
+  SearchIcon,
+  ShoppingBagIcon,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
+} from "lucide-vue-next";
+
+// Emits para comunicar com o componente pai
+const emit = defineEmits(["reloadEstoque"]);
+
+const props = defineProps({
+  readOnly: { type: Boolean, default: false },
+});
+
+const store = useStore();
+const { toast } = useToast();
+
+const parentData = inject("setorAtualData", {
+  estoqueItems: [],
+  resumoEstoque: {},
+  setorEstoque: {},
+});
+
+const produtoSelecionado = ref({});
+const estoqueIdSelecionado = ref(null);
+const quantidadeAtualSelecionada = ref(0);
+const quantidadeMinimaSelecionada = ref(0);
+const modalVisualizarLotes = ref(null);
+const editandoQuantidade = ref(null);
+const novaQuantidadeMinima = ref(0);
+
+// Pagination & Search
+const searchQuery = ref("");
+const currentPage = ref(1);
+const perPage = ref(10);
+
+const loading = computed(() => {
+  const parentItems = parentData.estoqueItems?.value || parentData.estoqueItems;
+  return !Array.isArray(parentItems) || store.state.isSearching;
+});
+
+const estoqueItems = computed(
+  () => parentData.estoqueItems?.value || parentData.estoqueItems || [],
+);
+const resumoEstoque = computed(
+  () => parentData.resumoEstoque?.value || parentData.resumoEstoque || {},
+);
+const setorEstoque = computed(
+  () => parentData.setorEstoque?.value || parentData.setorEstoque || {},
+);
+
+const visualizarDetalhes = async (item) => {
+  const itemCompleto = estoqueItems.value.find((e) => e.estoque_id === item.id);
+  if (!itemCompleto) return;
+
+  produtoSelecionado.value = itemCompleto.produto || {};
+  estoqueIdSelecionado.value = itemCompleto.estoque_id;
+  quantidadeAtualSelecionada.value = itemCompleto.quantidade_atual || 0;
+  quantidadeMinimaSelecionada.value = itemCompleto.quantidade_minima || 0;
+
+  if (estoqueIdSelecionado.value) {
+    try {
+      await cadEstoqueLote.listByEstoque(
+        { $axios: axios, $store: store },
+        estoqueIdSelecionado.value,
+      );
+    } catch (msg) {
+      console.error("Erro ao carregar lotes:", msg);
+    }
+  }
+
+  if (modalVisualizarLotes.value) {
+    modalVisualizarLotes.value.dialogOpen = true;
+  }
+};
+
+const editarQuantidadeMinima = (itemId, quantidadeAtual) => {
+  editandoQuantidade.value = itemId;
+  novaQuantidadeMinima.value = quantidadeAtual;
+};
+
+const cancelarEdicao = () => {
+  editandoQuantidade.value = null;
+  novaQuantidadeMinima.value = 0;
+};
+
+const salvarQuantidadeMinima = async (itemId) => {
+  try {
+    const itemOriginal = estoqueItems.value.find(
+      (item) => item.estoque_id === itemId,
+    );
+    const novaVal = parseInt(novaQuantidadeMinima.value);
+
+    if (isNaN(novaVal) || novaVal < 0) {
+      toast({
+        title: "Erro",
+        description: "Quantidade deve ser maior ou igual a zero.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (novaVal === itemOriginal.quantidade_minima) {
+      cancelarEdicao();
+      return;
+    }
+
+    await functionsEstoque.atualizarQuantidadeMinima(
+      { $axios: axios, $store: store },
+      itemId,
+      novaVal,
+    );
+    emit("reloadEstoque");
+    cancelarEdicao();
+    toast({ title: "Sucesso", description: "Quantidade mínima atualizada." });
+  } catch (err) {
+    toast({
+      title: "Erro",
+      description: "Falha ao atualizar.",
+      variant: "destructive",
+    });
+  }
+};
+
+const formattedEstoque = computed(() => {
+  return estoqueItems.value.map((item) => ({
+    id: item.estoque_id,
+    produto: item.produto?.nome_completo || item.produto?.nome || "N/A",
+    grupo: item.produto?.grupo_produto?.nome || "N/A",
+    quantidade_atual: item.quantidade_atual || 0,
+    quantidade_minima: item.quantidade_minima || 0,
+    unidade: item.produto?.unidade_medida?.nome || "",
+    abaixo_minimo: item.abaixo_minimo,
+  }));
+});
+
+const filteredEstoque = computed(() => {
+  let result = formattedEstoque.value;
+  if (searchQuery.value) {
+    const term = searchQuery.value.toLowerCase();
+    result = result.filter(
+      (item) =>
+        item.produto.toLowerCase().includes(term) ||
+        item.grupo.toLowerCase().includes(term),
+    );
+  }
+  return result;
+});
+
+const totalItems = computed(() => filteredEstoque.value.length);
+const totalPages = computed(
+  () => Math.ceil(totalItems.value / perPage.value) || 1,
+);
+
+const paginatedEstoque = computed(() => {
+  const start = (currentPage.value - 1) * perPage.value;
+  const end = start + perPage.value;
+  return filteredEstoque.value.slice(start, end);
+});
+
+const onPaginate = (page) => {
+  if (page >= 1 && page <= totalPages.value) {
+    currentPage.value = page;
+  }
+};
+
+import { watch } from "vue";
+watch(searchQuery, () => {
+  currentPage.value = 1;
+});
+</script>
+
 <template>
-  <div>
+  <div class="flex flex-col gap-8 pb-10">
     <!-- Loading -->
     <div
       v-if="loading"
-      class="w-full min-h-[400px] flex items-center justify-center"
+      class="flex flex-col items-center justify-center min-h-[400px] gap-4"
     >
       <LoadingSpinner size="lg" />
+      <p class="text-slate-500 font-medium">Sincronizando estoque...</p>
     </div>
 
-    <!-- Conteúdo do Estoque -->
-    <div v-else class="space-y-6">
-      <!-- Header -->
-
-      <div>
-        <h2 class="text-2xl font-bold flex items-center gap-2">
-          <i class="mdi mdi-package-variant text-xl text-blue-600"></i>
-          Estoque
-        </h2>
-        <p class="text-sm text-muted-foreground">
-          Estoque para controle do setor atual.
-        </p>
-      </div>
-
-      <!-- Cards de Resumo -->
+    <template v-else>
+      <!-- Dashboard Summary -->
       <div
-        class="grid grid-cols-1 md:grid-cols-3 gap-4"
-        v-if="resumoEstoque && Object.keys(resumoEstoque).length > 0"
+        class="grid grid-cols-1 sm:grid-cols-3 gap-4"
+        v-if="Object.keys(resumoEstoque).length > 0"
       >
-        <Card>
-          <CardContent class="pt-6">
-            <div class="text-center">
-              <div class="text-3xl font-bold text-blue-600 mb-2">
-                {{ resumoEstoque.total_produtos || 0 }}
+        <Card
+          class="bg-blue-50/30 border-blue-100 shadow-none overflow-hidden relative group"
+        >
+          <div
+            class="absolute -right-4 -top-4 w-24 h-24 bg-blue-100/50 rounded-full blur-2xl transition-all group-hover:scale-110"
+          ></div>
+          <CardContent class="p-6 relative">
+            <div class="flex items-center gap-4">
+              <div
+                class="p-3 bg-blue-600 rounded-xl text-white shadow-lg shadow-blue-200"
+              >
+                <BoxesIcon class="w-6 h-6" />
               </div>
-              <p class="text-sm text-muted-foreground">Total de Produtos</p>
+              <div>
+                <p
+                  class="text-[10px] font-bold uppercase tracking-wider text-blue-600/70"
+                >
+                  Itens em Estoque
+                </p>
+                <p class="text-3xl font-black text-blue-800">
+                  {{ resumoEstoque.total_produtos || 0 }}
+                </p>
+              </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardContent class="pt-6">
-            <div class="text-center">
-              <div class="text-3xl font-bold text-green-600 mb-2">
-                {{ resumoEstoque.produtos_disponiveis || 0 }}
+        <Card
+          class="bg-emerald-50/30 border-emerald-100 shadow-none overflow-hidden relative group"
+        >
+          <div
+            class="absolute -right-4 -top-4 w-24 h-24 bg-emerald-100/50 rounded-full blur-2xl transition-all group-hover:scale-110"
+          ></div>
+          <CardContent class="p-6 relative">
+            <div class="flex items-center gap-4">
+              <div
+                class="p-3 bg-emerald-600 rounded-xl text-white shadow-lg shadow-emerald-200"
+              >
+                <CheckCircle2Icon class="w-6 h-6" />
               </div>
-              <p class="text-sm text-muted-foreground">Disponíveis</p>
+              <div>
+                <p
+                  class="text-[10px] font-bold uppercase tracking-wider text-emerald-600/70"
+                >
+                  Disponíveis
+                </p>
+                <p class="text-3xl font-black text-emerald-800">
+                  {{ resumoEstoque.produtos_disponiveis || 0 }}
+                </p>
+              </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardContent class="pt-6">
-            <div class="text-center">
-              <div class="text-3xl font-bold text-amber-600 mb-2">
-                {{ resumoEstoque.produtos_abaixo_minimo || 0 }}
+        <Card
+          class="bg-amber-50/30 border-amber-100 shadow-none overflow-hidden relative group"
+        >
+          <div
+            class="absolute -right-4 -top-4 w-24 h-24 bg-amber-100/50 rounded-full blur-2xl transition-all group-hover:scale-110"
+          ></div>
+          <CardContent class="p-6 relative">
+            <div class="flex items-center gap-4">
+              <div
+                class="p-3 bg-amber-600 rounded-xl text-white shadow-lg shadow-amber-200"
+              >
+                <AlertTriangleIcon class="w-6 h-6" />
               </div>
-              <p class="text-sm text-muted-foreground">Abaixo do Mínimo</p>
+              <div>
+                <p
+                  class="text-[10px] font-bold uppercase tracking-wider text-amber-600/70"
+                >
+                  Abaixo do Mínimo
+                </p>
+                <p class="text-3xl font-black text-amber-800">
+                  {{ resumoEstoque.produtos_abaixo_minimo || 0 }}
+                </p>
+              </div>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      <!-- Tabela de Estoque -->
-      <div v-if="estoqueItems.length > 0">
-        <div class="table-responsive">
-          <table class="table table-striped align-middle mb-0">
-            <thead>
-              <tr>
-                <th class="text-center">#</th>
-                <th class="text-start">Produto</th>
-                <th class="text-start">Grupo</th>
-                <th class="text-center">Qtd. Atual</th>
-                <th class="text-center">Qtd. Mínima</th>
-                <th class="text-center">Alerta</th>
-                <th class="text-center" v-if="!readOnly">Ações</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr
-                v-for="(item, index) in formattedEstoque.data"
-                :key="item.id"
-                @click="visualizarDetalhes(item)"
-                style="cursor: pointer"
-                class="hover:bg-accent/50"
-              >
-                <td class="text-center">
-                  <strong>#{{ index + 1 }}</strong>
-                </td>
-                <td class="text-start">
-                  <small>{{ item.produto }}</small>
-                </td>
-                <td class="text-start">
-                  <small>{{ item.grupo }}</small>
-                </td>
-                <td class="text-center">
-                  <Badge variant="outline">{{ item.quantidade_atual }}</Badge>
-                </td>
-                <td class="text-center" @click.stop>
-                  <div
-                    v-if="editandoQuantidade === item.id && !readOnly"
-                    class="d-flex align-items-center justify-content-center gap-2"
+      <!-- Main Inventory Table -->
+      <div v-if="estoqueItems.length > 0" class="space-y-4">
+        <!-- Toolbar: search -->
+        <div class="flex items-center justify-between gap-3 mt-4">
+          <div class="relative w-full max-w-xs">
+            <Input
+              v-model="searchQuery"
+              placeholder="Pesquisar produto..."
+              class="h-10 px-4 text-sm bg-slate-50 border-slate-100 rounded-xl focus-visible:ring-primary/20 transition-all shadow-inner"
+            />
+          </div>
+        </div>
+
+        <Card class="border-slate-200 shadow-sm overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+              <thead class="bg-slate-50 border-b">
+                <tr>
+                  <th
+                    class="text-left font-bold text-slate-500 uppercase tracking-wider py-4 px-6 text-[10px]"
                   >
-                    <input
-                      type="number"
-                      class="form-control form-control-sm"
-                      style="width: 70px"
-                      v-model.number="novaQuantidadeMinima"
-                      min="0"
-                      @keyup.enter="
-                        salvarQuantidadeMinima(
-                          item.id,
-                          item.quantidade_minima_valor
-                        )
-                      "
-                      @keyup.escape="cancelarEdicao"
-                      autofocus
-                    />
-                    <Button
-                      size="icon-sm"
-                      variant="confirm"
-                      @click="
-                        salvarQuantidadeMinima(
-                          item.id,
-                          item.quantidade_minima_valor
-                        )
-                      "
-                      title="Salvar"
+                    Produto
+                  </th>
+                  <th
+                    class="text-left font-bold text-slate-500 uppercase tracking-wider py-4 px-6 text-[10px] hidden md:table-cell"
+                  >
+                    Grupo
+                  </th>
+                  <th
+                    class="text-center font-bold text-slate-500 uppercase tracking-wider py-4 px-6 text-[10px]"
+                  >
+                    Qtd. Atual
+                  </th>
+                  <th
+                    class="text-center font-bold text-slate-500 uppercase tracking-wider py-4 px-6 text-[10px]"
+                  >
+                    Mínimo
+                  </th>
+                  <th
+                    class="text-center font-bold text-slate-500 uppercase tracking-wider py-4 px-6 text-[10px]"
+                  >
+                    Status
+                  </th>
+                  <th
+                    v-if="!readOnly"
+                    class="text-right font-bold text-slate-500 uppercase tracking-wider py-4 px-6 text-[10px]"
+                  >
+                    Gestão
+                  </th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-100">
+                <template v-if="paginatedEstoque.length > 0">
+                  <tr
+                    v-for="item in paginatedEstoque"
+                    :key="item.id"
+                    @click="visualizarDetalhes(item)"
+                    class="hover:bg-slate-50/50 transition-colors cursor-pointer group"
+                  >
+                    <td class="py-4 px-6">
+                      <div class="flex flex-col">
+                        <span class="font-bold text-slate-800">{{
+                          item.produto
+                        }}</span>
+                        <span
+                          class="text-[10px] text-slate-400 font-medium md:hidden"
+                          >{{ item.grupo }}</span
+                        >
+                      </div>
+                    </td>
+                    <td class="py-4 px-6 hidden md:table-cell">
+                      <Badge
+                        variant="outline"
+                        class="font-medium bg-white text-[10px]"
+                        >{{ item.grupo }}</Badge
+                      >
+                    </td>
+                    <td class="py-4 px-6 text-center">
+                      <div
+                        class="inline-flex items-center justify-center font-black text-slate-700 bg-slate-100 px-3 py-1 rounded-lg"
+                      >
+                        {{ item.quantidade_atual }}
+                        <span
+                          class="text-[9px] ml-1 text-slate-400 font-medium"
+                          >{{ item.unidade }}</span
+                        >
+                      </div>
+                    </td>
+                    <td class="py-4 px-6 text-center" @click.stop>
+                      <div
+                        v-if="editandoQuantidade === item.id && !readOnly"
+                        class="flex items-center gap-1 justify-center"
+                      >
+                        <Input
+                          type="number"
+                          v-model.number="novaQuantidadeMinima"
+                          class="h-8 w-20 text-center font-bold"
+                          @keyup.enter="salvarQuantidadeMinima(item.id)"
+                          @keyup.escape="cancelarEdicao"
+                          autofocus
+                        />
+                        <Button
+                          size="icon"
+                          variant="default"
+                          class="h-8 w-8 bg-emerald-600 hover:bg-emerald-700"
+                          @click="salvarQuantidadeMinima(item.id)"
+                        >
+                          <CheckIcon class="w-4 h-4" />
+                        </Button>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          class="h-8 w-8 text-slate-400"
+                          @click="cancelarEdicao"
+                        >
+                          <XIcon class="w-4 h-4" />
+                        </Button>
+                      </div>
+                      <div
+                        v-else
+                        class="flex items-center justify-center gap-1"
+                      >
+                        <span class="font-bold text-slate-600">{{
+                          item.quantidade_minima
+                        }}</span>
+                        <span class="text-[9px] text-slate-400 font-medium">{{
+                          item.unidade
+                        }}</span>
+                      </div>
+                    </td>
+                    <td class="py-4 px-6 text-center">
+                      <Badge
+                        :variant="
+                          item.abaixo_minimo ? 'destructive' : 'secondary'
+                        "
+                        class="px-2 py-0.5 text-[10px] uppercase font-black"
+                      >
+                        {{ item.abaixo_minimo ? "Crítico" : "Seguro" }}
+                      </Badge>
+                    </td>
+                    <td
+                      v-if="!readOnly"
+                      class="py-4 px-6 text-right"
+                      @click.stop
                     >
-                      <i class="mdi mdi-check"></i>
-                    </Button>
-                    <Button
-                      size="icon-sm"
-                      variant="outline"
-                      @click="cancelarEdicao"
-                      title="Cancelar"
+                      <Button
+                        v-if="editandoQuantidade !== item.id"
+                        variant="ghost"
+                        size="icon"
+                        class="h-8 w-8 text-slate-400 hover:text-primary transition-colors"
+                        @click="
+                          editarQuantidadeMinima(
+                            item.id,
+                            item.quantidade_minima,
+                          )
+                        "
+                      >
+                        <PencilIcon class="w-4 h-4" />
+                      </Button>
+                    </td>
+                  </tr>
+                </template>
+                <tr v-else>
+                  <td :colspan="readOnly ? 5 : 6" class="py-12 text-center">
+                    <div
+                      class="flex flex-col items-center justify-center gap-2"
                     >
-                      <i class="mdi mdi-close"></i>
-                    </Button>
-                  </div>
-                  <div v-else>
-                    <Badge variant="outline">{{
-                      item.quantidade_minima
-                    }}</Badge>
-                  </div>
-                </td>
-                <td class="text-center">
-                  {{ item.alerta }}
-                </td>
-                <td class="text-center" @click.stop v-if="!readOnly">
-                  <div class="d-flex align-items-center justify-content-center">
-                    <Button
-                      v-if="editandoQuantidade !== item.id"
-                      variant="outline"
-                      size="icon-sm"
-                      @click="
-                        editarQuantidadeMinima(
-                          item.id,
-                          item.quantidade_minima_valor
-                        )
-                      "
-                      title="Editar quantidade mínima"
-                    >
-                      <i class="mdi mdi-pencil"></i>
-                    </Button>
-                  </div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+                      <span class="text-sm text-slate-500"
+                        >Nenhum produto encontrado.</span
+                      >
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </Card>
+
+        <!-- Pagination -->
+        <div
+          class="flex items-center justify-between px-1 pt-1"
+          v-if="totalItems > 0"
+        >
+          <p class="text-xs text-muted-foreground">
+            Mostrando
+            <span class="font-medium">{{
+              (currentPage - 1) * perPage + 1
+            }}</span
+            >–<span class="font-medium">{{
+              Math.min(currentPage * perPage, totalItems)
+            }}</span>
+            de <span class="font-medium">{{ totalItems }}</span> registros
+          </p>
+          <div class="flex items-center gap-1">
+            <Button
+              variant="outline"
+              size="icon-sm"
+              class="hidden lg:flex w-8 h-8 p-0"
+              :disabled="currentPage === 1"
+              @click="onPaginate(1)"
+            >
+              <ChevronsLeft class="h-3.5 w-3.5" />
+            </Button>
+            <Button
+              variant="outline"
+              size="icon-sm"
+              class="w-8 h-8 p-0"
+              :disabled="currentPage === 1"
+              @click="onPaginate(currentPage - 1)"
+            >
+              <ChevronLeft class="h-3.5 w-3.5" />
+            </Button>
+            <span class="text-xs font-medium px-2 text-slate-600">
+              {{ currentPage }} / {{ totalPages }}
+            </span>
+            <Button
+              variant="outline"
+              size="icon-sm"
+              class="w-8 h-8 p-0"
+              :disabled="currentPage === totalPages"
+              @click="onPaginate(currentPage + 1)"
+            >
+              <ChevronRight class="h-3.5 w-3.5" />
+            </Button>
+            <Button
+              variant="outline"
+              size="icon-sm"
+              class="hidden lg:flex w-8 h-8 p-0"
+              :disabled="currentPage === totalPages"
+              @click="onPaginate(totalPages)"
+            >
+              <ChevronsRight class="h-3.5 w-3.5" />
+            </Button>
+          </div>
         </div>
       </div>
 
       <!-- Empty State -->
-      <div v-else class="flex flex-col items-center justify-center py-12">
-        <i class="mdi mdi-box-multiple text-5xl text-muted-foreground mb-4"></i>
-        <h3 class="text-lg font-semibold mb-2">Nenhum item em estoque</h3>
-        <p class="text-muted-foreground">
-          Não há produtos em estoque para este setor.
+      <div
+        v-else
+        class="flex flex-col items-center justify-center py-20 bg-slate-50/50 border-2 border-dashed border-slate-200 rounded-3xl"
+      >
+        <div class="p-6 bg-white rounded-full shadow-sm mb-4">
+          <ShoppingBagIcon class="w-12 h-12 text-slate-300" />
+        </div>
+        <h3 class="text-slate-800 font-bold text-lg">Prateleiras Vazias</h3>
+        <p class="text-slate-500 text-sm max-w-xs text-center mt-2">
+          Não há itens registrados neste setor ou os filtros atuais não
+          encontraram correspondências.
         </p>
       </div>
-    </div>
+    </template>
 
-    <!-- Modal de Visualização de Lotes -->
     <ModalVisualizarLotesProduto
       ref="modalVisualizarLotes"
       :produto="produtoSelecionado"
@@ -192,230 +560,3 @@
     />
   </div>
 </template>
-
-<script setup>
-import { computed, ref, inject } from "vue";
-import { useStore } from "vuex";
-import functionsEstoque from "@/functions/cad_estoque";
-import cadEstoqueLote from "@/functions/cad_estoque_lote";
-import axios from "axios";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import ModalVisualizarLotesProduto from "@/components/cadastros/ModalVisualizarLotesProduto.vue";
-import { useToast } from "@/composables/useToast";
-import { LoadingSpinner } from "@/components/ui/loading-spinner";
-import * as bootstrap from "bootstrap";
-
-// Emits para comunicar com o componente pai
-const emit = defineEmits(["reloadEstoque"]);
-
-const props = defineProps({
-  readOnly: {
-    type: Boolean,
-    default: false,
-  },
-});
-
-const store = useStore();
-const { success, error } = useToast();
-
-// Receber dados do componente pai (SetorAtualView) via provide/inject
-const parentData = inject("setorAtualData", {
-  estoqueItems: [],
-  resumoEstoque: {},
-  setorEstoque: {},
-  loading: false,
-});
-
-// Ref do modal (removido pois não é mais usado)
-// const modalVisualizarEstoque = ref(null);
-
-// Estados para o modal de lotes
-const produtoSelecionado = ref({});
-const estoqueIdSelecionado = ref(null);
-const quantidadeAtualSelecionada = ref(0);
-const quantidadeMinimaSelecionada = ref(0);
-const modalVisualizarLotes = ref(null);
-
-const loading = computed(() => {
-  // Se já temos dados do componente pai, não mostrar loading
-  const parentItems = parentData.estoqueItems?.value || parentData.estoqueItems;
-  const hasParentData = Array.isArray(parentItems) && parentItems.length >= 0;
-  if (hasParentData) {
-    return false;
-  }
-
-  // Caso contrário, verificar se há busca em andamento
-  return Boolean(store.state.isSearching);
-});
-const estoqueItems = computed(() => {
-  const items = parentData.estoqueItems;
-  // Se for uma ref (Composition API), usar .value
-  return items?.value || items || [];
-});
-const resumoEstoque = computed(() => {
-  const resumo = parentData.resumoEstoque;
-  return resumo?.value || resumo || {};
-});
-const setorEstoque = computed(() => {
-  const setor = parentData.setorEstoque;
-  return setor?.value || setor || {};
-});
-
-// Função para visualizar detalhes do item (lotes)
-const visualizarDetalhes = async (item) => {
-  // Buscar dados completos do item no estoqueItems
-  const itemCompleto = estoqueItems.value.find((e) => e.estoque_id === item.id);
-
-  if (!itemCompleto) {
-    error("Erro", "Item de estoque não encontrado");
-    return;
-  }
-
-  // Definir dados do produto selecionado
-  produtoSelecionado.value = itemCompleto.produto || {};
-  estoqueIdSelecionado.value = itemCompleto.estoque_id;
-  quantidadeAtualSelecionada.value = itemCompleto.quantidade_atual || 0;
-  quantidadeMinimaSelecionada.value = itemCompleto.quantidade_minima || 0;
-
-  // Carregar lotes via API e aguardar
-  if (estoqueIdSelecionado.value) {
-    try {
-      // Aguardar o carregamento dos lotes
-      await cadEstoqueLote.listByEstoque(
-        {
-          $axios: axios,
-          $store: store,
-          $toastr: undefined,
-        },
-        estoqueIdSelecionado.value
-      );
-
-      // Pequeno delay para garantir que o Vue atualizou os computed
-      await new Promise((resolve) => setTimeout(resolve, 100));
-    } catch (errorMsg) {
-      console.error("Erro ao carregar lotes:", errorMsg);
-    }
-  }
-
-  // Abrir modal APÓS carregar os lotes
-  try {
-    if (modalVisualizarLotes.value) {
-      modalVisualizarLotes.value.dialogOpen = true;
-    }
-  } catch (errorMsg) {
-    console.error("Erro ao abrir modal de lotes:", errorMsg);
-    error("Erro", "Não foi possível abrir o modal. Tente novamente.");
-  }
-};
-
-// Estados para edição de quantidade mínima
-const editandoQuantidade = ref(null);
-const novaQuantidadeMinima = ref(0);
-
-// Função para iniciar edição
-const editarQuantidadeMinima = (itemId, quantidadeAtual) => {
-  editandoQuantidade.value = itemId;
-  novaQuantidadeMinima.value = quantidadeAtual;
-};
-
-// Função para cancelar edição
-const cancelarEdicao = () => {
-  editandoQuantidade.value = null;
-  novaQuantidadeMinima.value = 0;
-};
-
-// Função para salvar quantidade mínima
-const salvarQuantidadeMinima = async (itemId, quantidadeAtual) => {
-  try {
-    // Encontrar o item original
-    const itemOriginal = estoqueItems.value.find(
-      (item) => item.estoque_id === itemId
-    );
-    if (!itemOriginal) {
-      error("Erro", "Item não encontrado");
-      return;
-    }
-
-    // Validar a nova quantidade
-    const novaQuantidade = parseInt(novaQuantidadeMinima.value);
-    if (isNaN(novaQuantidade) || novaQuantidade < 0) {
-      error(
-        "Erro de validação",
-        "Quantidade deve ser um número maior ou igual a zero"
-      );
-      return;
-    }
-
-    // Verificar se houve mudança
-    if (novaQuantidade === itemOriginal.quantidade_minima) {
-      cancelarEdicao();
-      return;
-    }
-
-    // Atualizar via API
-    const context = {
-      $axios: axios,
-      $store: store,
-      $toastr: undefined,
-      modalData: {},
-    };
-
-    await functionsEstoque.atualizarQuantidadeMinima(
-      context,
-      itemId,
-      novaQuantidade
-    );
-
-    // Emitir evento para o componente pai recarregar os dados
-    emit("reloadEstoque");
-
-    // Cancelar edição
-    cancelarEdicao();
-
-    // Feedback de sucesso
-    success("Sucesso", "Quantidade mínima atualizada com sucesso!");
-  } catch (errorMsg) {
-    console.error("Erro ao salvar quantidade mínima:", errorMsg);
-    error("Erro", "Erro ao atualizar quantidade mínima");
-  }
-};
-
-const formattedEstoque = computed(() => {
-  if (!estoqueItems.value?.length) return { data: [] };
-
-  return {
-    data: estoqueItems.value.map((item) => ({
-      id: item.estoque_id,
-      produto: item.produto?.nome_completo || "N/A",
-      grupo: item.produto?.grupo_produto?.nome || "N/A",
-      quantidade_atual:
-        `${item.quantidade_atual || 0} ${item.produto?.unidade_medida?.nome || ""}`.trim(),
-      quantidade_minima:
-        `${item.quantidade_minima || 0} ${item.produto?.unidade_medida?.nome || ""}`.trim(),
-      quantidade_minima_valor: item.quantidade_minima || 0,
-      alerta: item.abaixo_minimo ? "⚠️ Abaixo" : "✅ OK",
-    })),
-  };
-});
-</script>
-
-<style scoped>
-.card.border-0 {
-  box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
-}
-
-.badge {
-  font-size: 0.75em;
-}
-
-.table-responsive {
-  border-radius: 0.25rem;
-  border: 1px solid #e9ecef;
-}
-
-.table {
-  margin-bottom: 0;
-}
-</style>

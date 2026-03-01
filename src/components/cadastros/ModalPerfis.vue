@@ -1,127 +1,104 @@
-<template>
-    <span>
-        <ModalBase01 :idModal="idModal" :modalTitle="modalTitle" :functions="functions" @actionModal="add_UP_Perfis">
-            
-        </ModalBase01>
-    </span>
-</template>
+<script setup>
+import { computed, ref, watch, getCurrentInstance } from "vue";
+import { useStore } from "vuex";
+import CadastroDialog from "@/components/layouts/CadastroDialog.vue";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
 
+const props = defineProps(["idModal", "functions"]);
+const store = useStore();
+const { proxy } = getCurrentInstance();
 
-<script>
+const localData = ref({
+  id: null,
+  status: "A",
+  nome: "",
+  descricao: "",
+});
 
-import ModalBase01 from "../layouts/ModalBase01.vue";
-import Funcoes from "../../functions/cad_perfis.js";
+const modalDataStore = computed(() => store.state.modalData.modalData);
+const modalFunction = computed(() => store.state.modalData.modalFunction);
+const isModalOpen = computed({
+  get: () => store.state.modalData.isModalOpen,
+  set: (value) => store.commit("setModalOpen", value),
+});
 
-export default {
-    name: 'ModalPerfis',
-    components: {
-        ModalBase01,
-        Funcoes
-    },
-    props: ['idModal', 'functions'],
-    data() {
-        return {
-
-        }
-    },
-    mounted() {
-
-    },
-    methods: {
-        add_UP_Perfis() {
-            const content = {
-                $axios: this.$axios,
-                $store: this.$store,
-                $toastr: this.$toastr,
-                modalData: JSON.parse(JSON.stringify(this.modalData))
-            };
-            this.functions.ADD_UP(content, this.modalFunction);
-        }
-    },
-    computed: {
-        modalTitle() {
-            return this.$store.state.modalTitle;
-        },
-        modalData() {
-            return this.$store.state.modalData;
-        },
-        modalFunction() {
-            return this.$store.state.modalFunction;
-        }
-    },
-    state: {
-        modalData: {
-            status: 'A',
-            nome: '',
-            descricao: '',
-        }
-    },
-    mutations: {
-        setModalData(state, payload) {
-            state.modalData = {
-                ...state.modalData,
-                ...payload
-            }
-        }
+watch(
+  modalDataStore,
+  (newValue) => {
+    if (newValue) {
+      localData.value = JSON.parse(JSON.stringify(newValue));
+      if (!localData.value.status) localData.value.status = "A";
     }
-}
+  },
+  { deep: true, immediate: true },
+);
 
+const handleSave = () => {
+  const content = {
+    $axios: proxy.$axios,
+    $store: store,
+    $toastr: proxy.$toastr,
+    modalData: localData.value,
+  };
+  props.functions.ADD_UP(content, modalFunction.value);
+};
 </script>
 
-<style scoped>
-.user-form {
-  display: grid;
-  gap: 1rem;
-  grid-template-columns: 1fr 1fr;
-}
+<template>
+  <CadastroDialog
+    v-model:open="isModalOpen"
+    :title="modalFunction === 'ADD' ? 'Cadastrar Perfil' : 'Editar Perfil'"
+  >
+    <div class="space-y-4 py-2">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="md:col-span-2 space-y-2">
+          <Label for="perfil-nome"
+            >Nome <span class="text-destructive">*</span></Label
+          >
+          <Input
+            id="perfil-nome"
+            v-model="localData.nome"
+            class="uppercase"
+            placeholder="Nome do perfil"
+          />
+        </div>
 
-.form-group {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
+        <div class="space-y-2">
+          <Label for="perfil-status">Status</Label>
+          <Select v-model="localData.status">
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="A">Ativo</SelectItem>
+              <SelectItem value="I">Inativo</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
 
-.form-group label {
-  font-weight: 500;
-  color: #333;
-}
+      <div class="space-y-2">
+        <Label for="perfil-desc">Descrição</Label>
+        <Input
+          id="perfil-desc"
+          v-model="localData.descricao"
+          placeholder="Breve descrição das permissões"
+        />
+      </div>
+    </div>
 
-.form-group input,
-.form-group select {
-  padding: 0.5rem;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 1rem;
-}
-
-.form-group input:focus,
-.form-group select:focus {
-  outline: none;
-  border-color: #4a4a4a;
-}
-
-.btn {
-  padding: 0.5rem 1rem;
-  border-radius: 4px;
-  cursor: pointer;
-  font-weight: 500;
-}
-
-.btn-primary {
-  background-color: #4a4a4a;
-  color: white;
-  border: none;
-}
-
-.btn-secondary {
-  background-color: #f0f0f0;
-  color: #333;
-  border: 1px solid #ddd;
-}
-
-@media (max-width: 768px) {
-  .user-form {
-    grid-template-columns: 1fr;
-  }
-}
-</style>
+    <template #footer="{ close }">
+      <Button variant="outline" @click="close">Fechar</Button>
+      <Button @click="handleSave">
+        {{ modalFunction === "ADD" ? "Salvar" : "Atualizar" }}
+      </Button>
+    </template>
+  </CadastroDialog>
+</template>

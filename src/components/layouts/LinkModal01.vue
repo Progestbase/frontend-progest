@@ -1,100 +1,69 @@
 <template>
   <span>
-    <span v-if="!dataList">
+    <!-- Botão de criar novo (sem dataList = modo ADD) -->
+    <template v-if="!dataList">
       <button
         type="button"
-        class="btn btn-primary btn-novo"
-        data-bs-toggle="modal"
-        :data-bs-target="idModalInsertUP"
-        v-on:click="preencheForm('create')"
+        @click="preencheForm('create')"
+        class="inline-flex items-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground shadow hover:bg-primary/90 h-9 px-4 py-2"
       >
-        <i class="mdi mdi-plus"></i>
+        <PlusIcon class="h-4 w-4" />
         {{ label }}
       </button>
-    </span>
-    <span v-if="dataList">
+    </template>
+
+    <!-- Link para editar (com dataList = modo EDIT, exibido dentro da tabela) -->
+    <template v-else>
       <a
-        data-bs-toggle="modal"
-        :data-bs-target="idModalInsertUP"
-        v-on:click="preencheForm('edit', idData)"
-        style="cursor: pointer; color: #3b76e1"
-        >{{ label }}</a
+        @click="preencheForm('edit', idData)"
+        class="text-primary font-medium hover:underline cursor-pointer text-sm"
       >
-    </span>
+        {{ label }}
+      </a>
+    </template>
   </span>
 </template>
 
-<script>
-export default {
-  name: "",
-  props: [
-    "idModalInsertUP",
-    "dataList",
-    "label",
-    "titleModal",
-    "functions",
-    "idData",
-    "varsModalData",
-  ],
-  data() {
-    return {
-      msg: "",
-    };
-  },
-  methods: {
-    preencheForm(tipo, idData = null) {
-      this.$store.commit("setModalTitle", this.titleModal);
-      if (tipo == "create") {
-        this.$store.commit("setModalData", this.varsModalData);
-        this.$store.commit("setModalFunction", "ADD");
-        this.$nextTick(() => {
-          setTimeout(() => {
-            const abaDadosTab = document.querySelector("#aba_dados-tab");
-            if (abaDadosTab) abaDadosTab.click();
-          }, 100);
-        });
-      } else {
-        // Monte o objeto corretamente
-        this.functions.listData({
-          $axios: this.$axios,
-          $store: this.$store,
-          $toastr: this.$toastr,
-          idData: idData,
-          callback: () => {
-            setTimeout(() => {
-              document.querySelector(this.idModalInsertUP).click();
-            }, 100);
-          },
-        });
-        this.$store.commit("setModalFunction", "UP");
-      }
-    },
-  },
-  mounted() {},
+<script setup>
+import { computed } from "vue";
+import { useStore } from "vuex";
+import { PlusIcon } from "lucide-vue-next";
+
+const props = defineProps({
+  idModalInsertUP: String, // Mantido apenas para compatibilidade de props, não mais usado como ID DOM
+  dataList: [Array, Object],
+  label: String,
+  titleModal: String,
+  functions: Object,
+  idData: [String, Number],
+  varsModalData: Object,
+});
+
+const store = useStore();
+
+const preencheForm = (tipo, idData = null) => {
+  store.commit("setModalTitle", props.titleModal);
+  if (tipo === "create") {
+    store.commit("setModalData", props.varsModalData || {});
+    store.commit("setModalFunction", "ADD");
+    store.commit("setModalOpen", true);
+  } else {
+    if (props.functions && props.functions.listData) {
+      props.functions.listData({
+        $axios: store._state.data.axios || null, // Dependendo de como o axios está no store
+        $store: store,
+        $toastr: store._state.data.toastr || null,
+        idData: idData,
+        callback: () => {
+          store.commit("setModalFunction", "UP");
+          store.commit("setModalOpen", true);
+        },
+      });
+    } else {
+      // Fallback se não houver listData (caso simples)
+      store.commit("setModalFunction", "UP");
+      store.commit("setModalOpen", true);
+    }
+  }
 };
 </script>
-
-<!-- Add "scoped" attribute to limit CSS to this component only -->
-<style scoped>
-.btn-novo {
-  font-weight: 600;
-  font-size: 0.9rem;
-  padding: 0.6rem 1rem;
-  border-radius: 0.5rem;
-  background-color: #28a745;
-  border: none;
-  color: white;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.btn-novo:hover {
-  background-color: #218838;
-  color: white;
-}
-
-.btn-novo i {
-  font-size: 1rem;
-  font-weight: bold;
-}
-</style>

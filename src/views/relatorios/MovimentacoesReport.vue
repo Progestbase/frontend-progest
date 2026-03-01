@@ -42,7 +42,8 @@
                   </select>
                 </div>
                 <div class="col-md-4 d-flex align-items-end justify-content-end">
-                  <button class="btn btn-outline-success me-2" @click="exportCsv" :disabled="movimentacoes.length===0">Exportar CSV</button>
+                  <button class="btn btn-outline-success me-2" @click="exportExcel" :disabled="movimentacoes.length===0">Exportar Excel</button>
+                  <button class="btn btn-outline-danger" @click="exportPdf" :disabled="movimentacoes.length===0">Exportar PDF</button>
                 </div>
               </div>
             </div>
@@ -156,6 +157,9 @@
 <script>
 import TemplateAdmin from '@/views/roleAdmin/TemplateAdmin.vue'
 import functionsRelatorios from '@/functions/cad_relatorios.js'
+import * as XLSX from 'xlsx'
+import jsPDF from 'jspdf'
+import autoTable from 'jspdf-autotable'
 
 export default {
   name: 'MovimentacoesReport',
@@ -284,15 +288,20 @@ export default {
     getStatusBadge(status) {
       return status === 'A' ? 'bg-success' : 'bg-danger';
     },
-    exportCsv() {
+    exportExcel() {
       if (!this.movimentacoes || this.movimentacoes.length===0) return;
-      const rows = [];
-      rows.push(['ID','Data/Hora','Tipo','Solicitante','Aprovador','Setor Origem','Setor Destino','Status','Qtd.Solicitada','Qtd.Liberada','Produto','Cód.SIMPRAS','Cód.Barras','Lote','Observação']);
+      
+      // Preparar dados para o Excel
+      const data = [];
+      
+      // Cabeçalho
+      data.push(['ID','Data/Hora','Tipo','Solicitante','Aprovador','Setor Origem','Setor Destino','Status','Qtd.Solicitada','Qtd.Liberada','Produto','Cód.SIMPRAS','Cód.Barras','Lote','Observação']);
+      
+      // Dados
       for (const m of this.movimentacoes) {
-        // Cada item vira uma linha no CSV
         if (m.itens && m.itens.length > 0) {
           m.itens.forEach(item => {
-            rows.push([
+            data.push([
               m.id,
               this.formatDateTime(m.data_hora || m.created_at),
               this.getTipoLabel(m.tipo),
@@ -311,7 +320,7 @@ export default {
             ]);
           });
         } else {
-          rows.push([
+          data.push([
             m.id,
             this.formatDateTime(m.data_hora || m.created_at),
             this.getTipoLabel(m.tipo),
@@ -330,14 +339,125 @@ export default {
           ]);
         }
       }
-      const csvContent = rows.map(r => r.map(c => '"'+String(c).replace(/"/g,'""')+'"').join(',')).join('\n');
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `relatorio_movimentacoes_${new Date().toISOString().slice(0,10)}.csv`;
-      a.click();
-      URL.revokeObjectURL(url);
+      
+      // Criar workbook e worksheet
+      const ws = XLSX.utils.aoa_to_sheet(data);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Movimentações');
+      
+      // Ajustar largura das colunas
+      const colWidths = [
+        { wch: 8 },  // ID
+        { wch: 18 }, // Data/Hora
+        { wch: 15 }, // Tipo
+        { wch: 20 }, // Solicitante
+        { wch: 20 }, // Aprovador
+        { wch: 20 }, // Setor Origem
+        { wch: 20 }, // Setor Destino
+        { wch: 12 }, // Status
+        { wch: 12 }, // Qtd.Solicitada
+        { wch: 12 }, // Qtd.Liberada
+        { wch: 30 }, // Produto
+        { wch: 15 }, // Cód.SIMPRAS
+        { wch: 15 }, // Cód.Barras
+        { wch: 15 }, // Lote
+        { wch: 30 }  // Observação
+      ];
+      ws['!cols'] = colWidths;
+      
+      // Baixar arquivo
+      XLSX.writeFile(wb, `relatorio_movimentacoes_${new Date().toISOString().slice(0,10)}.xlsx`);
+    },
+    exportPdf() {
+      if (!this.movimentacoes || this.movimentacoes.length===0) return;
+      
+      // Criar documento PDF em paisagem (landscape)
+      const doc = new jsPDF('landscape', 'mm', 'a4');
+      
+      // Cabeçalho
+      doc.setFontSize(16);
+      doc.text('Relatorio de Movimentacoes', 14, 15);
+      
+      doc.setFontSize(10);
+      const periodo = `Periodo: ${this.formatDate(this.filters.date_from) || 'Todos'} ate ${this.formatDate(this.filters.date_to) || 'Todos'}`;
+      doc.text(periodo, 14, 22);
+      
+      // Preparar dados da tabela
+      const tableData = [];
+      for (const m of this.movimentacoes) {
+        if (m.itens && m.itens.length > 0) {
+          m.itens.forEach((item, idx) => {
+            tableData.push([
+              idx === 0 ? m.id : '',
+              idx === 0 ? this.formatDateTime(m.data_hora || m.created_at) : '',
+              idx === 0 ? this.getTipoLabel(m.tipo) : '',
+              idx === 0 ? (m.usuario?.name || '-') : '',
+              idx === 0 ? (m.setor_origem?.nome || '-') : '',
+              idx === 0 ? (m.setor_destino?.nome || '-') : '',
+              idx === 0 ? this.getStatusSolicitacaoLabel(m.status_solicitacao) : '',
+              item.quantidade_solicitada || item.quantidade || '',
+              item.quantidade_liberada || item.quantidade || '',
+              item.produto?.nome || `Produto #${item.produto_id}`,
+              item.produto?.codigo_simpras || '',
+              item.lote || ''
+            ]);
+          });
+        } else {
+          tableData.push([
+            m.id,
+            this.formatDateTime(m.data_hora || m.created_at),
+            this.getTipoLabel(m.tipo),
+            m.usuario?.name || '-',
+            m.setor_origem?.nome || '-',
+            m.setor_destino?.nome || '-',
+            this.getStatusSolicitacaoLabel(m.status_solicitacao),
+            '',
+            '',
+            'Sem itens',
+            '',
+            ''
+          ]);
+        }
+      }
+      
+      // Gerar tabela
+      autoTable(doc, {
+        startY: 28,
+        head: [['ID', 'Data/Hora', 'Tipo', 'Solicitante', 'Origem', 'Destino', 'Status', 'Qtd.Sol.', 'Qtd.Lib.', 'Produto', 'Cod.SIMPRAS', 'Lote']],
+        body: tableData,
+        theme: 'striped',
+        headStyles: { fillColor: [13, 110, 253], fontSize: 8, fontStyle: 'bold' },
+        bodyStyles: { fontSize: 7 },
+        columnStyles: {
+          0: { cellWidth: 10 },
+          1: { cellWidth: 28 },
+          2: { cellWidth: 20 },
+          3: { cellWidth: 30 },
+          4: { cellWidth: 28 },
+          5: { cellWidth: 28 },
+          6: { cellWidth: 18 },
+          7: { cellWidth: 14 },
+          8: { cellWidth: 14 },
+          9: { cellWidth: 40 },
+          10: { cellWidth: 20 },
+          11: { cellWidth: 18 }
+        },
+        margin: { left: 14, right: 14 },
+        didDrawPage: (data) => {
+          // Rodapé com número de página
+          const pageCount = doc.internal.getNumberOfPages();
+          doc.setFontSize(8);
+          doc.text(
+            `Pagina ${data.pageNumber} de ${pageCount}`,
+            doc.internal.pageSize.width / 2,
+            doc.internal.pageSize.height - 10,
+            { align: 'center' }
+          );
+        }
+      });
+      
+      // Salvar PDF
+      doc.save(`relatorio_movimentacoes_${new Date().toISOString().slice(0,10)}.pdf`);
     }
   }
 }

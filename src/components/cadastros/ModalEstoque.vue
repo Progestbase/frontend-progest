@@ -1,183 +1,117 @@
-<template>
-  <span>
-    <ModalBase01
-      :idModal="idModal"
-      modalClass="modal-dialog modal-lg modal-dialog-centered"
-    >
-      <div class="col-md-12">
-        <div
-          class="tab-content text-muted mt-4 mt-md-0"
-          id="v-pills-tabContent"
-        >
-          <div
-            class="tab-pane fade show active"
-            id="aba_dados"
-            role="tabpanel"
-            aria-labelledby="aba_dados-tab"
-          >
-            <form autocomplete="off">
-              <div class="row">
-                <div class="col-md-12">
-                  <div class="mb-3">
-                    <label class="form-label">Nome</label>
-                    <input
-                      type="text"
-                      class="form-control text-uppercase"
-                      v-model="modalData.nome"
-                    />
-                  </div>
-                </div>
-              </div>
+<script setup>
+import { computed, ref, watch, getCurrentInstance } from "vue";
+import { useStore } from "vuex";
+import CadastroDialog from "@/components/layouts/CadastroDialog.vue";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
 
-              <div class="row">
-                <div class="col-md-4">
-                  <div class="mb-3">
-                    <label class="form-label">Descrição</label>
-                    <input
-                      type="text"
-                      class="form-control text-uppercase"
-                      v-model="modalData.descricao"
-                    />
-                  </div>
-                </div>
+const props = defineProps(["idModal", "functions"]);
+const store = useStore();
+const { proxy } = getCurrentInstance();
 
-                <div class="col-md-4">
-                  <div class="mb-3">
-                    <label class="form-label">Quantidade</label>
-                    <input
-                      type="text"
-                      class="form-control"
-                      v-model="modalData.quantidade"
-                    />
-                  </div>
-                </div>
+const localData = ref({
+  id: null,
+  nome: "",
+  descricao: "",
+  quantidade: 0,
+  unidade_medida: "UN",
+});
 
-                <div class="col-md-4">
-                  <div class="mb-3">
-                    <label class="form-label">Unidade de Medida</label>
-                    <select
-                      class="form-select"
-                      v-model="modalData.unidade_medida"
-                    >
-                      <option value="UN">Unidade</option>
-                      <option value="KG">Quilograma</option>
-                      <option value="LT">Litro</option>
-                      <option value="M">Metro</option>
-                      <option value="PC">Peça</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
-            </form>
-          </div>
-        </div>
-      </div>
+const modalDataStore = computed(() => store.state.modalData.modalData);
+const modalFunction = computed(() => store.state.modalData.modalFunction);
+const isModalOpen = computed({
+  get: () => store.state.modalData.isModalOpen,
+  set: (value) => store.commit("setModalOpen", value),
+});
 
-      <div class="row mt-2">
-        <div class="col-12 text-end">
-          <button
-            type="button"
-            class="btn btn-secondary"
-            data-bs-dismiss="modal"
-          >
-            <i class="mdi mdi-close-thick font-size-15"></i> Fechar
-          </button>
-          <button
-            type="submit"
-            class="btn btn-success"
-            id="btn-save-event"
-            @click="add_UP_Estoque"
-          >
-            <i class="mdi mdi-check-bold font-size-15"></i>
-            {{ modalFunction === "ADD" ? "Salvar" : "Atualizar" }}
-          </button>
-        </div>
-      </div>
-    </ModalBase01>
-  </span>
-</template>
-
-<script>
-import ModalBase01 from "@/components/layouts/ModalBase01.vue";
-import Funcoes from "@/functions/cad_estoque.js";
-
-export default {
-  name: "ModalEstoque",
-  components: {
-    ModalBase01,
-    Funcoes,
+watch(
+  modalDataStore,
+  (newValue) => {
+    if (newValue) {
+      localData.value = JSON.parse(JSON.stringify(newValue));
+    }
   },
-  props: ["idModal", "functions"],
-  computed: {
-    modalData() {
-      return this.$store.state.modalData.modalData;
-    },
-    modalFunction() {
-      return this.$store.state.modalData.modalFunction;
-    },
-  },
-  methods: {
-    add_UP_Estoque() {
-      const content = {
-        $axios: this.$axios,
-        $store: this.$store,
-        $toastr: this.$toastr,
-        modalData: JSON.parse(JSON.stringify(this.modalData)),
-      };
-      this.functions.ADD_UP(this, this.modalFunction);
-    },
-  },
+  { deep: true, immediate: true },
+);
+
+const handleSave = () => {
+  const content = {
+    $axios: proxy.$axios,
+    $store: store,
+    $toastr: proxy.$toastr,
+    modalData: localData.value,
+  };
+  props.functions.ADD_UP(content, modalFunction.value);
 };
 </script>
 
-<style scoped>
-.form-group {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
+<template>
+  <CadastroDialog
+    v-model:open="isModalOpen"
+    :title="
+      modalFunction === 'ADD'
+        ? 'Novo Item em Estoque'
+        : 'Editar Item em Estoque'
+    "
+  >
+    <div class="space-y-4 py-2">
+      <div class="space-y-2">
+        <Label for="est-nome">Nome do Produto</Label>
+        <Input
+          id="est-nome"
+          v-model="localData.nome"
+          class="uppercase"
+          placeholder="Nome do item"
+        />
+      </div>
 
-.form-group label {
-  font-weight: 500;
-  color: #333;
-}
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="space-y-2">
+          <Label for="est-desc">Descrição</Label>
+          <Input
+            id="est-desc"
+            v-model="localData.descricao"
+            class="uppercase"
+            placeholder="Observações"
+          />
+        </div>
 
-.form-group input,
-.form-group select {
-  padding: 0.5rem;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 1rem;
-}
+        <div class="grid grid-cols-2 gap-2">
+          <div class="space-y-2">
+            <Label for="est-qtd">Quantidade</Label>
+            <Input id="est-qtd" type="number" v-model="localData.quantidade" />
+          </div>
 
-.form-group input:focus,
-.form-group select:focus {
-  outline: none;
-  border-color: #4a4a4a;
-}
+          <div class="space-y-2">
+            <Label>Unidade</Label>
+            <Select v-model="localData.unidade_medida">
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="UN">UN</SelectItem>
+                <SelectItem value="KG">KG</SelectItem>
+                <SelectItem value="LT">LT</SelectItem>
+                <SelectItem value="M">M</SelectItem>
+                <SelectItem value="PC">PC</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+      </div>
+    </div>
 
-.btn {
-  padding: 0.5rem 1rem;
-  border-radius: 4px;
-  cursor: pointer;
-  font-weight: 500;
-}
-
-.btn-primary {
-  background-color: #4a4a4a;
-  color: white;
-  border: none;
-}
-
-.btn-secondary {
-  background-color: #f0f0f0;
-  color: #333;
-  border: 1px solid #ddd;
-}
-
-@media (max-width: 768px) {
-  /* .user-form { */
-  /*   grid-template-columns: 1fr; */
-  /* } */
-}
-</style>
+    <template #footer="{ close }">
+      <Button variant="outline" @click="close">Fechar</Button>
+      <Button @click="handleSave">
+        {{ modalFunction === "ADD" ? "Salvar" : "Atualizar" }}
+      </Button>
+    </template>
+  </CadastroDialog>
+</template>

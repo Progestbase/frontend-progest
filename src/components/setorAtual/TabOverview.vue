@@ -1,206 +1,13 @@
-<template>
-  <div class="space-y-6">
-    <div>
-      <h2 class="text-2xl font-bold flex items-center gap-2">
-        <i class="mdi mdi-view-dashboard text-xl text-blue-600"></i>
-        Visão Geral
-      </h2>
-      <p class="text-sm text-muted-foreground">
-        Informações gerais e estatísticas do setor atual.
-      </p>
-    </div>
-
-    <div class="row">
-      <div class="col-md-8">
-        <Card>
-          <CardHeader>
-            <CardTitle class="flex items-center gap-2">
-              <i class="mdi mdi-information-outline"></i>
-              Informações do Setor
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div class="row">
-              <div class="col-md-6">
-                <div class="mb-3">
-                  <Label class="form-label">Nome:</Label>
-                  <p class="form-control-plaintext">{{ setor.nome }}</p>
-                </div>
-              </div>
-              <div class="col-md-6">
-                <div class="mb-3">
-                  <Label class="form-label">Tipo:</Label>
-                  <Badge
-                    :variant="
-                      setor.tipo === 'Medicamento' ? 'secondary' : 'default'
-                    "
-                  >
-                    {{ setor.tipo }}
-                  </Badge>
-                </div>
-                <div class="mb-3">
-                  <Label class="form-label">Controla Estoque:</Label>
-                  <Badge :variant="setor.estoque ? 'outline' : 'secondary'">
-                    {{ setor.estoque ? "Sim" : "Não" }}
-                  </Badge>
-                </div>
-              </div>
-              <div class="col-12" v-if="setor.descricao">
-                <div class="mb-3">
-                  <Label class="form-label">Descrição:</Label>
-                  <p class="form-control-plaintext">{{ setor.descricao }}</p>
-                </div>
-              </div>
-              <div class="col-md-6" v-if="setor.unidade">
-                <div class="mb-3">
-                  <Label class="form-label">Unidade:</Label>
-                  <p class="form-control-plaintext">{{ setor.unidade.nome }}</p>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div class="col-md-4">
-        <Card class="mb-4" v-if="!isSolicitante && !readOnly">
-          <CardHeader>
-            <CardTitle class="flex items-center gap-2">
-              <i class="mdi mdi-cog-outline"></i>
-              Ações
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div class="flex flex-col gap-2">
-              <Button @click="editarSetor" class="w-full">
-                <i class="mdi mdi-pencil me-2"></i>
-                Editar Setor
-              </Button>
-              <Button
-                v-if="isAdminUser"
-                @click="excluirSetor"
-                variant="destructive"
-                class="w-full"
-              >
-                <i class="mdi mdi-delete me-2"></i>
-                Excluir Setor
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card class="mb-4">
-          <CardHeader>
-            <div class="flex items-center justify-between">
-              <CardTitle class="flex items-center gap-2">
-                <i class="mdi mdi-truck-delivery-outline"></i>
-                Setor Distribuidor
-              </CardTitle>
-              <Dialog
-                v-if="!isSolicitante && !readOnly"
-                :open="isAddModalOpen"
-                @update:open="isAddModalOpen = $event"
-              >
-                <DialogTrigger as-child>
-                  <Button variant="outline" size="sm" @click="openAddModal">
-                    <i class="mdi mdi-plus"></i>
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Adicionar Distribuidor</DialogTitle>
-                  </DialogHeader>
-                  <div class="py-4">
-                    <Label class="mb-2 block"
-                      >Selecione o Setor Distribuidor</Label
-                    >
-                    <Select v-model="selectedFornecedorId">
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione um setor..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem
-                          v-for="s in availableSetores"
-                          :key="s.id"
-                          :value="String(s.id)"
-                        >
-                          {{ s.nome }} ({{ s.tipo }})
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div class="flex justify-end gap-2">
-                    <Button variant="ghost" @click="isAddModalOpen = false"
-                      >Cancelar</Button
-                    >
-                    <Button
-                      @click="handleAddFornecedor"
-                      :disabled="!selectedFornecedorId || loadingAdd"
-                    >
-                      {{ loadingAdd ? "Adicionando..." : "Adicionar" }}
-                    </Button>
-                  </div>
-                </DialogContent>
-              </Dialog>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div
-              v-if="
-                setor.fornecedores_relacionados &&
-                setor.fornecedores_relacionados.length > 0
-              "
-            >
-              <div
-                v-for="rel in setor.fornecedores_relacionados"
-                :key="rel.id"
-                class="mb-3 p-3 border rounded-lg"
-              >
-                <div class="flex justify-between items-start">
-                  <div>
-                    <div class="font-semibold">
-                      {{
-                        rel.fornecedor?.nome ||
-                        rel.fornecedor?.razao_social ||
-                        "Desconhecido"
-                      }}
-                    </div>
-                    <div class="text-muted-foreground text-sm">
-                      {{ rel.fornecedor?.descricao || "" }}
-                    </div>
-                  </div>
-                  <div class="flex items-center gap-2">
-                    <Badge variant="outline">
-                      {{ rel.fornecedor?.tipo || "-" }}
-                    </Badge>
-                    <Button
-                      v-if="!isSolicitante && !readOnly"
-                      variant="ghost"
-                      size="icon"
-                      class="h-6 w-6 text-destructive hover:text-destructive/90"
-                      @click="handleRemoveFornecedor(rel.id)"
-                      title="Remover distribuidor"
-                    >
-                      <i class="mdi mdi-trash-can-outline"></i>
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div v-else class="text-center text-muted-foreground py-4">
-              Nenhum distribuidor vinculado.
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
-  </div>
-</template>
-
 <script setup>
-import { defineProps, defineEmits, computed, ref } from "vue";
+import { computed, ref } from "vue";
 import { useStore } from "vuex";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
@@ -210,6 +17,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import {
   Select,
@@ -225,19 +33,23 @@ import {
   buscarSetorPorId,
 } from "@/functions/cad_setores";
 import { useToast } from "@/components/ui/toast/use-toast";
+import {
+  PencilIcon,
+  Trash2Icon,
+  InfoIcon,
+  Settings2Icon,
+  TruckIcon,
+  PlusIcon,
+  LayoutDashboardIcon,
+  CalendarIcon,
+} from "lucide-vue-next";
 
 const store = useStore();
 const { toast } = useToast();
 
 const props = defineProps({
-  setor: {
-    type: Object,
-    required: true,
-  },
-  readOnly: {
-    type: Boolean,
-    default: false,
-  },
+  setor: { type: Object, required: true },
+  readOnly: { type: Boolean, default: false },
 });
 
 const emit = defineEmits(["navigate", "editar-setor", "excluir-setor"]);
@@ -248,71 +60,36 @@ const availableSetores = ref([]);
 const selectedFornecedorId = ref("");
 const loadingAdd = ref(false);
 
-// Verificar se o usuário é admin@admin.com
 const isAdminUser = computed(() => {
   const user = store.state.user;
-  return user && user.email === "admin@admin.com";
+  return user && (user.email === "admin@admin.com" || user.is_admin);
 });
 
-// Verificar se o usuário possui perfil 'solicitante' no setor atual
 const isSolicitante = computed(() => {
   const user = store.state.user;
   if (!user) return false;
-
-  try {
-    const list = store.state.listUsuariosSetor || [];
-    const found = list.find((u) => {
-      const userId =
-        u.usuario_id || u.user_id || u.id || (u.usuario && u.usuario.id);
-      const perfil = (u.perfil || (u.pivot && u.pivot.perfil) || "")
-        .toString()
-        .toLowerCase();
-      return (
-        userId === user.id &&
-        (perfil === "solicitante" || perfil.includes("solicitante"))
-      );
-    });
-    if (found) return true;
-  } catch (e) {
-    console.warn("Erro ao avaliar isSolicitante (TabOverview):", e);
-  }
-
-  if (
-    (user.roles && user.roles.includes && user.roles.includes("solicitante")) ||
-    (user.perfil &&
-      user.perfil.toString().toLowerCase().includes("solicitante"))
-  )
-    return true;
-
-  return false;
+  const list = store.state.listUsuariosSetor || [];
+  const found = list.find((u) => {
+    const userId = u.usuario_id || u.user_id || u.id || u.usuario?.id;
+    const perfil = (u.perfil || u.pivot?.perfil || "").toString().toLowerCase();
+    return userId === user.id && perfil.includes("solicitante");
+  });
+  return !!found;
 });
 
-// Funções de ação do setor
-const editarSetor = () => {
-  emit("editar-setor");
-};
-
-const excluirSetor = () => {
-  emit("excluir-setor");
-};
-
-// Supplier Management Functions
 const openAddModal = async () => {
   isAddModalOpen.value = true;
   selectedFornecedorId.value = "";
   loadingAdd.value = false;
 
-  // Fetch available sectors
   const result = await listarSetores();
   if (result.success) {
-    // Filter out current sector and already added suppliers
     const currentId = props.setor.id;
     const existingIds = (props.setor.fornecedores_relacionados || []).map(
-      (r) => r.setor_fornecedor_id
+      (r) => r.setor_fornecedor_id,
     );
-
     availableSetores.value = result.data.filter(
-      (s) => s.id !== currentId && !existingIds.includes(s.id) && s.estoque
+      (s) => s.id !== currentId && !existingIds.includes(s.id) && s.estoque,
     );
   } else {
     toast({
@@ -325,20 +102,17 @@ const openAddModal = async () => {
 
 const handleAddFornecedor = async () => {
   if (!selectedFornecedorId.value) return;
-
   loadingAdd.value = true;
   const result = await addFornecedor(
     props.setor.id,
-    selectedFornecedorId.value
+    selectedFornecedorId.value,
   );
-
   if (result.success) {
     toast({
       title: "Sucesso",
       description: "Distribuidor adicionado com sucesso.",
     });
     isAddModalOpen.value = false;
-    // Reload sector details to update the list
     await reloadSetorDetails();
   } else {
     toast({
@@ -351,16 +125,12 @@ const handleAddFornecedor = async () => {
 };
 
 const handleRemoveFornecedor = async (relationId) => {
-  if (!confirm("Tem certeza que deseja remover este distribuidor?")) return;
-
   const result = await removeFornecedor(relationId);
-
   if (result.success) {
     toast({
       title: "Sucesso",
       description: "Distribuidor removido com sucesso.",
     });
-    // Reload sector details to update the list
     await reloadSetorDetails();
   } else {
     toast({
@@ -373,9 +143,324 @@ const handleRemoveFornecedor = async (relationId) => {
 
 const reloadSetorDetails = async () => {
   const result = await buscarSetorPorId(props.setor.id);
+  if (result.success) store.commit("setSetorDetails", result.data);
+};
 
-  if (result.success) {
-    store.commit("setSetorDetails", result.data);
-  }
+const formatarData = (date) => {
+  if (!date) return "--/--/----";
+  return new Date(date).toLocaleString("pt-BR");
 };
 </script>
+
+<template>
+  <div class="flex flex-col gap-8 pb-10">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+      <!-- Info Section -->
+      <div class="lg:col-span-2 space-y-6">
+        <Card
+          class="overflow-hidden border-slate-200 shadow-sm transition-all hover:shadow-md"
+        >
+          <CardHeader class="border-b bg-slate-50/50 py-4">
+            <CardTitle class="flex items-center gap-2 text-lg">
+              <InfoIcon class="w-5 h-5 text-primary" />
+              Informações Gerais
+            </CardTitle>
+          </CardHeader>
+          <CardContent class="p-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div class="space-y-1">
+                <Label class="text-xs uppercase font-bold text-slate-400"
+                  >Nome da Unidade</Label
+                >
+                <p class="text-lg font-semibold text-slate-900">
+                  {{ setor.nome }}
+                </p>
+              </div>
+
+              <div class="flex gap-8">
+                <div class="space-y-2">
+                  <Label class="text-xs uppercase font-bold text-slate-400"
+                    >Tipo de Insumos</Label
+                  >
+                  <div>
+                    <Badge
+                      :variant="
+                        setor.tipo === 'Medicamento' ? 'secondary' : 'default'
+                      "
+                      class="px-3 py-1 text-xs"
+                    >
+                      {{ setor.tipo }}
+                    </Badge>
+                  </div>
+                </div>
+                <div class="space-y-2">
+                  <Label class="text-xs uppercase font-bold text-slate-400"
+                    >Controle de Estoque</Label
+                  >
+                  <div>
+                    <Badge
+                      :variant="setor.estoque ? 'outline' : 'secondary'"
+                      class="px-3 py-1 text-xs"
+                    >
+                      {{ setor.estoque ? "Ativado" : "Desativado" }}
+                    </Badge>
+                  </div>
+                </div>
+              </div>
+
+              <div
+                class="md:col-span-2 space-y-1 pt-4 border-t border-slate-100"
+              >
+                <Label class="text-xs uppercase font-bold text-slate-400"
+                  >Descrição / Observações</Label
+                >
+                <p class="text-slate-600 leading-relaxed">
+                  {{
+                    setor.descricao ||
+                    "Nenhuma descrição informada para este setor."
+                  }}
+                </p>
+              </div>
+
+              <div
+                v-if="setor.unidade"
+                class="md:col-span-2 space-y-1 pt-4 border-t border-slate-100"
+              >
+                <Label class="text-xs uppercase font-bold text-slate-400"
+                  >Unidade Central / Polo</Label
+                >
+                <div class="flex items-center gap-2 text-slate-700 font-medium">
+                  <div
+                    class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center"
+                  >
+                    <LayoutDashboardIcon class="w-4 h-4 text-slate-500" />
+                  </div>
+                  {{ setor.unidade.nome }}
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <!-- Timeline / Traceability Card -->
+        <Card class="border-slate-200 shadow-sm">
+          <CardHeader class="border-b bg-slate-50/50 py-4">
+            <CardTitle class="flex items-center gap-2 text-lg">
+              <CalendarIcon class="w-5 h-5 text-primary" />
+              Datas Importantes
+            </CardTitle>
+          </CardHeader>
+          <CardContent class="p-6">
+            <div class="flex flex-col md:flex-row gap-12">
+              <div class="flex items-center gap-4">
+                <div class="p-3 bg-blue-50 rounded-xl">
+                  <PlusIcon class="w-6 h-6 text-blue-600" />
+                </div>
+                <div>
+                  <p class="text-xs uppercase font-bold text-slate-400">
+                    Data de Criação
+                  </p>
+                  <p class="font-semibold text-slate-800">
+                    {{ formatarData(setor.created_at) }}
+                  </p>
+                </div>
+              </div>
+
+              <div class="flex items-center gap-4">
+                <div class="p-3 bg-slate-100 rounded-xl">
+                  <PencilIcon class="w-6 h-6 text-slate-500" />
+                </div>
+                <div>
+                  <p class="text-xs uppercase font-bold text-slate-400">
+                    Última Atualização
+                  </p>
+                  <p class="font-semibold text-slate-800">
+                    {{ formatarData(setor.updated_at) }}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <!-- Actions & Relations Section -->
+      <div class="space-y-6">
+        <!-- Shortcut Actions Card -->
+        <Card
+          v-if="!isSolicitante && !readOnly"
+          class="border-slate-200 shadow-sm border-l-4 border-l-primary/50"
+        >
+          <CardHeader class="pb-3">
+            <CardTitle class="flex items-center gap-2 text-lg">
+              <Settings2Icon class="w-5 h-5 text-primary" />
+              Gestão
+            </CardTitle>
+            <CardDescription
+              >Gerencie as configurações e o ciclo de vida deste
+              setor.</CardDescription
+            >
+          </CardHeader>
+          <CardContent class="space-y-3 pb-6">
+            <Button
+              @click="emit('editar-setor')"
+              class="w-full justify-start h-12 gap-3 bg-white text-slate-700 hover:bg-slate-50 border-slate-200 shadow-none"
+            >
+              <div class="bg-primary/10 p-2 rounded-lg text-primary">
+                <PencilIcon class="w-4 h-4" />
+              </div>
+              <span class="font-semibold">Editar Detalhes</span>
+            </Button>
+
+            <Button
+              v-if="isAdminUser"
+              @click="emit('excluir-setor')"
+              variant="outline"
+              class="w-full justify-start h-12 gap-3 text-destructive border-destructive/20 hover:bg-destructive/5 hover:text-destructive transition-colors shadow-none"
+            >
+              <div class="bg-destructive/10 p-2 rounded-lg">
+                <Trash2Icon class="w-4 h-4" />
+              </div>
+              <span class="font-semibold">Excluir Unidade</span>
+            </Button>
+          </CardContent>
+        </Card>
+
+        <!-- Suppliers / Distributors Card -->
+        <Card class="border-slate-200 shadow-sm">
+          <CardHeader class="pb-3">
+            <div class="flex items-center justify-between">
+              <CardTitle class="flex items-center gap-2 text-lg">
+                <TruckIcon class="w-5 h-5 text-primary" />
+                Distribuidor
+              </CardTitle>
+
+              <Dialog
+                v-if="!isSolicitante && !readOnly"
+                :open="isAddModalOpen"
+                @update:open="isAddModalOpen = $event"
+              >
+                <DialogTrigger as-child>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    @click="openAddModal"
+                    class="h-8 w-8 rounded-full bg-slate-100 hover:bg-primary hover:text-white transition-all text-slate-600"
+                  >
+                    <PlusIcon class="w-4 h-4" />
+                  </Button>
+                </DialogTrigger>
+                <DialogContent class="sm:max-w-[425px]">
+                  <DialogHeader>
+                    <DialogTitle>Vincular Distribuidor</DialogTitle>
+                    <CardDescription
+                      >Escolha o setor que servirá como fonte de suprimentos
+                      para este setor.</CardDescription
+                    >
+                  </DialogHeader>
+                  <div class="py-6 space-y-4">
+                    <div class="space-y-2">
+                      <Label>Setor Distribuidor</Label>
+                      <Select v-model="selectedFornecedorId">
+                        <SelectTrigger
+                          ><SelectValue placeholder="Selecione um setor..."
+                        /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem
+                            v-for="s in availableSetores"
+                            :key="s.id"
+                            :value="String(s.id)"
+                          >
+                            {{ s.nome }} ({{ s.tipo }})
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button variant="ghost" @click="isAddModalOpen = false"
+                      >Cancelar</Button
+                    >
+                    <Button
+                      @click="handleAddFornecedor"
+                      :disabled="!selectedFornecedorId || loadingAdd"
+                      class="gap-2"
+                    >
+                      <PlusIcon v-if="!loadingAdd" class="w-4 h-4" />
+                      {{ loadingAdd ? "Processando..." : "Confirmar Vínculo" }}
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            </div>
+            <CardDescription
+              >Unidades centrais que fornecem itens.</CardDescription
+            >
+          </CardHeader>
+          <CardContent class="pb-6">
+            <div
+              v-if="
+                setor.fornecedores_relacionados &&
+                setor.fornecedores_relacionados.length > 0
+              "
+              class="space-y-3"
+            >
+              <div
+                v-for="rel in setor.fornecedores_relacionados"
+                :key="rel.id"
+                class="group p-4 bg-white border rounded-xl hover:border-primary/30 transition-all hover:bg-slate-50/50"
+              >
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-3">
+                    <div
+                      class="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-500 group-hover:bg-primary/10 group-hover:text-primary transition-colors"
+                    >
+                      <TruckIcon class="w-5 h-5" />
+                    </div>
+                    <div>
+                      <div class="font-bold text-slate-800 text-sm">
+                        {{
+                          rel.fornecedor?.nome ||
+                          rel.fornecedor?.razao_social ||
+                          "Distribuidor"
+                        }}
+                      </div>
+                      <div class="flex items-center gap-2 mt-0.5">
+                        <Badge
+                          variant="outline"
+                          class="text-[10px] h-4 px-1.5 uppercase font-bold tracking-wider"
+                        >
+                          {{ rel.tipo_produto || rel.fornecedor?.tipo || "-" }}
+                        </Badge>
+                      </div>
+                    </div>
+                  </div>
+
+                  <Button
+                    v-if="!isSolicitante && !readOnly"
+                    variant="ghost"
+                    size="icon"
+                    class="opacity-0 group-hover:opacity-100 h-8 w-8 text-destructive hover:bg-destructive/10 transition-all"
+                    @click="handleRemoveFornecedor(rel.id)"
+                    title="Remover distribuidor"
+                  >
+                    <Trash2Icon class="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+            </div>
+            <div
+              v-else
+              class="flex flex-col items-center justify-center py-10 bg-slate-50 border border-dashed rounded-2xl"
+            >
+              <TruckIcon class="w-10 h-10 text-slate-300 mb-2" />
+              <p class="text-slate-400 text-xs text-center px-4">
+                Esta unidade não recebe suprimentos de sub-centros específicos.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  </div>
+</template>

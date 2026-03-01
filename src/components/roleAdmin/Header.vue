@@ -4,9 +4,24 @@
       <!-- Left Side: Page Title -->
       <div class="flex items-center gap-4">
         <!-- Page Title -->
-        <h2 class="text-2xl font-bold text-slate-900">
-          <span>{{ headerTitle }}</span>
-        </h2>
+        <div class="flex flex-col">
+          <h2
+            class="text-2xl flex items-center gap-2"
+            :class="
+              pageTitle
+                ? 'font-black tracking-tight text-slate-800 uppercase'
+                : 'font-bold text-slate-900'
+            "
+          >
+            <span>{{ displayTitle }}</span>
+          </h2>
+          <p
+            v-if="displaySubtitle"
+            class="text-sm text-slate-500 mt-1 font-medium"
+          >
+            {{ displaySubtitle }}
+          </p>
+        </div>
       </div>
 
       <!-- Right Side: User Info + Logout -->
@@ -50,7 +65,12 @@ const setorAtual = computed(() => {
   return store.state.setorAtualNome || "Carregando...";
 });
 
-const headerTitle = computed(() => {
+const pageTitle = computed(() => store.state.pageTitle);
+const displaySubtitle = computed(() => store.state.pageSubtitle);
+
+const displayTitle = computed(() => {
+  if (pageTitle.value) return pageTitle.value;
+
   const titleMap = {
     dashboard: "Dashboard",
     users: "Usuários",

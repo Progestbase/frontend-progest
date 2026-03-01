@@ -1,353 +1,203 @@
-<template>
-  <span>
-    <ModalBase01
-      :idModal="idModal"
-      modalClass="modal-dialog modal-lg modal-dialog-centered"
-    >
-      <div class="col-md-12">
-        <div
-          class="tab-content text-muted mt-4 mt-md-0"
-          id="v-pills-tabContent"
-        >
-          <div
-            class="tab-pane fade show active"
-            id="aba_dados"
-            role="tabpanel"
-            aria-labelledby="aba_dados-tab"
-          >
-            <form autocomplete="off">
-              <div class="row">
-                <div class="col-md-6">
-                  <div class="mb-3">
-                    <label class="form-label">Status</label>
-                    <select class="form-select" v-model="modalData.status">
-                      <option value="A">Ativo</option>
-                      <option value="I">Inativo</option>
-                    </select>
-                  </div>
-                </div>
-
-                <!-- Tipo de vínculo -->
-                <div class="col-md-6">
-                  <div class="mb-3">
-                    <label class="form-label" for="UserTipoVinculo"
-                      >Tipo de Vínculo *</label
-                    >
-                    <select
-                      class="form-select"
-                      v-model="modalData.tipo_vinculo"
-                      required
-                    >
-                      <option value="">Selecione um tipo</option>
-                      <option
-                        v-for="tipo in listTiposVinculoStore"
-                        :key="tipo.id"
-                        :value="tipo.id"
-                      >
-                        {{ tipo.nome }}
-                      </option>
-                    </select>
-                  </div>
-                </div>
-              </div>
-              <div class="row">
-                <div class="col-md-8">
-                  <div class="mb-3">
-                    <label class="form-label" for="UserNome">Nome *</label>
-                    <input
-                      type="text"
-                      class="form-control"
-                      placeholder="Digite o nome"
-                      v-model="modalData.name"
-                      required
-                    />
-                  </div>
-                </div>
-                <div class="col-md-4">
-                  <div class="mb-3">
-                    <label class="form-label" for="UserCpf">CPF *</label>
-                    <input
-                      type="text"
-                      class="form-control"
-                      placeholder="Digite o CPF"
-                      v-model="modalData.cpf"
-                      v-mask="'###.###.###-##'"
-                      required
-                    />
-                  </div>
-                </div>
-              </div>
-              <div class="row">
-                <div class="col-md-12">
-                  <div class="mb-3">
-                    <label class="form-label" for="UserEmail">E-mail *</label>
-                    <input
-                      type="email"
-                      class="form-control"
-                      placeholder="Digite o e-mail"
-                      v-model="modalData.email"
-                      required
-                    />
-                  </div>
-                </div>
-              </div>
-              <!-- Unidades -->
-              <!-- Unidades removidas do modal: vínculo a setores será gerenciado por outro módulo -->
-              <div class="row">
-                <div class="col-md-4">
-                  <div class="mb-3">
-                    <label class="form-label" for="UserTelefone"
-                      >Telefone</label
-                    >
-                    <input
-                      type="text"
-                      class="form-control"
-                      placeholder="(99) 99999-9999"
-                      v-model="modalData.telefone"
-                      v-mask="'(##) #####-####'"
-                    />
-                  </div>
-                </div>
-                <div class="col-md-4">
-                  <div class="mb-3">
-                    <label class="form-label" for="UserNascimento"
-                      >Data de Nascimento</label
-                    >
-                    <input
-                      type="date"
-                      class="form-control"
-                      v-model="modalData.data_nascimento"
-                    />
-                  </div>
-                </div>
-                <div class="col-md-4">
-                  <div class="mb-3">
-                    <label class="form-label" for="UserPassword"
-                      >Senha {{ modalFunction === "ADD" ? "*" : "" }}</label
-                    >
-                    <input
-                      type="password"
-                      class="form-control"
-                      placeholder="Digite a senha"
-                      v-model="modalData.password"
-                      :required="modalFunction === 'ADD'"
-                    />
-                  </div>
-                </div>
-              </div>
-            </form>
-          </div>
-        </div>
-      </div>
-      <div class="row mt-2">
-        <div class="col-12 text-end">
-          <div class="d-flex gap-2 justify-content-end">
-            <button
-              type="button"
-              class="btn btn-secondary btn-modal"
-              data-bs-dismiss="modal"
-            >
-              <i class="mdi mdi-close-thick me-2"></i>Fechar
-            </button>
-            <button
-              type="submit"
-              class="btn btn-success btn-modal"
-              data-bs-target="#success-btn"
-              id="btn-save-event"
-              v-on:click="add_UP_User()"
-            >
-              <i class="mdi mdi-check-bold me-2"></i>
-              {{ modalFunction === "ADD" ? "Salvar" : "Atualizar" }}
-            </button>
-          </div>
-        </div>
-      </div>
-    </ModalBase01>
-  </span>
-</template>
-
-<script>
-import ModalBase01 from "@/components/layouts/ModalBase01.vue";
+<script setup>
+import { computed, ref, watch, getCurrentInstance, onMounted } from "vue";
+import { useStore } from "vuex";
+import CadastroDialog from "@/components/layouts/CadastroDialog.vue";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
 import Funcoes from "@/functions/cad_usuarios.js";
-import Multiselect from "vue-multiselect";
-import "vue-multiselect/dist/vue-multiselect.min.css";
 
-export default {
-  name: "ModalUser01",
-  components: {
-    ModalBase01,
-    Funcoes,
-    Multiselect,
-  },
-  props: ["idModal", "functions"],
-  data() {
-    return {};
-  },
-  mounted() {
-    // Carrega apenas os tipos de vínculo que são obrigatórios
-    // Captura falhas silenciosamente para não gerar promise rejection não tratada
-    this.listTiposVinculo()?.catch((e) => {
-      console.warn("Não foi possível carregar tipos de vínculo no modal:", e);
-    });
-  },
-  methods: {
-    add_UP_User() {
-      // Validação simples antes de enviar
-      if (
-        !this.modalData.name ||
-        !this.modalData.email ||
-        !this.modalData.cpf ||
-        !this.modalData.tipo_vinculo
-      ) {
-        alert("Por favor, preencha todos os campos obrigatórios (*)");
-        return;
-      }
+const props = defineProps(["idModal", "functions"]);
+const store = useStore();
+const { proxy } = getCurrentInstance();
 
-      if (this.modalFunction === "ADD" && !this.modalData.password) {
-        alert("Senha é obrigatória para novos usuários");
-        return;
-      }
+const localData = ref({
+  id: null,
+  status: "A",
+  tipo_vinculo: "",
+  name: "",
+  cpf: "",
+  email: "",
+  telefone: "",
+  data_nascimento: "",
+  password: "",
+});
 
-      this.functions.ADD_UP(this, this.modalFunction);
-    },
-    listTiposVinculo() {
-      // Retornar a promise para que chamadores possam encadear/capturar erros
-      return Funcoes.listTiposVinculo(this);
-    },
-  },
-  computed: {
-    modalTitle() {
-      return this.$store.state.modalData.modalTitle;
-    },
-    modalData() {
-      return this.$store.state.modalData.modalData;
-    },
-    modalFunction() {
-      return this.$store.state.modalData.modalFunction;
-    },
-    listTiposVinculoStore() {
-      return this.$store.state.listTiposVinculo || [];
-    },
-  },
-  watch: {
-    modalFunction(newValue) {
-      // Quando é um novo usuário, garante que o status seja 'A'
-      if (
-        newValue === "ADD" &&
-        (!this.modalData.status || this.modalData.status === "")
-      ) {
-        this.$store.commit("setModalData", { ...this.modalData, status: "A" });
-      }
-    },
-  },
-  state: {
-    modalData: {},
-  },
-  mutations: {
-    setModalData(state, payload) {
-      state.modalData = {
-        ...state.modalData,
-        ...payload,
-      };
-    },
+const modalDataStore = computed(() => store.state.modalData.modalData);
+const modalFunction = computed(() => store.state.modalData.modalFunction);
+const listTiposVinculoStore = computed(
+  () => store.state.listTiposVinculo || [],
+);
+const isModalOpen = computed({
+  get: () => store.state.modalData.isModalOpen,
+  set: (value) => store.commit("setModalOpen", value),
+});
 
-    resetModalData(state) {
-      state.modalData = {};
-    },
+watch(
+  modalDataStore,
+  (newValue) => {
+    if (newValue) {
+      localData.value = JSON.parse(JSON.stringify(newValue));
+      if (!localData.value.status) localData.value.status = "A";
+    }
   },
+  { deep: true, immediate: true },
+);
+
+onMounted(() => {
+  Funcoes.listTiposVinculo({ $axios: proxy.$axios, $store: store })?.catch(
+    (e) => {
+      console.warn("Erro ao carregar tipos de vínculo:", e);
+    },
+  );
+});
+
+const handleSave = () => {
+  if (
+    !localData.value.name ||
+    !localData.value.email ||
+    !localData.value.cpf ||
+    !localData.value.tipo_vinculo
+  ) {
+    proxy.$toastr?.e("Por favor, preencha todos os campos obrigatórios (*)");
+    return;
+  }
+
+  if (modalFunction.value === "ADD" && !localData.value.password) {
+    proxy.$toastr?.e("Senha é obrigatória para novos usuários");
+    return;
+  }
+
+  const content = {
+    $axios: proxy.$axios,
+    $store: store,
+    $toastr: proxy.$toastr,
+    modalData: localData.value,
+  };
+
+  props.functions.ADD_UP(content, modalFunction.value);
 };
 </script>
 
-<style scoped>
-.user-form {
-  display: grid;
-  gap: 1rem;
-  grid-template-columns: 1fr 1fr;
-}
+<template>
+  <CadastroDialog
+    v-model:open="isModalOpen"
+    :title="modalFunction === 'ADD' ? 'Cadastrar Usuário' : 'Editar Usuário'"
+  >
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 py-2">
+      <div class="space-y-2">
+        <Label for="status">Status</Label>
+        <Select v-model="localData.status">
+          <SelectTrigger>
+            <SelectValue placeholder="Status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="A">Ativo</SelectItem>
+            <SelectItem value="I">Inativo</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
 
-.form-group {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
+      <div class="space-y-2">
+        <Label for="vinculo"
+          >Tipo de Vínculo <span class="text-destructive">*</span></Label
+        >
+        <Select v-model="localData.tipo_vinculo">
+          <SelectTrigger>
+            <SelectValue placeholder="Selecione o vínculo" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem
+              v-for="tipo in listTiposVinculoStore"
+              :key="tipo.id"
+              :value="tipo.id.toString()"
+            >
+              {{ tipo.nome }}
+            </SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
 
-.form-group label {
-  font-weight: 500;
-  color: #333;
-}
+      <div class="space-y-2 md:col-span-1">
+        <Label for="name">Nome <span class="text-destructive">*</span></Label>
+        <Input id="name" v-model="localData.name" placeholder="Nome completo" />
+      </div>
 
-.form-group input,
-.form-group select {
-  padding: 0.5rem;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 1rem;
-}
+      <div class="space-y-2 md:col-span-1">
+        <Label for="cpf">CPF <span class="text-destructive">*</span></Label>
+        <Input
+          id="cpf"
+          v-model="localData.cpf"
+          v-mask="'###.###.###-##'"
+          placeholder="000.000.000-00"
+        />
+      </div>
 
-.form-group input:focus,
-.form-group select:focus {
-  outline: none;
-  border-color: #4a4a4a;
-}
+      <div class="space-y-2 md:col-span-2">
+        <Label for="email"
+          >E-mail <span class="text-destructive">*</span></Label
+        >
+        <Input
+          id="email"
+          type="email"
+          v-model="localData.email"
+          placeholder="usuario@exemplo.com"
+        />
+      </div>
 
-.btn {
-  padding: 0.5rem 1rem;
-  border-radius: 4px;
-  cursor: pointer;
-  font-weight: 500;
-}
+      <div class="space-y-2">
+        <Label for="telefone">Telefone</Label>
+        <Input
+          id="telefone"
+          v-model="localData.telefone"
+          v-mask="'(##) #####-####'"
+          placeholder="(00) 00000-0000"
+        />
+      </div>
 
-.btn-primary {
-  background-color: #4a4a4a;
-  color: white;
-  border: none;
-}
+      <div class="space-y-2">
+        <Label for="nascimento">Data de Nascimento</Label>
+        <Input
+          id="nascimento"
+          type="date"
+          v-model="localData.data_nascimento"
+        />
+      </div>
 
-.btn-secondary {
-  background-color: #f0f0f0;
-  color: #333;
-  border: 1px solid #ddd;
-}
+      <div class="space-y-2 md:col-span-2">
+        <Label for="password"
+          >Senha
+          <span v-if="modalFunction === 'ADD'" class="text-destructive"
+            >*</span
+          ></Label
+        >
+        <Input
+          id="password"
+          type="password"
+          v-model="localData.password"
+          placeholder="Digite a senha"
+        />
+        <p
+          v-if="modalFunction === 'UP'"
+          class="text-[11px] text-muted-foreground italic"
+        >
+          Deixe em branco para manter a senha atual.
+        </p>
+      </div>
+    </div>
 
-@media (max-width: 768px) {
-  .user-form {
-    grid-template-columns: 1fr;
-  }
-}
-
-/* Estilos para botões dos modais */
-.btn-modal {
-  font-weight: 600;
-  font-size: 0.9rem;
-  padding: 0.6rem 1.25rem;
-  border-radius: 0.4rem;
-  text-transform: uppercase;
-  letter-spacing: 0.3px;
-  border: none;
-  min-width: 100px;
-}
-
-.btn-modal.btn-secondary {
-  background-color: #6c757d;
-  color: white;
-}
-
-.btn-modal.btn-secondary:hover {
-  background-color: #5a6268;
-  color: white;
-}
-
-.btn-modal.btn-success {
-  background-color: #28a745;
-  color: white;
-}
-
-.btn-modal.btn-success:hover {
-  background-color: #218838;
-  color: white;
-}
-
-.btn-modal i {
-  font-size: 0.9rem;
-}
-</style>
+    <template #footer="{ close }">
+      <Button variant="outline" @click="close"> Fechar </Button>
+      <Button @click="handleSave" class="min-w-[100px]">
+        {{ modalFunction === "ADD" ? "Salvar" : "Atualizar" }}
+      </Button>
+    </template>
+  </CadastroDialog>
+</template>

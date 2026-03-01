@@ -1,148 +1,185 @@
+<script setup>
+import { computed, onMounted, getCurrentInstance } from "vue";
+import { useStore } from "vuex";
+import LinkModal01 from "@/components/layouts/LinkModal01.vue";
+import TemplateAdmin from "@/views/roleAdmin/TemplateAdmin.vue";
+import ModalGrupoProduto from "@/components/cadastros/ModalGrupoProduto.vue";
+import DataTable from "@/components/ui/data-table/DataTable.vue";
+import { Badge } from "@/components/ui/badge";
+import { LayersIcon, TagIcon, ShapesIcon } from "lucide-vue-next";
+import functions from "@/functions/cad_grupo_produto.js";
+
+const store = useStore();
+const { proxy } = getCurrentInstance();
+
+const titleModal = "Grupos de Produtos";
+const varsModalData = { status: "A", nome: "", tipo: "Material" };
+
+const columns = [
+  { key: "id", label: "#", align: "center", sortable: true },
+  { key: "nome", label: "Grupo / Categoria", sortable: true },
+  { key: "tipo", label: "Classificação", sortable: true },
+  { key: "status", label: "Status", align: "center" },
+];
+
+const listGrupoProdutos = computed(
+  () => store.state.listGrupoProdutos?.data || [],
+);
+const pagination = computed(() => {
+  const list = store.state.listGrupoProdutos;
+  if (list && list.current_page) {
+    return {
+      current_page: list.current_page,
+      last_page: list.last_page,
+      per_page: list.per_page,
+      total: list.total,
+    };
+  }
+  return null;
+});
+
+const formattedList = computed(() => {
+  return listGrupoProdutos.value.map((g) => ({
+    id: g.id,
+    nome: g.nome,
+    tipo: g.tipo || "Geral",
+    status: g.status === "A" ? "Ativo" : "Inativo",
+  }));
+});
+
+const listAll = (url = null) => {
+  functions.listAll(
+    { $axios: proxy.$axios, $store: store, $toastr: proxy.$toastr },
+    url,
+  );
+};
+
+const handleSearch = (query) => {
+  store.state.searchFilters = query ? [{ nome: query }] : [{}];
+  listAll();
+};
+
+const handlePaginate = (page) => {
+  let url = typeof page === "number" ? `/grupoProduto/list?page=${page}` : page;
+  listAll(url);
+};
+
+const handleEdit = (item) => {
+  functions.listData({
+    idData: item.id,
+    $axios: proxy.$axios,
+    $store: store,
+    $toastr: proxy.$toastr,
+    callback: () => {
+      store.commit("setModalFunction", "UP");
+      store.commit("setModalOpen", true);
+    },
+  });
+};
+
+const handleDelete = (id) => {
+  functions.deleteData(
+    { $axios: proxy.$axios, $store: store, $toastr: proxy.$toastr },
+    id,
+  );
+};
+
+onMounted(listAll);
+</script>
+
 <template>
   <TemplateAdmin>
-    <div class="main-content">
-      <div class="page-content">
-        <div class="container-fluid">
-          <div class="row">
-            <div class="col-12">
-              <div class="card">
-                <div class="card-body">
-                  <LinkModal01
-                    :idModalInsertUP="'#addUPGrupoProduto'"
-                    :label="'NOVO'"
-                    :titleModal="titleModal"
-                    :varsModalData="varsModalData"
+    <div class="px-6 py-6 w-full h-full flex flex-col gap-6">
+      <!-- Content Table -->
+      <div
+        class="bg-white rounded-[2.5rem] border border-slate-200 shadow-2xl shadow-slate-200/40 overflow-hidden flex-1 flex flex-col"
+      >
+        <div class="p-8 flex-1 flex flex-col">
+          <DataTable
+            :columns="columns"
+            :data="formattedList"
+            :loading="store.state.isSearching"
+            :pagination="pagination"
+            @search="handleSearch"
+            @paginate="handlePaginate"
+            @edit="handleEdit"
+            @delete="handleDelete"
+          >
+            <!-- Actions Slot -->
+            <template #actions>
+              <LinkModal01
+                label="NOVA CATEGORIA"
+                :titleModal="titleModal"
+                :varsModalData="varsModalData"
+                class="shrink-0"
+              />
+            </template>
+
+            <template #cell-status="{ item }">
+              <Badge
+                :variant="item.status === 'Ativo' ? 'default' : 'destructive'"
+                class="font-black px-4 py-1.5 text-[10px] uppercase tracking-widest rounded-full"
+              >
+                {{ item.status }}
+              </Badge>
+            </template>
+
+            <template #cell-nome="{ item }">
+              <div class="flex items-center gap-3">
+                <div class="w-2 h-2 rounded-full bg-primary/40 shrink-0"></div>
+                <span
+                  class="font-bold text-slate-700 text-sm tracking-tight uppercase"
+                  >{{ item.nome }}</span
+                >
+              </div>
+            </template>
+
+            <template #cell-tipo="{ item }">
+              <div
+                class="flex items-center gap-2 px-3 py-1 bg-slate-50 border border-slate-100 rounded-lg w-fit"
+              >
+                <ShapesIcon class="w-3.5 h-3.5 text-slate-400" />
+                <span class="text-[11px] font-black text-slate-500 uppercase">{{
+                  item.tipo
+                }}</span>
+              </div>
+            </template>
+
+            <!-- Empty State -->
+            <template #empty>
+              <div
+                class="flex flex-col items-center justify-center py-24 gap-6"
+              >
+                <div
+                  class="p-8 bg-slate-50 rounded-[2rem] border-2 border-dashed border-slate-200"
+                >
+                  <TagIcon class="w-16 h-16 text-slate-300" />
+                </div>
+                <div class="text-center max-w-sm">
+                  <h3 class="text-slate-900 font-black text-xl tracking-tight">
+                    Sem categorias definidas
+                  </h3>
+                  <p
+                    class="text-slate-500 text-sm mt-2 leading-relaxed font-medium"
                   >
-                  </LinkModal01>
-                  <div class="mt-5">
-                    <!-- Loading -->
-                    <div
-                      v-if="$store.state.isSearching"
-                      class="text-center mt-5"
-                    >
-                      <div class="spinner-border text-primary" role="status">
-                        <span class="visually-hidden">Carregando...</span>
-                      </div>
-                      <p class="mt-2">Carregando grupos de produtos...</p>
-                    </div>
-
-                    <!-- Tabela com dados -->
-                    <TBLBASE01
-                      v-else-if="
-                        listGrupoProdutos && listGrupoProdutos.length > 0
-                      "
-                      :list="formattedList"
-                      :titles="['#', 'Nome', 'Tipo', 'Status']"
-                      :align="[
-                        'text-center',
-                        'text-left',
-                        'text-left',
-                        'text-center',
-                      ]"
-                      :indexLink="1"
-                      :idModalUP="'#addUPGrupoProduto'"
-                      :functions="functions"
-                      classColTable="12"
-                      deleteRoute="/grupoProduto/delete"
-                    />
-
-                    <!-- Estado vazio -->
-                    <div v-else class="text-center p-5">
-                      <div class="mb-3">
-                        <i
-                          class="mdi mdi-folder-outline text-muted"
-                          style="font-size: 3rem"
-                        ></i>
-                      </div>
-                      <h5 class="text-muted">
-                        Nenhum grupo de produto encontrado
-                      </h5>
-                      <p class="text-muted">
-                        Clique em "NOVO" para cadastrar o primeiro grupo de
-                        produto.
-                      </p>
-                    </div>
-                  </div>
+                    Defina grupos para organizar seus medicamentos e materiais
+                    de forma estruturada.
+                  </p>
                 </div>
               </div>
-            </div>
-
-            <ModalGrupoProduto
-              idModal="addUPGrupoProduto"
-              :functions="functions"
-            ></ModalGrupoProduto>
-          </div>
+            </template>
+          </DataTable>
         </div>
       </div>
+
+      <!-- Modals -->
+      <ModalGrupoProduto :functions="functions" />
     </div>
   </TemplateAdmin>
 </template>
 
-<script>
-import LinkModal01 from "@/components/layouts/LinkModal01.vue";
-import TemplateAdmin from "@/views/roleAdmin/TemplateAdmin.vue";
-import ModalGrupoProduto from "@/components/cadastros/ModalGrupoProduto.vue";
-import TBLBASE01 from "@/components/layouts/TableBase01.vue";
-
-import functions from "../../functions/cad_grupo_produto.js";
-
-export default {
-  name: "GrupoProdutoView",
-  components: { LinkModal01, TemplateAdmin, ModalGrupoProduto, TBLBASE01 },
-  data() {
-    return {
-      functions: functions,
-      titleModal: "Grupos de Produtos",
-      varsModalData: { status: "A", nome: "", tipo: "Material" },
-    };
-  },
-  methods: {
-    listAll() {
-      functions.listAll(this);
-    },
-  },
-  computed: {
-    listGrupoProdutos() {
-      return this.$store.state.listGrupoProdutos?.data || [];
-    },
-    formattedList() {
-      return this.listGrupoProdutos.map((g) => ({
-        id: g.id,
-        nome: g.nome,
-        tipo: g.tipo,
-        status: g.status === "A" ? "Ativo" : "Inativo",
-      }));
-    },
-  },
-  created() {
-    this.listAll();
-  },
-  mounted() {
-    this.listAll();
-  },
-};
-</script>
-
-<style>
-.modal-title {
-  font-size: 1.5rem;
-  font-weight: bold;
-  color: #4a4a4a;
-  display: flex;
-  align-items: center;
-  margin-bottom: 1rem;
-}
-.form-control {
-  background-color: #f8f9fa;
-  border: 1px solid #ced4da;
-  border-radius: 0.25rem;
-  padding: 0.5rem;
-}
-.btn-primary {
-  background-color: var(--dark);
-  border-color: var(--dark);
-  font-size: 1rem;
-  font-weight: bold;
-  border-radius: 0.25rem;
+<style scoped>
+:deep(.data-table-container) {
+  @apply border-none shadow-none p-0;
 }
 </style>

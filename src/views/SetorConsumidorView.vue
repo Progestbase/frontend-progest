@@ -17,65 +17,53 @@
 
               <!-- Conteúdo -->
               <div v-else-if="setor.id">
-                <div>
-                  <div class="mb-4">
-                    <h2 class="text-xl font-bold flex items-center gap-2">
-                      <i class="mdi mdi-store-search text-primary"></i>
-                      Visualizando: {{ setor.nome }}
-                    </h2>
-                    <p class="text-muted small mb-0">
-                      Modo de visualização (Apenas Leitura)
-                    </p>
+                <!-- Tabs Navigation -->
+                <ul
+                  class="nav nav-tabs nav-tabs-custom nav-justified"
+                  role="tablist"
+                >
+                  <li class="nav-item">
+                    <a
+                      class="nav-link"
+                      :class="{ active: activeTab === 'overview' }"
+                      @click="changeTab('overview')"
+                      href="#"
+                    >
+                      <span class="d-block d-sm-none"
+                        ><i class="fas fa-info-circle"></i
+                      ></span>
+                      <span class="d-none d-sm-block"> Visão Geral</span>
+                    </a>
+                  </li>
+                  <li class="nav-item" v-if="setor.estoque">
+                    <a
+                      class="nav-link"
+                      :class="{ active: activeTab === 'estoque' }"
+                      @click="changeTab('estoque')"
+                      href="#"
+                    >
+                      <span class="d-block d-sm-none"
+                        ><i class="fas fa-boxes"></i
+                      ></span>
+                      <span class="d-none d-sm-block">Estoque</span>
+                    </a>
+                  </li>
+                </ul>
+
+                <!-- Tab Content -->
+                <div class="tab-content p-3 text-muted">
+                  <!-- Overview Tab -->
+                  <div v-show="activeTab === 'overview'">
+                    <TabOverview
+                      :setor="setor"
+                      :readOnly="true"
+                      @navigate="changeTab"
+                    />
                   </div>
 
-                  <!-- Tabs Navigation -->
-                  <ul
-                    class="nav nav-tabs nav-tabs-custom nav-justified"
-                    role="tablist"
-                  >
-                    <li class="nav-item">
-                      <a
-                        class="nav-link"
-                        :class="{ active: activeTab === 'overview' }"
-                        @click="changeTab('overview')"
-                        href="#"
-                      >
-                        <span class="d-block d-sm-none"
-                          ><i class="fas fa-info-circle"></i
-                        ></span>
-                        <span class="d-none d-sm-block"> Visão Geral</span>
-                      </a>
-                    </li>
-                    <li class="nav-item" v-if="setor.estoque">
-                      <a
-                        class="nav-link"
-                        :class="{ active: activeTab === 'estoque' }"
-                        @click="changeTab('estoque')"
-                        href="#"
-                      >
-                        <span class="d-block d-sm-none"
-                          ><i class="fas fa-boxes"></i
-                        ></span>
-                        <span class="d-none d-sm-block">Estoque</span>
-                      </a>
-                    </li>
-                  </ul>
-
-                  <!-- Tab Content -->
-                  <div class="tab-content p-3 text-muted">
-                    <!-- Overview Tab -->
-                    <div v-show="activeTab === 'overview'">
-                      <TabOverview
-                        :setor="setor"
-                        :readOnly="true"
-                        @navigate="changeTab"
-                      />
-                    </div>
-
-                    <!-- Estoque Tab -->
-                    <div v-show="activeTab === 'estoque'">
-                      <TabEstoque :readOnly="true" />
-                    </div>
+                  <!-- Estoque Tab -->
+                  <div v-show="activeTab === 'estoque'">
+                    <TabEstoque :readOnly="true" />
                   </div>
                 </div>
               </div>
@@ -94,7 +82,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, provide, watch } from "vue";
+import { ref, onMounted, onUnmounted, provide, watch } from "vue";
 import { useRoute } from "vue-router";
 import { useStore } from "vuex";
 import TemplateAdmin from "@/views/roleAdmin/TemplateAdmin.vue";
@@ -154,6 +142,11 @@ const carregarDadosDoSetor = async (setorId) => {
     if (responseSetor.success) {
       setor.value = responseSetor.data;
 
+      store.commit("setPageHeader", {
+        title: `Visualizando: ${setor.value.nome}`,
+        subtitle: "Modo de visualização (Apenas Leitura)",
+      });
+
       // 2. Carregar estoque se necessário
       if (setor.value.estoque) {
         const context = {
@@ -175,7 +168,7 @@ const carregarDadosDoSetor = async (setorId) => {
           // em vez de atualizar o .value da ref, quebrando a reatividade se confiarmos apenas no context.
           const result = await functionsEstoque.listEstoqueUnidade(
             context,
-            setorId
+            setorId,
           );
 
           if (result && result.success && result.data) {
@@ -187,7 +180,7 @@ const carregarDadosDoSetor = async (setorId) => {
 
           console.log(
             "Estoque carregado para setor consumidor (via retorno):",
-            estoqueItems.value.length
+            estoqueItems.value.length,
           );
         } catch (e) {
           console.error("Erro ao carregar estoque do setor consumidor", e);
@@ -210,6 +203,10 @@ onMounted(() => {
   }
 });
 
+onUnmounted(() => {
+  store.commit("clearPageHeader");
+});
+
 // Observar mudança de rota (caso navegue de um setor consumidor para outro)
 watch(
   () => route.params.id,
@@ -218,7 +215,7 @@ watch(
       carregarDadosDoSetor(newId);
       activeTab.value = "overview";
     }
-  }
+  },
 );
 </script>
 

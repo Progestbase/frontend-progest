@@ -7,7 +7,7 @@ import ModalPolos from "@/components/cadastros/ModalPolos.vue";
 import DataTable from "@/components/ui/data-table/DataTable.vue";
 import { Badge } from "@/components/ui/badge";
 import { BuildingIcon, MapPinIcon, NetworkIcon } from "lucide-vue-next";
-import functions from "@/functions/cad_polos.js";
+import functions from "@/functions/cad_unidades_polos.js";
 
 const store = useStore();
 const { proxy } = getCurrentInstance();

@@ -1,16 +1,9 @@
-// MÓDULO DE POLOS
-// Segue o padrão usado em outros módulos (unidades de medida)
-
 var ADD_UP = (content, funcao) => {
-  // Execução de ADD/UP de polo
-
-  // Preparar dados conforme documentação da API (agora tratado como Unidade)
   const unidadeData = {
     nome: content.modalData.nome,
     status: content.modalData.status || "A",
   };
 
-  // Se for atualização, incluir ID
   if (funcao == "UP") {
     unidadeData.id = content.modalData.id;
   }
@@ -25,57 +18,46 @@ var ADD_UP = (content, funcao) => {
     .then(function (response) {
       if (response.data.status) {
         listAll(content);
-
-        const mensagem = funcao == "ADD" ? "Unidade cadastrada com sucesso!" : "Unidade atualizada com sucesso!";
-
-        try {
-          if (content.$toastr && content.$toastr.s) {
-            content.$toastr.s(mensagem);
-          } else {
-            alert(mensagem);
-          }
-        } catch (e) {
-          
-          alert(mensagem);
+        
+        const msg = funcao == "ADD" ? "Unidade cadastrada com sucesso!" : "Unidade atualizada com sucesso!";
+        
+        // Compatibilidade com as duas versões do Toastr
+        if (content.$toastr && typeof content.$toastr.success === "function") {
+          content.$toastr.success(msg);
+        } else if (content.$toastr && typeof content.$toastr.s === "function") {
+          content.$toastr.s(msg);
         }
 
-console.warn("Erro ao exibir notificação:", e);        // response.data.data pode conter a estrutura antiga (polo) ou nova (unidade)
-        const returned = response.data.data && (response.data.data.unidade || response.data.data.polo || response.data.data);
-        if (funcao == "ADD") {
-          content.modalData.id = returned.id;
+        const returned =
+          response.data.data?.unidade ||
+          response.data.data?.polo ||
+          response.data.data;
+
+        if (funcao == "ADD" && returned?.id) {
           content.$store.commit("setIdDataLoaded", returned.id);
         }
-        content.$store.commit("setModalTitle", returned.nome);
-        content.$store.commit("setModalFunction", "UP");
-
-        if (response.data.data) {
-          const raw = response.data.data.data || [response.data.data];
-          const arr = Array.isArray(raw) ? raw : [raw];
-          const enriched = arr.map((u) => ({
-            ...u,
-            statusFormatted: u.status === "A" ? "Ativo" : "Inativo",
-          }));
-          content.$store.commit("setListUnidades", {
-            ...(response.data.data || {}),
-            data: enriched,
-          });
+        
+        if (returned?.nome) {
+          content.$store.commit("setModalTitle", returned.nome);
         }
 
-        // Fechar modal (proteção para casos onde bootstrap não esteja disponível)
-        try {
-          const modal = document.querySelector("#addUPPolo");
-          if (modal && window && window.bootstrap && window.bootstrap.Modal) {
-            const bootstrapModal = window.bootstrap.Modal.getInstance(modal);
-            if (bootstrapModal) bootstrapModal.hide();
-          }
-        } catch (e) {}
-
-        // Limpar erros do modal
-        // content.$store.commit("setModalErrors", {});
+        content.$store.commit("setModalFunction", "UP");
+        // Fechamento via Vuex (compatível com Shadcn UI)
+        content.$store.commit("setModalOpen", false);
+        content.$store.commit("setModalErrors", {});
+        
+      } else if (response.data.status == false && response.data.validacao) {
+        content.$store.commit("setModalErrors", response.data.erros || {});
+        if (content.$toastr && typeof content.$toastr.error === "function") {
+          content.$toastr.error("Verifique os campos obrigatórios.");
+        }
       }
     })
     .catch(function (error) {
-      console.error("Erro na requisição capturado globalmente:", error);
+      console.error("Erro na requisição:", error);
+      if (content.$toastr && typeof content.$toastr.error === "function") {
+        content.$toastr.error("Erro na comunicação com o servidor.");
+      }
     });
 };
 
@@ -85,10 +67,11 @@ var listAll = (content, url = null) => {
   const attempt = (endpoint) =>
     content.$axios.post(
       endpoint,
-      { filters: content.$store.state.searchFilters },
+      { filters: content.$store.state.searchFilters || [{}] },
       {
         headers: {
           Authorization: "Bearer " + content.$store.getters.getUserToken,
+          "Content-Type": "application/json",
         },
       }
     );
@@ -96,21 +79,27 @@ var listAll = (content, url = null) => {
   const primary = url == null ? "/unidade/list" : url;
 
   const handleResponse = (response) => {
-    if (response.data.status && response.data.data) {
-      // A API retorna paginação do Laravel: response.data.data.data
-      const unidadesData = response.data.data.data || [];
+    if (response.data && response.data.status && response.data.data) {
+      let rawData = response.data.data;
+      let unidadesData = rawData.data || rawData; // Pega o array dentro do objeto paginado, se existir
 
-      // Enriquecer dados com formatação para exibição
-      const enrichedUnidades = unidadesData.map((u) => {
-        const base = u.unidade || u.polo || u;
-        return {
-          ...base,
-          statusFormatted: base.status === "A" ? "Ativo" : "Inativo",
-        };
-      });
-
-      content.$store.commit("setListPolos", { ...response.data.data, data: enrichedUnidades });
-      content.$store.commit("setListUnidades", { ...response.data.data, data: enrichedUnidades });
+      if (Array.isArray(unidadesData)) {
+        const enrichedUnidades = unidadesData.map((u) => {
+          const base = u.unidade || u.polo || u;
+          return {
+            ...base,
+            statusFormatted: base.status === "A" ? "Ativo" : "Inativo",
+          };
+        });
+        
+        const payload = { ...rawData, data: enrichedUnidades };
+        // Atualiza ambos para garantir compatibilidade
+        content.$store.commit("setListPolos", payload);
+        content.$store.commit("setListUnidades", payload);
+      } else {
+        content.$store.commit("setListPolos", { status: false, data: [] });
+        content.$store.commit("setListUnidades", { status: false, data: [] });
+      }
     } else {
       content.$store.commit("setListPolos", { status: false, data: [] });
       content.$store.commit("setListUnidades", { status: false, data: [] });
@@ -121,8 +110,8 @@ var listAll = (content, url = null) => {
   attempt(primary)
     .then(handleResponse)
     .catch((error) => {
-      // se recebeu 404/405 e usamos /unidade como primary, tenta /polo/list
       const status = error && error.response && error.response.status;
+      // Fallback: se usar a rota nova der 404/405, tenta a antiga /polo/list
       if (!url && (status === 404 || status === 405)) {
         attempt("/polo/list")
           .then(handleResponse)
@@ -142,36 +131,38 @@ var listAll = (content, url = null) => {
 };
 
 var listData = (content) => {
-  const abaDados = document.querySelector("#aba_dados");
-  if (abaDados) abaDados.click();
+  // Removido o clique via document.querySelector
   content.$axios
     .post("/polo/listData", { id: content.idData }, {
-        headers: { Authorization: "Bearer " + content.$store.getters.getUserToken },
-      })
+      headers: { Authorization: "Bearer " + content.$store.getters.getUserToken },
+    })
     .then((response) => {
-      content.$store.commit("setIdDataLoaded", content.idData);
-      // Suporta resposta com 'unidade' ou 'polo' ou direta
-      const payload = response.data.data.unidade || response.data.data.polo || response.data.data;
-      content.$store.commit("setModalData", payload);
-      if (content.callback) content.callback(); // Chama o callback após carregar os dados
+      if (response.data && response.data.status) {
+        content.$store.commit("setIdDataLoaded", content.idData);
+        // Suporta resposta vindo como 'unidade', 'polo' ou direto no data
+        const payload = response.data.data.unidade || response.data.data.polo || response.data.data;
+        content.$store.commit("setModalData", payload);
+        if (content.callback) content.callback();
+      }
     })
     .catch((error) => {
-      console.error("Erro ao carregar dados do polo:", error);
+      console.error("Erro ao carregar dados da unidade:", error);
     });
 };
 
 var toggleStatus = (content, poloId) => {
   content.$axios
     .post("/polo/toggleStatus", { id: poloId }, {
-        headers: { Authorization: "Bearer " + content.$store.getters.getUserToken },
-      })
+      headers: { Authorization: "Bearer " + content.$store.getters.getUserToken },
+    })
     .then((response) => {
-      if (response.data.status) {
+      if (response.data && response.data.status) {
         listAll(content);
-        try {
-          if (content.$toastr && content.$toastr.s) content.$toastr.s("Status alterado com sucesso!");
-          else alert("Status alterado com sucesso!");
-        } catch (e) { alert("Status alterado com sucesso!"); }
+        if (content.$toastr && typeof content.$toastr.success === "function") {
+          content.$toastr.success("Status alterado com sucesso!");
+        } else if (content.$toastr && typeof content.$toastr.s === "function") {
+          content.$toastr.s("Status alterado com sucesso!");
+        }
       }
     })
     .catch((error) => {
@@ -180,19 +171,24 @@ var toggleStatus = (content, poloId) => {
 };
 
 var deletar = (content, poloId) => {
-  if (!confirm("Tem certeza que deseja deletar este polo?")) return;
+  if (!confirm("Tem certeza que deseja deletar esta unidade?")) return;
 
   content.$axios
     .post(`/polo/delete/${poloId}`, {}, {
-        headers: { Authorization: "Bearer " + content.$store.getters.getUserToken },
-      })
+      headers: { Authorization: "Bearer " + content.$store.getters.getUserToken },
+    })
     .then((response) => {
-      if (response.data.status) {
+      if (response.data && response.data.status) {
         listAll(content);
-        try {
-          if (content.$toastr && content.$toastr.s) content.$toastr.s("Unidade deletada com sucesso!");
-          else alert("Unidade deletada com sucesso!");
-        } catch (e) { alert("Unidade deletada com sucesso!"); }
+        if (content.$toastr && typeof content.$toastr.success === "function") {
+          content.$toastr.success("Unidade removida com sucesso!");
+        } else if (content.$toastr && typeof content.$toastr.s === "function") {
+          content.$toastr.s("Unidade removida com sucesso!");
+        }
+      } else {
+        if (content.$toastr && typeof content.$toastr.error === "function") {
+          content.$toastr.error(response.data.message || "Erro ao deletar.");
+        }
       }
     })
     .catch((error) => {

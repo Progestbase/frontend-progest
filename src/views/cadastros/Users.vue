@@ -56,12 +56,8 @@ const pagination = computed(() => {
   return null;
 });
 
-const formattedUsers = computed(() => {
-  return listUsers.value.map((u) => ({
-    ...u,
-    status: u.status === "A" ? "Ativo" : "Inativo",
-  }));
-});
+// Nota: a conversão de status (A → "Ativo", I → "Inativo") já é feita
+// no listALL do cad_usuarios.js (enrichedUsers). Não reconverter aqui.
 
 const listAllUsers = (url = null) => {
   functions
@@ -117,7 +113,7 @@ onMounted(listAllUsers);
         <div class="p-8 flex-1 flex flex-col">
           <DataTable
             :columns="columns"
-            :data="formattedUsers"
+            :data="listUsers"
             :loading="store.state.isSearching"
             :pagination="pagination"
             @search="handleSearch"

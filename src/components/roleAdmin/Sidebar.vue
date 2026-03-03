@@ -189,10 +189,19 @@
             <router-link
               class="submenu-item"
               to="/relatorios/entradas"
-              title="Entradas"
+              title="Entradas por Notas Fiscais"
             >
               <span class="material-icons menu-icon">receipt_long</span>
-              <span class="menu-text">Entradas Detalhadas</span>
+              <span class="menu-text">Entradas por Notas Fiscais</span>
+            </router-link>
+
+            <router-link
+              class="submenu-item"
+              to="/relatorios/entradas-por-data"
+              title="Entradas por Data"
+            >
+              <span class="material-icons menu-icon">event</span>
+              <span class="menu-text">Entradas por Data</span>
             </router-link>
 
             <router-link

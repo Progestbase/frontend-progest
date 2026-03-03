@@ -162,6 +162,12 @@ const router = createRouter({
       meta: { requiresAuth: true, requiresSector: true },
     },
     {
+      path: "/relatorios/entradas-por-data",
+      name: "relatoriosEntradasPorData",
+      component: () => import("@/views/relatorios/EntradasPorDataReport.vue"),
+      meta: { requiresAuth: true, requiresSector: true },
+    },
+    {
       path: "/:pathMatch(.*)*",
       redirect: (to) => {
         const isAuthenticated = localStorage.getItem("token");

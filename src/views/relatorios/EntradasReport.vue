@@ -5,8 +5,8 @@
         <div class="container-fluid py-4">
           <div class="d-flex justify-content-between align-items-center mb-3">
             <div>
-              <h4>Relatório de Entradas (Visão Geral)</h4>
-              <p class="text-muted mb-0">Visão agregada das entradas de estoque.</p>
+              <h4>Relatório de Entradas por Notas Fiscais</h4>
+              <p class="text-muted mb-0">Visão agregada das entradas de estoque por nota fiscal.</p>
             </div>
             <div>
               <button class="btn btn-outline-secondary me-2" @click="resetFilters">Limpar</button>

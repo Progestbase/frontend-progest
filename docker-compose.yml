@@ -12,6 +12,7 @@ services:
     restart: unless-stopped
     labels:
       - "traefik.enable=true"
+      - "traefik.docker.network=traefik-public"
       # Configuração do DOMÍNIO DO FRONTEND (Corrigido: progrest -> progest)
       - "traefik.http.routers.progest-web.rule=Host(`hgvcprogest.davidjunior.dev.br`)"
       - "traefik.http.routers.progest-web.entrypoints=web,websecure"

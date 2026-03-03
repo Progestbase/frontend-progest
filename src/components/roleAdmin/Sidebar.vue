@@ -192,7 +192,7 @@
               title="Entradas"
             >
               <span class="material-icons menu-icon">receipt_long</span>
-              <span class="menu-text">Entradas</span>
+              <span class="menu-text">Entradas Detalhadas</span>
             </router-link>
 
             <router-link
@@ -201,7 +201,16 @@
               title="Saídas"
             >
               <span class="material-icons menu-icon">exit_to_app</span>
-              <span class="menu-text">Saídas</span>
+              <span class="menu-text">Saídas Detalhadas</span>
+            </router-link>
+
+            <router-link
+              class="submenu-item"
+              to="/relatorios/saidas-por-data"
+              title="Saídas por Data"
+            >
+              <span class="material-icons menu-icon">calendar_today</span>
+              <span class="menu-text">Saídas por Data</span>
             </router-link>
 
             <router-link
@@ -210,7 +219,7 @@
               title="Estoque"
             >
               <span class="material-icons menu-icon">inventory_2</span>
-              <span class="menu-text">Estoque</span>
+              <span class="menu-text">Estoque Detalhadas</span>
             </router-link>
 
             <router-link

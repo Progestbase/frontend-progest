@@ -16,6 +16,16 @@
               <strong>Movimentações</strong>
               <div class="small text-muted">Relatório de transferências, saídas e devoluções</div>
             </router-link>
+
+            <router-link class="list-group-item list-group-item-action" to="/relatorios/saidas">
+              <strong>Saídas</strong>
+              <div class="small text-muted">Relatório de saídas de estoque (visão geral)</div>
+            </router-link>
+
+            <router-link class="list-group-item list-group-item-action" to="/relatorios/saidas-por-data">
+              <strong>Saídas por Data</strong>
+              <div class="small text-muted">Relatório de saídas agrupadas por data de movimentação</div>
+            </router-link>
           </div>
         </div>
       </div>

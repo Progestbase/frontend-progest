@@ -255,6 +255,90 @@ var listSaidasReport = (content, filters = {}, perPage = 50, page = 1) => {
     });
 };
 
+
+var listSaidasPorDataReport = (content, filters = {}, perPage = 50, page = 1) => {
+  console.log("📊 Carregando relatório de saídas por data: POST /relatorios/saidas-por-data/list");
+
+  const payload = {
+    filters: {
+      ...filters,
+    },
+    per_page: perPage,
+    page: page,
+  };
+
+  console.log("📋 Payload:", payload);
+
+  return content.$axios
+    .post("/relatorios/saidas-por-data/list", payload, {
+      headers: {
+        Authorization: "Bearer " + content.$store.getters.getUserToken,
+        "Content-Type": "application/json",
+      },
+    })
+    .then((response) => {
+      console.log("✅ Resposta da API - Relatório Saídas por Data:", response.data);
+
+      if (response.data && response.data.status) {
+        // Nova estrutura: data é paginada com data.data contendo array de dias
+        const paginatedData = response.data.data;
+        const saidasPorData = paginatedData?.data || [];
+        const periodo = response.data.periodo || null;
+
+        console.log(
+          `📊 Dias com saídas encontrados: ${saidasPorData.length} de ${
+            paginatedData?.total || saidasPorData.length
+          } total`
+        );
+
+        if (periodo) {
+          console.log(`📅 Período: ${periodo.data_inicial} até ${periodo.data_final}`);
+        }
+
+        // Commit no Vuex store
+        content.$store.commit("setRelatorioSaidasPorData", saidasPorData);
+        
+        return { 
+          success: true, 
+          data: saidasPorData,
+          periodo: periodo,
+          pagination: {
+            total: paginatedData?.total || saidasPorData.length,
+            per_page: paginatedData?.per_page || perPage,
+            current_page: paginatedData?.current_page || page,
+            last_page: paginatedData?.last_page || 1,
+            from: paginatedData?.from || 0,
+            to: paginatedData?.to || 0,
+          }
+        };
+      } else {
+        console.warn("⚠️ Resposta da API sem dados válidos:", response.data);
+        content.$store.commit("setRelatorioSaidasPorData", []);
+        return { success: false, data: [], error: response.data.message };
+      }
+    })
+    .catch((error) => {
+      console.error("❌ Erro ao carregar relatório de saídas por data:", error);
+      console.error("Resposta de erro:", error.response?.data);
+
+      // Notificação de erro
+      try {
+        if (content.$toastr && content.$toastr.e) {
+          const mensagem =
+            error.response?.data?.message ||
+            error.response?.data?.error ||
+            "Erro ao carregar relatório de saídas por data";
+          content.$toastr.e(mensagem);
+        }
+      } catch (e) {
+        console.warn("Erro ao exibir notificação:", e);
+      }
+
+      content.$store.commit("setRelatorioSaidasPorData", []);
+      return { success: false, data: [], error };
+    });
+};
+
 /**
  * Exporta o módulo com os métodos públicos
  */
@@ -262,4 +346,5 @@ export default {
   listEntradasReport,
   listMovimentacoesReport,
   listSaidasReport,
+  listSaidasPorDataReport,
 };

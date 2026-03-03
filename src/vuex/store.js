@@ -79,6 +79,7 @@ export default createStore({
     relatorioEntradas: [],
     relatorioMovimentacoes: [],
     relatorioSaidas: [],
+    relatorioSaidasPorData: [],
 
     // UI / Filtros
     searchFilters: [],
@@ -338,6 +339,13 @@ export default createStore({
     clearRelatorioSaidas(state) {
       state.relatorioSaidas = [];
     },
+
+    setRelatorioSaidasPorData(state, saidasPorData) {
+      state.relatorioSaidasPorData = saidasPorData || [];
+    },
+    clearRelatorioSaidasPorData(state) {
+      state.relatorioSaidasPorData = [];
+    },
   },
   actions: {
     // Você pode adicionar ações assíncronas aqui se necessário
@@ -387,5 +395,6 @@ export default createStore({
     getRelatorioEntradas: (state) => state.relatorioEntradas,
     getRelatorioMovimentacoes: (state) => state.relatorioMovimentacoes,
     getRelatorioSaidas: (state) => state.relatorioSaidas,
+    getRelatorioSaidasPorData: (state) => state.relatorioSaidasPorData,
   },
 });

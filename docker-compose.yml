@@ -12,10 +12,9 @@ services:
     restart: unless-stopped
     labels:
       - "traefik.enable=true"
-      - "traefik.docker.network=traefik-public"
-      # Configuração do DOMÍNIO DO FRONTEND (Corrigido: progrest -> progest)
+      # Configuração do DOMÍNIO DO FRONTEND
       - "traefik.http.routers.progest-web.rule=Host(`hgvcprogest.davidjunior.dev.br`)"
-      - "traefik.http.routers.progest-web.entrypoints=web,websecure"
+      - "traefik.http.routers.progest-web.entrypoints=websecure"
       - "traefik.http.routers.progest-web.tls=true"
       - "traefik.http.routers.progest-web.tls.certresolver=myresolver"
       # Porta interna onde o frontend roda (80)
@@ -25,3 +24,4 @@ services:
 networks:
   traefik-public:
     external: true
+    name: traefik-public

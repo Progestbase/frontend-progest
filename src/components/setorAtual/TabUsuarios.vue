@@ -15,6 +15,7 @@ import {
 } from "lucide-vue-next";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/toast/use-toast";
+import ModalUsuarioSetor from "@/components/cadastros/ModalUsuarioSetor.vue";
 
 const props = defineProps({
   setorId: { type: Number, required: true },
@@ -26,6 +27,8 @@ const { toast } = useToast();
 const parentData = inject("setorAtualData", {
   usuariosItems: [],
 });
+
+const modalUsuarioSetor = ref(null);
 
 const filterSearch = ref("");
 
@@ -67,6 +70,17 @@ const handleDesvincular = async (usuarioId) => {
     });
   }
 };
+
+const handleVincular = () => {
+  if (modalUsuarioSetor.value) {
+    modalUsuarioSetor.value.openModal();
+  }
+};
+
+const handleUsuarioVinculado = () => {
+  toast({ title: "Sucesso", description: "Usuário vinculado com sucesso!" });
+  location.reload();
+};
 </script>
 
 <template>
@@ -81,7 +95,7 @@ const handleDesvincular = async (usuarioId) => {
             class="px-4 h-10 w-64 bg-white"
           />
         </div>
-        <Button class="gap-2 shadow-lg shadow-primary/20">
+        <Button @click="handleVincular" class="gap-2 shadow-lg shadow-primary/20">
           <UserPlusIcon class="w-4 h-4" /> Vincular Usuário
         </Button>
       </div>
@@ -164,5 +178,13 @@ const handleDesvincular = async (usuarioId) => {
         para começar.
       </p>
     </div>
+
+    <!-- Modal Vincular Usuário -->
+    <ModalUsuarioSetor
+      ref="modalUsuarioSetor"
+      :setorId="setorId"
+      mode="ADD"
+      @changed="handleUsuarioVinculado"
+    />
   </div>
 </template>

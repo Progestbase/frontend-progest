@@ -180,7 +180,7 @@ const aprovarMovimentacao = async () => {
       })),
     };
     await axios.post(
-      `/movimentacoes/${movimentacaoParaAprovar.value.id}/status`,
+      `/movimentacao/${movimentacaoParaAprovar.value.id}/process`,
       payload,
       {
         headers: { Authorization: "Bearer " + store.getters.getUserToken },
@@ -207,7 +207,7 @@ const rejeitarMovimentacao = async () => {
   loadingAprovacao.value = true;
   try {
     await axios.post(
-      `/movimentacoes/${movimentacaoParaAprovar.value.id}/status`,
+      `/movimentacao/${movimentacaoParaAprovar.value.id}/process`,
       { status: "R" },
       {
         headers: { Authorization: "Bearer " + store.getters.getUserToken },
@@ -236,7 +236,7 @@ const cancelarMovimentacao = async () => {
   loadingCancelamento.value = true;
   try {
     await axios.post(
-      `/movimentacoes/${movimentacaoParaCancelar.value.id}/status`,
+      `/movimentacao/${movimentacaoParaCancelar.value.id}/process`,
       { status: "X" },
       {
         headers: { Authorization: "Bearer " + store.getters.getUserToken },

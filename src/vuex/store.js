@@ -81,6 +81,7 @@ export default createStore({
     relatorioSaidas: [],
     relatorioSaidasPorData: [],
     relatorioEntradasPorData: [],
+    relatorioEstoque: [],
 
     // UI / Filtros
     searchFilters: [],
@@ -353,6 +354,13 @@ export default createStore({
     },
     clearRelatorioEntradasPorData(state) {
       state.relatorioEntradasPorData = [];
+    },
+
+    setRelatorioEstoque(state, estoque) {
+      state.relatorioEstoque = estoque || [];
+    },
+    clearRelatorioEstoque(state) {
+      state.relatorioEstoque = [];
     },
   },
   actions: {

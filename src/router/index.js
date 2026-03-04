@@ -168,6 +168,12 @@ const router = createRouter({
       meta: { requiresAuth: true, requiresSector: true },
     },
     {
+      path: "/relatorios/estoque",
+      name: "relatoriosEstoque",
+      component: () => import("@/views/relatorios/EstoqueReport.vue"),
+      meta: { requiresAuth: true, requiresSector: true },
+    },
+    {
       path: "/:pathMatch(.*)*",
       redirect: (to) => {
         const isAuthenticated = localStorage.getItem("token");

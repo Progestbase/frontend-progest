@@ -422,6 +422,94 @@ var listEntradasPorDataReport = (content, filters = {}, perPage = 50, page = 1) 
     });
 };
 
+
+var listEstoqueReport = (content, filters = {}, perPage = 50, page = 1) => {
+  console.log("📊 Carregando relatório de estoque: POST /relatorios/estoque/list");
+
+  const payload = {
+    filters: {
+      ...filters,
+    },
+    per_page: perPage,
+    page: page,
+  };
+
+  console.log("📋 Payload:", payload);
+
+  return content.$axios
+    .post("/relatorios/estoque/list", payload, {
+      headers: {
+        Authorization: "Bearer " + content.$store.getters.getUserToken,
+        "Content-Type": "application/json",
+      },
+    })
+    .then((response) => {
+      console.log("✅ Resposta da API - Relatório Estoque:", response.data);
+
+      if (response.data && response.data.status) {
+        // Normalizar resposta: backend pode retornar data.data ou data diretamente
+        const paginatedData = response.data.data;
+        const estoque = Array.isArray(paginatedData)
+          ? paginatedData
+          : (paginatedData?.data || []);
+
+        // Capturar totalizadores da resposta
+        const totalizadores = response.data.totalizadores || {
+          total_itens: estoque.length,
+          total_produtos_disponiveis: 0,
+          total_produtos_indisponiveis: 0,
+          total_abaixo_minimo: 0
+        };
+
+        console.log(
+          `📊 Itens de estoque encontrados: ${estoque.length} de ${
+            paginatedData?.total || estoque.length
+          } total`
+        );
+        console.log(`📈 Totalizadores:`, totalizadores);
+
+        // Commit no Vuex store
+        content.$store.commit("setRelatorioEstoque", estoque);
+        
+        return { 
+          success: true, 
+          data: estoque,
+          totalizadores: totalizadores,
+          pagination: {
+            total: paginatedData?.total || estoque.length,
+            per_page: paginatedData?.per_page || perPage,
+            current_page: paginatedData?.current_page || page,
+            last_page: paginatedData?.last_page || 1,
+          }
+        };
+      } else {
+        console.warn("⚠️ Resposta da API sem dados válidos:", response.data);
+        content.$store.commit("setRelatorioEstoque", []);
+        return { success: false, data: [], error: response.data.message };
+      }
+    })
+    .catch((error) => {
+      console.error("❌ Erro ao carregar relatório de estoque:", error);
+      console.error("Resposta de erro:", error.response?.data);
+
+      // Notificação de erro
+      try {
+        if (content.$toastr && content.$toastr.e) {
+          const mensagem =
+            error.response?.data?.message ||
+            error.response?.data?.error ||
+            "Erro ao carregar relatório de estoque";
+          content.$toastr.e(mensagem);
+        }
+      } catch (e) {
+        console.warn("Erro ao exibir notificação:", e);
+      }
+
+      content.$store.commit("setRelatorioEstoque", []);
+      return { success: false, data: [], error };
+    });
+};
+
 /**
  * Exporta o módulo com os métodos públicos
  */
@@ -431,4 +519,5 @@ export default {
   listSaidasReport,
   listSaidasPorDataReport,
   listEntradasPorDataReport,
+  listEstoqueReport,
 };

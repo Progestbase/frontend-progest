@@ -228,7 +228,7 @@
               title="Estoque"
             >
               <span class="material-icons menu-icon">inventory_2</span>
-              <span class="menu-text">Estoque Detalhadas</span>
+              <span class="menu-text">Estoque Atual</span>
             </router-link>
 
             <router-link

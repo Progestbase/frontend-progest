@@ -17,7 +17,7 @@ services:
       - "traefik.http.routers.progest-web.rule=Host(`hgvcprogest.davidjunior.dev.br`)"
       - "traefik.http.routers.progest-web.entrypoints=web,websecure"
       - "traefik.http.routers.progest-web.tls=true"
-      - "traefik.http.routers.progest-web.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.progest-web.tls.certresolver=myresolver"
       # Porta interna onde o frontend roda (80)
       - "traefik.http.services.progest-web.loadbalancer.server.port=80"
 

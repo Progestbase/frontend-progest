@@ -54,6 +54,10 @@ watch(
     if (newValue) {
       localData.value = JSON.parse(JSON.stringify(newValue));
       if (!localData.value.status) localData.value.status = "A";
+      // Converter tipo_vinculo para string (o Select usa :value="tipo.id.toString()")
+      if (localData.value.tipo_vinculo != null) {
+        localData.value.tipo_vinculo = String(localData.value.tipo_vinculo);
+      }
     }
   },
   { deep: true, immediate: true },
@@ -91,6 +95,10 @@ const handleSave = () => {
     $store: store,
     $toastr: proxy.$toastr,
     modalData: localData.value,
+    // Callback chamado após salvar com sucesso — fecha o modal
+    onSuccess: () => {
+      store.commit("setModalOpen", false);
+    },
   };
 
   props.functions.ADD_UP(content, modalFunction.value);
@@ -166,6 +174,7 @@ const handleSave = () => {
           id="cpf"
           v-model="localData.cpf"
           v-mask="'###.###.###-##'"
+          maxlength="14"
           placeholder="000.000.000-00"
           :class="{ 'border-red-500 focus-visible:ring-red-500': hasError('cpf') }"
         />

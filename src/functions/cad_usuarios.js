@@ -26,11 +26,6 @@ var ADD_UP = (content, funcao) => {
     .then(function (response) {
       if (response.data.status) {
         listALL(content);
-        feedback.success(
-          funcao == "ADD"
-            ? "Usuário cadastrado com sucesso!"
-            : "Usuário atualizado com sucesso!"
-        );
 
         if (funcao == "ADD") {
           content.modalData.id = response.data.data.id;
@@ -38,6 +33,18 @@ var ADD_UP = (content, funcao) => {
         }
         content.$store.commit("setModalTitle", response.data.data.name);
         content.$store.commit("setModalFunction", "UP");
+        content.$store.commit("setModalErrors", {});
+
+        // Fechar o modal antes de exibir o feedback
+        if (content.onSuccess && typeof content.onSuccess === "function") {
+          content.onSuccess();
+        }
+
+        feedback.success(
+          funcao == "ADD"
+            ? "Usuário cadastrado com sucesso!"
+            : "Usuário atualizado com sucesso!"
+        );
       } else {
         console.log("Erro inesperado com status 200", response);
       }
@@ -89,6 +96,10 @@ var listALL = (content, url = null) => {
       url == null ? "/user/list" : url,
       {
         filters: content.$store.state.searchFilters,
+        search: content.search || "",
+        sort_by: content.sort_by || "name",
+        sort_dir: content.sort_dir || "asc",
+        tipo_vinculo: content.tipo_vinculo || "",
       },
       {
         headers: {
@@ -107,6 +118,8 @@ var listALL = (content, url = null) => {
 
           return {
             ...user,
+            // Preservar o ID original do tipo de vínculo
+            tipo_vinculo_id: user.tipo_vinculo,
             // Substitui o valor numérico pelo nome do tipo de vínculo
             tipo_vinculo: tipoVinculo ? tipoVinculo.nome : "N/A",
             // Substitui A/I por Ativo/Inativo
@@ -248,7 +261,7 @@ var listUnidades = (content, url = null) => {
 };
 
 var deleteData = (content, id) => {
-  if (!confirm("Tem certeza que deseja desativar este usuário?")) {
+  if (!confirm("Tem certeza que deseja alterar o status deste usuário?")) {
     return;
   }
 
@@ -265,13 +278,13 @@ var deleteData = (content, id) => {
     .then((response) => {
       if (response.data.status) {
         listALL(content);
-        feedback.success(response.data.message || "Usuário desativado com sucesso!");
+        feedback.success(response.data.message || "Status atualizado com sucesso!");
       } else {
-        feedback.error(response.data.message || "Erro ao desativar usuário.");
+        feedback.error(response.data.message || "Erro ao alterar status.");
       }
     })
     .catch((error) => {
-      console.error("Erro ao excluir usuário:", error);
+      console.error("Erro ao alterar status do usuário:", error);
     });
 };
 

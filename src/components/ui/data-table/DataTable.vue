@@ -49,7 +49,7 @@ interface Props {
 }
 
 const props = defineProps<Props>();
-const emit = defineEmits(["search", "paginate", "sort", "edit", "delete"]);
+const emit = defineEmits(["search", "paginate", "sort", "view", "edit", "toggle-status"]);
 
 const searchQuery = ref("");
 
@@ -209,16 +209,24 @@ const onSort = (key: string) => {
                       <DropdownMenuSeparator />
                       <DropdownMenuItem
                         class="text-sm cursor-pointer"
+                        @click="emit('view', item)"
+                      >
+                        Visualizar
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        class="text-sm cursor-pointer"
                         @click="emit('edit', item)"
                       >
                         Editar
                       </DropdownMenuItem>
-                      <DropdownMenuSeparator />
                       <DropdownMenuItem
-                        class="text-sm cursor-pointer text-destructive focus:text-destructive focus:bg-destructive/10"
-                        @click="emit('delete', item.id)"
+                        class="text-sm cursor-pointer"
+                        :class="item.status === 'Ativo' || item.status === 'A'
+                          ? 'text-destructive focus:text-destructive focus:bg-destructive/10'
+                          : 'text-emerald-600 focus:text-emerald-600 focus:bg-emerald-50'"
+                        @click="emit('toggle-status', item)"
                       >
-                        Excluir
+                        {{ item.status === 'Ativo' || item.status === 'A' ? 'Inativar' : 'Ativar' }}
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>

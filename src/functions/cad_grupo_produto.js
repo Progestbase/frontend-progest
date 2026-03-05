@@ -1,11 +1,13 @@
 // MÓDULO DE GRUPO DE PRODUTOS
 // Segue o padrão usado em outros módulos (unidades de medida)
 
+import { feedback } from "@/components/ui/feedback-modal";
+
 var ADD_UP = (content, funcao) => {
   console.log(
     "Executando " +
-      (funcao == "ADD" ? "cadastro" : "atualização") +
-      " de grupo de produto"
+    (funcao == "ADD" ? "cadastro" : "atualização") +
+    " de grupo de produto"
   );
 
   const grupoData = {
@@ -44,7 +46,7 @@ var ADD_UP = (content, funcao) => {
         if (content.$toastr) {
           content.$toastr.s(mensagem);
         } else {
-          alert(mensagem);
+          feedback.success(mensagem);
         }
 
         if (funcao == "ADD") {
@@ -174,7 +176,7 @@ var deleteData = (content, id) => {
         if (content.$toastr) {
           content.$toastr.s(mensagem);
         } else {
-          alert(mensagem);
+          feedback.success(mensagem);
         }
       }
     })

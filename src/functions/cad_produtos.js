@@ -1,6 +1,8 @@
 // MÓDULO DE PRODUTOS
 // Refatorado para usar o Interceptor Global de Erros (HTTP 422, 404, 500)
 
+import { feedback } from "@/components/ui/feedback-modal";
+
 var ADD_UP = (content, funcao) => {
   const produtoData = {
     produto: {
@@ -31,11 +33,7 @@ var ADD_UP = (content, funcao) => {
         listAll(content);
 
         const mensagem = funcao == "ADD" ? "Produto cadastrado com sucesso!" : "Produto atualizado com sucesso!";
-
-        try {
-          if (content.$toastr && content.$toastr.s) content.$toastr.s(mensagem);
-          else alert(mensagem);
-        } catch (e) { alert(mensagem); }
+        feedback.success(mensagem);
 
         if (funcao == "ADD") {
           content.modalData.id = response.data.data.id;
@@ -43,14 +41,6 @@ var ADD_UP = (content, funcao) => {
         }
         content.$store.commit("setModalTitle", response.data.data.nome);
         content.$store.commit("setModalFunction", "UP");
-
-        try {
-          const modal = document.querySelector("#addUPProduto");
-          if (modal && window && window.bootstrap && window.bootstrap.Modal) {
-            const bootstrapModal = window.bootstrap.Modal.getInstance(modal);
-            if (bootstrapModal) bootstrapModal.hide();
-          }
-        } catch (e) { }
 
         content.$store.commit("setModalErrors", {});
       }
@@ -133,10 +123,7 @@ var deleteData = (content, id) => {
       .then((response) => {
         if (response.data && response.data.status) {
           listAll(content);
-          try {
-            if (content.$toastr && content.$toastr.s) content.$toastr.s("Produto excluído com sucesso!");
-            else alert("Produto excluído com sucesso!");
-          } catch (e) { alert("Produto excluído com sucesso!"); }
+          feedback.success("Produto excluído com sucesso!");
         }
       })
       .catch((error) => {

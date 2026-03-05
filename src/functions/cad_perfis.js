@@ -1,3 +1,5 @@
+import { feedback } from "@/components/ui/feedback-modal";
+
 var ADD_UP = (content, funcao) => {
   const payload =
     funcao == "ADD" || funcao == "UP" ? content.modalData : content.perfil_data;
@@ -15,7 +17,7 @@ var ADD_UP = (content, funcao) => {
             (funcao == "ADD" ? "Cadastrado" : "Atualizado") + " com sucesso",
           );
         } else {
-          alert(
+          feedback.success(
             (funcao == "ADD" ? "Cadastrado" : "Atualizado") + " com sucesso",
           );
         }
@@ -34,23 +36,23 @@ var ADD_UP = (content, funcao) => {
         if (content.$toastr) {
           content.$toastr.error(
             "Erro ao " +
-              (funcao == "ADD" ? "cadastrar" : "atualizar") +
-              ": " +
-              erros,
+            (funcao == "ADD" ? "cadastrar" : "atualizar") +
+            ": " +
+            erros,
           );
         } else {
-          alert(
+          feedback.error(
             "Erro ao " +
-              (funcao == "ADD" ? "cadastrar" : "atualizar") +
-              ": " +
-              erros,
+            (funcao == "ADD" ? "cadastrar" : "atualizar") +
+            ": " +
+            erros,
           );
         }
       } else if (response.data.message) {
         if (content.$toastr) {
           content.$toastr.error(response.data.message);
         } else {
-          alert(response.data.message);
+          feedback.error(response.data.message);
         }
       }
     })

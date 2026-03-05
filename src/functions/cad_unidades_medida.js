@@ -1,11 +1,13 @@
 // MÓDULO DE UNIDADES DE MEDIDA
 // Refatorado para usar o Interceptor Global de Erros
 
+import { feedback } from "@/components/ui/feedback-modal";
+
 var ADD_UP = (content, funcao) => {
   console.log(
     "Executando " +
-      (funcao == "ADD" ? "cadastro" : "atualização") +
-      " de unidade de medida"
+    (funcao == "ADD" ? "cadastro" : "atualização") +
+    " de unidade de medida"
   );
 
   // Preparar dados conforme documentação da API
@@ -43,11 +45,11 @@ var ADD_UP = (content, funcao) => {
           funcao == "ADD"
             ? "Unidade de medida cadastrada com sucesso!"
             : "Unidade de medida atualizada com sucesso!";
-        
+
         if (content.$toastr) {
           content.$toastr.s(mensagem);
         } else {
-          alert(mensagem);
+          feedback.success(mensagem);
         }
 
         if (funcao == "ADD") {
@@ -197,7 +199,7 @@ var deleteData = (content, id) => {
         if (content.$toastr) {
           content.$toastr.s(mensagem);
         } else {
-          alert(mensagem);
+          feedback.success(mensagem);
         }
       }
     })

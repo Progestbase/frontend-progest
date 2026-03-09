@@ -1,27 +1,21 @@
-var ADD_UP = (content, funcao) => {
-  const headers = {
-    Authorization: "Bearer " + content.$store.getters.getUserToken,
-  };
+// MÓDULO DE FORNECEDORES
 
+import { feedback } from "@/components/ui/feedback-modal";
+
+var ADD_UP = (content, funcao) => {
   content.$axios
     .post(
       funcao == "ADD" ? "/fornecedores/add" : "/fornecedores/update",
       { fornecedor: content.modalData },
-      { headers }
+      {
+        headers: {
+          Authorization: "Bearer " + content.$store.getters.getUserToken,
+        },
+      }
     )
     .then(function (response) {
       if (response.data.status) {
-        content.$store.commit("setModalErrors", {});
         listAll(content);
-
-        const msg = funcao == "ADD" ? "Fornecedor cadastrado com sucesso!" : "Fornecedor atualizado com sucesso!";
-        
-        // Suporte aos dois padrões de toastr encontrados no projeto
-        if (content.$toastr && typeof content.$toastr.success === "function") {
-          content.$toastr.success(msg);
-        } else if (content.$toastr && typeof content.$toastr.s === "function") {
-          content.$toastr.s(msg);
-        }
 
         if (funcao == "ADD" && response.data.data?.id) {
           content.$store.commit("setIdDataLoaded", response.data.data.id);
@@ -37,69 +31,60 @@ var ADD_UP = (content, funcao) => {
         }
 
         content.$store.commit("setModalFunction", "UP");
-        
-        // Fechamento do modal via Vuex (compatível com o novo CadastroDialog do Shadcn UI)
-        content.$store.commit("setModalOpen", false);
+        content.$store.commit("setModalErrors", {});
 
-      } else if (response.data.status == false && response.data.validacao) {
-        // Tratamento de validação explícito mantido como segurança
-        content.$store.commit("setModalErrors", response.data.erros || {});
-        if (content.$toastr && typeof content.$toastr.error === "function") {
-          content.$toastr.error("Verifique os campos obrigatórios.");
+        // Fechar o modal antes de exibir o feedback
+        if (content.onSuccess && typeof content.onSuccess === "function") {
+          content.onSuccess();
         }
-      } else {
-        if (content.$toastr && typeof content.$toastr.error === "function") {
-          content.$toastr.error(response.data.message || "Erro na operação.");
-        }
+
+        feedback.success(
+          funcao == "ADD"
+            ? "Fornecedor cadastrado com sucesso!"
+            : "Fornecedor atualizado com sucesso!"
+        );
       }
     })
     .catch(function (error) {
-      console.error("Erro na requisição capturado global/localmente:", error);
+      console.error("Erro na requisição:", error);
     });
 };
 
 var listAll = (content, url = null) => {
   content.$store.commit("setisSearching", true);
-  const headers = {
-    Authorization: "Bearer " + content.$store.getters.getUserToken,
-    "Content-Type": "application/json",
-  };
 
   content.$axios
     .post(
       url == null ? "/fornecedores/list" : url,
-      { filters: content.$store.state.searchFilters || [{}] },
-      { headers }
+      {
+        filters: content.$store.state.searchFilters || [],
+        search: content.search || "",
+        sort_by: content.sort_by || "razao_social_nome",
+        sort_dir: content.sort_dir || "asc",
+        tipo_pessoa: content.tipo_pessoa || "",
+      },
+      {
+        headers: {
+          Authorization: "Bearer " + content.$store.getters.getUserToken,
+        },
+      }
     )
     .then((response) => {
-      try {
-        if (response.data && response.data.status) {
-          let rawData = response.data.data;
+      if (response.data && response.data.status && response.data.data) {
+        let rawData = response.data.data;
+        let fornecedoresData = rawData.data || rawData;
 
-          // Se for objeto paginado, extrai o array interno
-          if (rawData && rawData.data && Array.isArray(rawData.data)) {
-            rawData = rawData.data;
-          }
-
-          if (Array.isArray(rawData)) {
-            const enriched = rawData.map((f) => ({
-              ...f,
-              statusFormatted: f.status === "A" ? "Ativo" : "Inativo",
-            }));
-
-            content.$store.commit("setListFornecedores", {
-              ...response.data,
-              data: enriched,
-            });
-          } else {
-            content.$store.commit("setListFornecedores", { status: false, data: [] });
-          }
+        if (Array.isArray(fornecedoresData)) {
+          const enriched = fornecedoresData.map((f) => ({
+            ...f,
+            status: f.status === "A" ? "Ativo" : "Inativo",
+          }));
+          content.$store.commit("setListFornecedores", enriched);
         } else {
-          content.$store.commit("setListFornecedores", { status: false, data: [] });
+          content.$store.commit("setListFornecedores", []);
         }
-      } catch (e) {
-        console.error("Erro ao processar resposta de listAll fornecedores:", e);
-        content.$store.commit("setListFornecedores", { status: false, data: [] });
+      } else {
+        content.$store.commit("setListFornecedores", []);
       }
 
       content.$store.commit("setisSearching", false);
@@ -107,18 +92,23 @@ var listAll = (content, url = null) => {
     .catch((error) => {
       console.error("Erro na chamada da API listAll:", error);
       content.$store.commit("setisSearching", false);
+      content.$store.commit("setListFornecedores", []);
     });
 };
 
 var listData = (content) => {
-  const headers = {
-    Authorization: "Bearer " + content.$store.getters.getUserToken,
-  };
-
   content.$axios
-    .post("/fornecedores/listData", { id: content.idData }, { headers })
+    .post(
+      "/fornecedores/listData",
+      { id: content.idData },
+      {
+        headers: {
+          Authorization: "Bearer " + content.$store.getters.getUserToken,
+        },
+      }
+    )
     .then((response) => {
-      if (response.data && response.data.status) {
+      if (response.data && response.data.status && response.data.data) {
         content.$store.commit("setIdDataLoaded", content.idData);
         content.$store.commit("setModalData", response.data.data);
         if (content.callback) content.callback();
@@ -130,32 +120,32 @@ var listData = (content) => {
 };
 
 var deleteData = (content, id) => {
-  // Confirm mantido para segurança do usuário
-  if (confirm("Deseja realmente excluir este fornecedor?")) {
-    const headers = {
-      Authorization: "Bearer " + content.$store.getters.getUserToken,
-    };
+  if (!confirm("Tem certeza que deseja alterar o status deste fornecedor?"))
+    return;
 
-    content.$axios
-      .post(`/fornecedores/delete/${id}`, {}, { headers })
-      .then((response) => {
-        if (response.data && response.data.status) {
-          listAll(content);
-          if (content.$toastr && typeof content.$toastr.success === "function") {
-            content.$toastr.success("Fornecedor removido com sucesso.");
-          } else if (content.$toastr && typeof content.$toastr.s === "function") {
-            content.$toastr.s("Fornecedor removido com sucesso.");
-          }
-        } else {
-          if (content.$toastr && typeof content.$toastr.error === "function") {
-            content.$toastr.error(response.data.message || "Erro ao remover.");
-          }
-        }
-      })
-      .catch((error) => {
-        console.error("Erro na requisição delete:", error);
-      });
-  }
+  content.$axios
+    .post(
+      `/fornecedores/delete/${id}`,
+      {},
+      {
+        headers: {
+          Authorization: "Bearer " + content.$store.getters.getUserToken,
+        },
+      }
+    )
+    .then(function (response) {
+      if (response.data.status) {
+        listAll(content);
+        feedback.success(
+          response.data.message || "Status atualizado com sucesso!"
+        );
+      } else {
+        feedback.error(response.data.message || "Erro ao alterar status.");
+      }
+    })
+    .catch(function (error) {
+      console.error("Erro ao alterar status:", error);
+    });
 };
 
 var exportFunctions = {

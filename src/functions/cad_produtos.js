@@ -1,5 +1,4 @@
 // MÓDULO DE PRODUTOS
-// Refatorado para usar o Interceptor Global de Erros (HTTP 422, 404, 500)
 
 import { feedback } from "@/components/ui/feedback-modal";
 
@@ -16,7 +15,6 @@ var ADD_UP = (content, funcao) => {
     },
   };
 
-  // Se for atualização, incluir ID
   if (funcao == "UP") {
     produtoData.produto.id = content.modalData.id;
   }
@@ -25,28 +23,37 @@ var ADD_UP = (content, funcao) => {
     .post(funcao == "ADD" ? "/produtos/add" : "/produtos/update", produtoData, {
       headers: {
         Authorization: "Bearer " + content.$store.getters.getUserToken,
-        "Content-Type": "application/json",
       },
     })
     .then(function (response) {
       if (response.data.status) {
         listAll(content);
 
-        const mensagem = funcao == "ADD" ? "Produto cadastrado com sucesso!" : "Produto atualizado com sucesso!";
-        feedback.success(mensagem);
-
-        if (funcao == "ADD") {
-          content.modalData.id = response.data.data.id;
+        if (funcao == "ADD" && response.data.data?.id) {
           content.$store.commit("setIdDataLoaded", response.data.data.id);
         }
-        content.$store.commit("setModalTitle", response.data.data.nome);
-        content.$store.commit("setModalFunction", "UP");
 
+        if (response.data.data?.nome) {
+          content.$store.commit("setModalTitle", response.data.data.nome);
+        }
+
+        content.$store.commit("setModalFunction", "UP");
         content.$store.commit("setModalErrors", {});
+
+        // Fechar modal
+        if (content.onSuccess && typeof content.onSuccess === "function") {
+          content.onSuccess();
+        }
+
+        feedback.success(
+          funcao == "ADD"
+            ? "Produto cadastrado com sucesso!"
+            : "Produto atualizado com sucesso!"
+        );
       }
     })
     .catch(function (error) {
-      console.error("Erro na requisição capturado globalmente:", error);
+      console.error("Erro na requisição:", error);
     });
 };
 
@@ -56,25 +63,43 @@ var listAll = (content, url = null) => {
   content.$axios
     .post(
       url == null ? "/produtos/list" : url,
-      { filters: content.$store.state.searchFilters || [{}], per_page: 15 },
+      {
+        filters: content.$store.state.searchFilters || [],
+        search: content.search || "",
+        sort_by: content.sort_by || "nome",
+        sort_dir: content.sort_dir || "asc",
+        grupo_produto_id: content.grupo_produto_id || "",
+        marca: content.marca_filter || "",
+      },
       {
         headers: {
           Authorization: "Bearer " + content.$store.getters.getUserToken,
-          "Content-Type": "application/json",
         },
       }
     )
     .then((response) => {
-      if (response.data && response.data.status) {
-        content.$store.commit("setListProdutos", response.data.data);
+      if (response.data && response.data.status && response.data.data) {
+        let rawData = response.data.data;
+        let produtosData = rawData.data || rawData;
+
+        if (Array.isArray(produtosData)) {
+          const enriched = produtosData.map((p) => ({
+            ...p,
+            status: p.status === "A" ? "Ativo" : "Inativo",
+          }));
+          content.$store.commit("setListProdutos", enriched);
+        } else {
+          content.$store.commit("setListProdutos", []);
+        }
       } else {
-        content.$store.commit("setListProdutos", { status: true, data: [] });
+        content.$store.commit("setListProdutos", []);
       }
       content.$store.commit("setisSearching", false);
     })
     .catch((error) => {
       console.error("Erro ao listar produtos:", error);
       content.$store.commit("setisSearching", false);
+      content.$store.commit("setListProdutos", []);
     });
 };
 
@@ -86,7 +111,6 @@ var listData = (content) => {
       {
         headers: {
           Authorization: "Bearer " + content.$store.getters.getUserToken,
-          "Content-Type": "application/json",
         },
       }
     )
@@ -94,7 +118,6 @@ var listData = (content) => {
       if (response.data && response.data.status && response.data.data) {
         content.$store.commit("setModalData", response.data.data);
         content.$store.commit("setModalTitle", response.data.data.nome);
-        content.$store.commit("setModalFunction", "UP");
         content.$store.commit("setIdDataLoaded", response.data.data.id);
 
         if (content.callback && typeof content.callback === "function") {
@@ -108,28 +131,32 @@ var listData = (content) => {
 };
 
 var deleteData = (content, id) => {
-  if (confirm("Tem certeza que deseja excluir este produto?")) {
-    content.$axios
-      .post(
-        "/produtos/delete",
-        { id: id },
-        {
-          headers: {
-            Authorization: "Bearer " + content.$store.getters.getUserToken,
-            "Content-Type": "application/json",
-          },
-        }
-      )
-      .then((response) => {
-        if (response.data && response.data.status) {
-          listAll(content);
-          feedback.success("Produto excluído com sucesso!");
-        }
-      })
-      .catch((error) => {
-        console.error("Erro ao excluir produto:", error);
-      });
-  }
+  if (!confirm("Tem certeza que deseja alterar o status deste produto?"))
+    return;
+
+  content.$axios
+    .post(
+      `/produtos/delete/${id}`,
+      {},
+      {
+        headers: {
+          Authorization: "Bearer " + content.$store.getters.getUserToken,
+        },
+      }
+    )
+    .then((response) => {
+      if (response.data.status) {
+        listAll(content);
+        feedback.success(
+          response.data.message || "Status atualizado com sucesso!"
+        );
+      } else {
+        feedback.error(response.data.message || "Erro ao alterar status.");
+      }
+    })
+    .catch((error) => {
+      console.error("Erro ao alterar status:", error);
+    });
 };
 
 var exportFunctions = {

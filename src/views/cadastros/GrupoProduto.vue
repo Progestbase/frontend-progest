@@ -1,12 +1,20 @@
 <script setup>
-import { computed, onMounted, getCurrentInstance } from "vue";
+import { computed, ref, onMounted, getCurrentInstance } from "vue";
 import { useStore } from "vuex";
 import LinkModal01 from "@/components/layouts/LinkModal01.vue";
 import TemplateAdmin from "@/views/roleAdmin/TemplateAdmin.vue";
 import ModalGrupoProduto from "@/components/cadastros/ModalGrupoProduto.vue";
+import ModalGrupoProdutoView from "@/components/cadastros/ModalGrupoProdutoView.vue";
 import DataTable from "@/components/ui/data-table/DataTable.vue";
 import { Badge } from "@/components/ui/badge";
-import { LayersIcon, TagIcon, ShapesIcon } from "lucide-vue-next";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { LayersIcon, TagIcon, ShapesIcon, FilterIcon } from "lucide-vue-next";
 import functions from "@/functions/cad_grupo_produto.js";
 
 const store = useStore();
@@ -19,12 +27,20 @@ const columns = [
   { key: "id", label: "#", align: "center", sortable: true },
   { key: "nome", label: "Grupo / Categoria", sortable: true },
   { key: "tipo", label: "Classificação", sortable: true },
-  { key: "status", label: "Status", align: "center" },
+  { key: "status", label: "Status", align: "center", sortable: true },
 ];
 
-const listGrupoProdutos = computed(
-  () => store.state.listGrupoProdutos?.data || [],
-);
+// Estado de busca, ordenação e filtros
+const searchQuery = ref("");
+const sortBy = ref("nome");
+const sortDir = ref("asc");
+const filterTipo = ref("");
+
+const listGrupoProdutos = computed(() => {
+  const data = store.state.listGrupoProdutos;
+  return data?.data || data || [];
+});
+
 const pagination = computed(() => {
   const list = store.state.listGrupoProdutos;
   if (list && list.current_page) {
@@ -38,30 +54,61 @@ const pagination = computed(() => {
   return null;
 });
 
-const formattedList = computed(() => {
-  return listGrupoProdutos.value.map((g) => ({
-    id: g.id,
-    nome: g.nome,
-    tipo: g.tipo || "Geral",
-    status: g.status === "A" ? "Ativo" : "Inativo",
-  }));
-});
-
 const listAll = (url = null) => {
   functions.listAll(
-    { $axios: proxy.$axios, $store: store, $toastr: proxy.$toastr },
+    {
+      $axios: proxy.$axios,
+      $store: store,
+      $toastr: proxy.$toastr,
+      search: searchQuery.value,
+      sort_by: sortBy.value,
+      sort_dir: sortDir.value,
+      tipo: filterTipo.value,
+    },
     url,
   );
 };
 
 const handleSearch = (query) => {
-  store.state.searchFilters = query ? [{ nome: query }] : [{}];
+  searchQuery.value = query;
+  listAll();
+};
+
+const handleSort = (key) => {
+  if (sortBy.value === key) {
+    sortDir.value = sortDir.value === "asc" ? "desc" : "asc";
+  } else {
+    sortBy.value = key;
+    sortDir.value = "asc";
+  }
+  listAll();
+};
+
+const handleFilterTipo = (value) => {
+  filterTipo.value = value === "all" ? "" : value;
   listAll();
 };
 
 const handlePaginate = (page) => {
   let url = typeof page === "number" ? `/grupoProduto/list?page=${page}` : page;
   listAll(url);
+};
+
+// Modal de visualização
+const isViewModalOpen = ref(false);
+const viewingItem = ref({});
+
+const handleView = (item) => {
+  functions.listData({
+    idData: item.id,
+    $axios: proxy.$axios,
+    $store: store,
+    $toastr: proxy.$toastr,
+    callback: () => {
+      viewingItem.value = store.state.modalData.modalData || {};
+      isViewModalOpen.value = true;
+    },
+  });
 };
 
 const handleEdit = (item) => {
@@ -77,10 +124,10 @@ const handleEdit = (item) => {
   });
 };
 
-const handleDelete = (id) => {
+const handleToggleStatus = (item) => {
   functions.deleteData(
     { $axios: proxy.$axios, $store: store, $toastr: proxy.$toastr },
-    id,
+    item.id,
   );
 };
 
@@ -97,16 +144,39 @@ onMounted(listAll);
         <div class="p-8 flex-1 flex flex-col">
           <DataTable
             :columns="columns"
-            :data="formattedList"
+            :data="listGrupoProdutos"
             :loading="store.state.isSearching"
             :pagination="pagination"
             @search="handleSearch"
             @paginate="handlePaginate"
+            @sort="handleSort"
+            @view="handleView"
             @edit="handleEdit"
-            @delete="handleDelete"
+            @toggle-status="handleToggleStatus"
           >
             <!-- Actions Slot -->
             <template #actions>
+              <!-- Filtro por Tipo -->
+              <div class="flex items-center gap-2">
+                <div class="flex items-center gap-1.5 text-slate-400">
+                  <FilterIcon class="w-3.5 h-3.5" />
+                </div>
+                <Select
+                  :model-value="filterTipo || 'all'"
+                  @update:model-value="handleFilterTipo"
+                >
+                  <SelectTrigger
+                    class="h-10 w-[180px] text-sm bg-slate-50 border-slate-100 rounded-xl"
+                  >
+                    <SelectValue placeholder="Tipo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos os Tipos</SelectItem>
+                    <SelectItem value="Medicamento">Medicamento</SelectItem>
+                    <SelectItem value="Material">Material</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
               <LinkModal01
                 label="NOVA CATEGORIA"
                 :titleModal="titleModal"
@@ -127,10 +197,9 @@ onMounted(listAll);
             <template #cell-nome="{ item }">
               <div class="flex items-center gap-3">
                 <div class="w-2 h-2 rounded-full bg-primary/40 shrink-0"></div>
-                <span
-                  class="font-bold text-slate-700 text-sm tracking-tight uppercase"
-                  >{{ item.nome }}</span
-                >
+                <span class="font-bold text-slate-700 text-sm tracking-tight">
+                  {{ item.nome }}
+                </span>
               </div>
             </template>
 
@@ -174,6 +243,10 @@ onMounted(listAll);
 
       <!-- Modals -->
       <ModalGrupoProduto :functions="functions" />
+      <ModalGrupoProdutoView
+        v-model:open="isViewModalOpen"
+        :item="viewingItem"
+      />
     </div>
   </TemplateAdmin>
 </template>

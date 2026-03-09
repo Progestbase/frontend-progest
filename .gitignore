@@ -29,5 +29,5 @@ coverage
 
 *.tsbuildinfo
 
-.agent
+.agente
 .env

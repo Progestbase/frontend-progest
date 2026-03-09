@@ -31,6 +31,11 @@ const isModalOpen = computed({
   set: (value) => store.commit("setModalOpen", value),
 });
 
+// Funções auxiliares para erros inline
+const hasError = (campo) => !!modalErrors.value[campo];
+const getError = (campo) =>
+  modalErrors.value[campo] ? modalErrors.value[campo][0] : "";
+
 watch(
   modalDataStore,
   (newValue) => {
@@ -43,11 +48,21 @@ watch(
 );
 
 const handleSave = () => {
+  store.commit("setModalErrors", {});
+
+  if (!localData.value.nome) {
+    proxy.$toastr?.e("Por favor, preencha o nome da unidade.");
+    return;
+  }
+
   const content = {
     $axios: proxy.$axios,
     $store: store,
     $toastr: proxy.$toastr,
     modalData: localData.value,
+    onSuccess: () => {
+      store.commit("setModalOpen", false);
+    },
   };
   props.functions.ADD_UP(content, modalFunction.value);
 };
@@ -57,7 +72,7 @@ const handleSave = () => {
   <CadastroDialog
     v-model:open="isModalOpen"
     :title="
-      modalFunction === 'ADD' ? 'Cadastrar Polo/Unidade' : 'Editar Polo/Unidade'
+      modalFunction === 'ADD' ? 'Cadastrar Unidade' : 'Editar Unidade'
     "
   >
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 py-2">
@@ -67,17 +82,17 @@ const handleSave = () => {
           id="nome"
           v-model="localData.nome"
           placeholder="Digite o nome da unidade"
-          class="uppercase"
+          :class="{ 'border-red-500 focus-visible:ring-red-500': hasError('nome') }"
         />
-        <p v-if="modalErrors.nome" class="text-xs text-destructive">
-          {{ modalErrors.nome[0] }}
+        <p v-if="hasError('nome')" class="text-xs text-destructive mt-1">
+          {{ getError("nome") }}
         </p>
       </div>
 
       <div class="space-y-2 md:col-span-1">
         <Label for="status">Status</Label>
         <Select v-model="localData.status">
-          <SelectTrigger>
+          <SelectTrigger :class="{ 'border-red-500': hasError('status') }">
             <SelectValue placeholder="Status" />
           </SelectTrigger>
           <SelectContent>
@@ -85,12 +100,15 @@ const handleSave = () => {
             <SelectItem value="I">Inativo</SelectItem>
           </SelectContent>
         </Select>
+        <p v-if="hasError('status')" class="text-xs text-destructive mt-1">
+          {{ getError("status") }}
+        </p>
       </div>
     </div>
 
     <template #footer="{ close }">
       <Button variant="outline" @click="close"> Fechar </Button>
-      <Button @click="handleSave">
+      <Button @click="handleSave" class="min-w-[100px]">
         {{ modalFunction === "ADD" ? "Salvar" : "Atualizar" }}
       </Button>
     </template>

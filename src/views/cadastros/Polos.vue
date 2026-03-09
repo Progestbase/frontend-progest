@@ -1,9 +1,10 @@
 <script setup>
-import { computed, onMounted, getCurrentInstance } from "vue";
+import { computed, ref, onMounted, getCurrentInstance } from "vue";
 import { useStore } from "vuex";
 import LinkModal01 from "@/components/layouts/LinkModal01.vue";
 import TemplateAdmin from "@/views/roleAdmin/TemplateAdmin.vue";
 import ModalPolos from "@/components/cadastros/ModalPolos.vue";
+import ModalPolosView from "@/components/cadastros/ModalPolosView.vue";
 import DataTable from "@/components/ui/data-table/DataTable.vue";
 import { Badge } from "@/components/ui/badge";
 import { BuildingIcon, MapPinIcon, NetworkIcon } from "lucide-vue-next";
@@ -21,10 +22,19 @@ const varsModalData = {
 const columns = [
   { key: "id", label: "#", align: "center", sortable: true },
   { key: "nome", label: "Unidade / Polo", sortable: true },
-  { key: "status", label: "Status", align: "center" },
+  { key: "status", label: "Status", align: "center", sortable: true },
 ];
 
-const listUnidades = computed(() => store.state.listUnidades?.data || []);
+// Estado de busca e ordenação
+const searchQuery = ref("");
+const sortBy = ref("nome");
+const sortDir = ref("asc");
+
+const listUnidades = computed(() => {
+  const data = store.state.listUnidades;
+  return data?.data || data || [];
+});
+
 const pagination = computed(() => {
   const list = store.state.listUnidades;
   if (list && list.current_page) {
@@ -38,29 +48,55 @@ const pagination = computed(() => {
   return null;
 });
 
-const formattedUnidades = computed(() => {
-  return listUnidades.value.map((unidade) => ({
-    id: unidade.id,
-    nome: unidade.nome,
-    status: unidade.status === "A" ? "Ativo" : "Inativo",
-  }));
-});
-
 const listAll = (url = null) => {
   functions.listAll(
-    { $axios: proxy.$axios, $store: store, $toastr: proxy.$toastr },
+    {
+      $axios: proxy.$axios,
+      $store: store,
+      $toastr: proxy.$toastr,
+      search: searchQuery.value,
+      sort_by: sortBy.value,
+      sort_dir: sortDir.value,
+    },
     url,
   );
 };
 
 const handleSearch = (query) => {
-  store.state.searchFilters = query ? [{ nome: query }] : [{}];
+  searchQuery.value = query;
+  listAll();
+};
+
+const handleSort = (key) => {
+  if (sortBy.value === key) {
+    sortDir.value = sortDir.value === "asc" ? "desc" : "asc";
+  } else {
+    sortBy.value = key;
+    sortDir.value = "asc";
+  }
   listAll();
 };
 
 const handlePaginate = (page) => {
-  let url = typeof page === "number" ? `/unidade/list?page=${page}` : page;
+  let url = typeof page === "number" ? `/polo/list?page=${page}` : page;
   listAll(url);
+};
+
+// Modal de visualização
+const isViewModalOpen = ref(false);
+const viewingItem = ref({});
+
+const handleView = (item) => {
+  functions.listData({
+    idData: item.id,
+    $axios: proxy.$axios,
+    $store: store,
+    $toastr: proxy.$toastr,
+    callback: () => {
+      viewingItem.value = store.state.modalData.modalData || {};
+      isViewModalOpen.value = true;
+    },
+  });
 };
 
 const handleEdit = (item) => {
@@ -76,19 +112,11 @@ const handleEdit = (item) => {
   });
 };
 
-const handleDelete = (id) => {
-  // Chamada genérica permitindo 'deletar' ou 'deleteData' dependendo de como o arquivo JS exporta a função
-  if (functions.deletar) {
-    functions.deletar(
-      { $axios: proxy.$axios, $store: store, $toastr: proxy.$toastr },
-      id,
-    );
-  } else if (functions.deleteData) {
-    functions.deleteData(
-      { $axios: proxy.$axios, $store: store, $toastr: proxy.$toastr },
-      id,
-    );
-  }
+const handleToggleStatus = (item) => {
+  functions.deleteData(
+    { $axios: proxy.$axios, $store: store, $toastr: proxy.$toastr },
+    item.id,
+  );
 };
 
 onMounted(listAll);
@@ -103,13 +131,15 @@ onMounted(listAll);
         <div class="p-8 flex-1 flex flex-col">
           <DataTable
             :columns="columns"
-            :data="formattedUnidades"
+            :data="listUnidades"
             :loading="store.state.isSearching"
             :pagination="pagination"
             @search="handleSearch"
             @paginate="handlePaginate"
+            @sort="handleSort"
+            @view="handleView"
             @edit="handleEdit"
-            @delete="handleDelete"
+            @toggle-status="handleToggleStatus"
           >
             <template #actions>
               <LinkModal01
@@ -140,7 +170,7 @@ onMounted(listAll);
                 </div>
                 <div class="flex flex-col">
                   <span
-                    class="font-bold text-slate-800 text-sm tracking-tight uppercase leading-none"
+                    class="font-bold text-slate-800 text-sm tracking-tight leading-none"
                     >{{ item.nome }}</span
                   >
                   <div class="flex items-center gap-1.5 mt-1.5">
@@ -187,7 +217,12 @@ onMounted(listAll);
         </div>
       </div>
 
+      <!-- Modals -->
       <ModalPolos :functions="functions" />
+      <ModalPolosView
+        v-model:open="isViewModalOpen"
+        :item="viewingItem"
+      />
     </div>
   </TemplateAdmin>
 </template>

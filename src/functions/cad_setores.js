@@ -1,5 +1,6 @@
 import axios from "axios";
 import { API_URL } from "@/config";
+import { feedback } from "@/components/ui/feedback-modal";
 
 // Função para adicionar ou atualizar setor (compatível com o sistema existente)
 var ADD_UP = (content, funcao) => {
@@ -97,7 +98,7 @@ var ADD_UP = (content, funcao) => {
         // Commitar erros no Vuex para exibição inline nos modais
         try {
           content.$store.commit("setModalErrors", response.data.errors || {});
-        } catch (e) {}
+        } catch (e) { }
       } else if (response.data.validacao && response.data.erros) {
         let erros = "";
         for (let erro of Object.values(response.data.erros)) {
@@ -107,7 +108,7 @@ var ADD_UP = (content, funcao) => {
         // Commitar erros no Vuex para exibição inline nos modais
         try {
           content.$store.commit("setModalErrors", response.data.erros || {});
-        } catch (e) {}
+        } catch (e) { }
       } else if (response.data.message) {
         content.$toastr.error(response.data.message);
       } else {
@@ -185,12 +186,12 @@ var ADD_UP = (content, funcao) => {
             "setModalErrors",
             content.lastValidationErrors || {}
           );
-        } catch (e) {}
+        } catch (e) { }
 
         if (content.$toastr) {
           content.$toastr.error(mensagemErro);
         } else {
-          alert(mensagemErro);
+          feedback.error(mensagemErro);
         }
       } else {
         const mensagem =
@@ -198,7 +199,7 @@ var ADD_UP = (content, funcao) => {
         if (content.$toastr) {
           content.$toastr.error(mensagem);
         } else {
-          alert(mensagem);
+          feedback.error(mensagem);
         }
       }
     });
@@ -497,7 +498,7 @@ var deleteSetor = (content, id) => {
         // Recarregar lista
         try {
           listAll(content);
-        } catch (e) {}
+        } catch (e) { }
         return { success: true };
       } else {
         return {
@@ -529,7 +530,7 @@ var toggleStatus = (content, setorId) => {
       if (response.data.status) {
         try {
           listAll(content);
-        } catch (e) {}
+        } catch (e) { }
         return { success: true, data: response.data.data };
       } else {
         return { success: false, message: response.data.message };

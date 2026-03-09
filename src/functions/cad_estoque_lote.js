@@ -3,6 +3,8 @@
  * Pattern: cad_*.js (seguindo arquitetura do projeto)
  */
 
+import { feedback } from "@/components/ui/feedback-modal";
+
 /**
  * Lista todos os lotes de um estoque específico (produto × unidade)
  * @param {Object} content - Referência ao componente Vue (this)
@@ -42,7 +44,7 @@ var listByEstoque = (content, estoqueId) => {
         if (content.$toastr && content.$toastr.e) {
           content.$toastr.e(`Erro ao carregar lotes: ${mensagemErro}`);
         } else {
-          alert(`Erro ao carregar lotes: ${mensagemErro}`);
+          feedback.error(`Erro ao carregar lotes: ${mensagemErro}`);
         }
       } else if (error.response && error.response.status === 500) {
         const mensagemErro = error.response.data?.message || "Erro no servidor";
@@ -50,13 +52,13 @@ var listByEstoque = (content, estoqueId) => {
         if (content.$toastr && content.$toastr.e) {
           content.$toastr.e(`Erro ao carregar lotes: ${mensagemErro}`);
         } else {
-          alert(`Erro ao carregar lotes: ${mensagemErro}`);
+          feedback.error(`Erro ao carregar lotes: ${mensagemErro}`);
         }
       } else {
         if (content.$toastr && content.$toastr.e) {
           content.$toastr.e("Erro ao carregar lotes");
         } else {
-          alert("Erro ao carregar lotes");
+          feedback.error("Erro ao carregar lotes");
         }
       }
 

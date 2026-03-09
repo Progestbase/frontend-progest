@@ -40,12 +40,24 @@ const isModalOpen = computed({
   set: (value) => store.commit("setModalOpen", value),
 });
 
+// Erros de validação vindos do backend (normalizados pelo interceptor)
+const modalErrors = computed(() => store.state.modalErrors || {});
+
+// Função auxiliar para verificar se um campo tem erro
+const hasError = (campo) => !!modalErrors.value[campo];
+const getError = (campo) =>
+  modalErrors.value[campo] ? modalErrors.value[campo][0] : "";
+
 watch(
   modalDataStore,
   (newValue) => {
     if (newValue) {
       localData.value = JSON.parse(JSON.stringify(newValue));
       if (!localData.value.status) localData.value.status = "A";
+      // Converter tipo_vinculo para string (o Select usa :value="tipo.id.toString()")
+      if (localData.value.tipo_vinculo != null) {
+        localData.value.tipo_vinculo = String(localData.value.tipo_vinculo);
+      }
     }
   },
   { deep: true, immediate: true },
@@ -60,6 +72,9 @@ onMounted(() => {
 });
 
 const handleSave = () => {
+  // Limpa erros antes de submeter
+  store.commit("setModalErrors", {});
+
   if (
     !localData.value.name ||
     !localData.value.email ||
@@ -80,6 +95,10 @@ const handleSave = () => {
     $store: store,
     $toastr: proxy.$toastr,
     modalData: localData.value,
+    // Callback chamado após salvar com sucesso — fecha o modal
+    onSuccess: () => {
+      store.commit("setModalOpen", false);
+    },
   };
 
   props.functions.ADD_UP(content, modalFunction.value);
@@ -95,7 +114,7 @@ const handleSave = () => {
       <div class="space-y-2">
         <Label for="status">Status</Label>
         <Select v-model="localData.status">
-          <SelectTrigger>
+          <SelectTrigger :class="{ 'border-red-500': hasError('status') }">
             <SelectValue placeholder="Status" />
           </SelectTrigger>
           <SelectContent>
@@ -103,6 +122,9 @@ const handleSave = () => {
             <SelectItem value="I">Inativo</SelectItem>
           </SelectContent>
         </Select>
+        <p v-if="hasError('status')" class="text-xs text-destructive mt-1">
+          {{ getError("status") }}
+        </p>
       </div>
 
       <div class="space-y-2">
@@ -110,7 +132,9 @@ const handleSave = () => {
           >Tipo de Vínculo <span class="text-destructive">*</span></Label
         >
         <Select v-model="localData.tipo_vinculo">
-          <SelectTrigger>
+          <SelectTrigger
+            :class="{ 'border-red-500': hasError('tipo_vinculo') }"
+          >
             <SelectValue placeholder="Selecione o vínculo" />
           </SelectTrigger>
           <SelectContent>
@@ -123,11 +147,25 @@ const handleSave = () => {
             </SelectItem>
           </SelectContent>
         </Select>
+        <p
+          v-if="hasError('tipo_vinculo')"
+          class="text-xs text-destructive mt-1"
+        >
+          {{ getError("tipo_vinculo") }}
+        </p>
       </div>
 
       <div class="space-y-2 md:col-span-1">
         <Label for="name">Nome <span class="text-destructive">*</span></Label>
-        <Input id="name" v-model="localData.name" placeholder="Nome completo" />
+        <Input
+          id="name"
+          v-model="localData.name"
+          placeholder="Nome completo"
+          :class="{ 'border-red-500 focus-visible:ring-red-500': hasError('name') }"
+        />
+        <p v-if="hasError('name')" class="text-xs text-destructive mt-1">
+          {{ getError("name") }}
+        </p>
       </div>
 
       <div class="space-y-2 md:col-span-1">
@@ -136,8 +174,13 @@ const handleSave = () => {
           id="cpf"
           v-model="localData.cpf"
           v-mask="'###.###.###-##'"
+          maxlength="14"
           placeholder="000.000.000-00"
+          :class="{ 'border-red-500 focus-visible:ring-red-500': hasError('cpf') }"
         />
+        <p v-if="hasError('cpf')" class="text-xs text-destructive mt-1">
+          {{ getError("cpf") }}
+        </p>
       </div>
 
       <div class="space-y-2 md:col-span-2">
@@ -149,7 +192,11 @@ const handleSave = () => {
           type="email"
           v-model="localData.email"
           placeholder="usuario@exemplo.com"
+          :class="{ 'border-red-500 focus-visible:ring-red-500': hasError('email') }"
         />
+        <p v-if="hasError('email')" class="text-xs text-destructive mt-1">
+          {{ getError("email") }}
+        </p>
       </div>
 
       <div class="space-y-2">
@@ -159,7 +206,11 @@ const handleSave = () => {
           v-model="localData.telefone"
           v-mask="'(##) #####-####'"
           placeholder="(00) 00000-0000"
+          :class="{ 'border-red-500 focus-visible:ring-red-500': hasError('telefone') }"
         />
+        <p v-if="hasError('telefone')" class="text-xs text-destructive mt-1">
+          {{ getError("telefone") }}
+        </p>
       </div>
 
       <div class="space-y-2">
@@ -168,7 +219,14 @@ const handleSave = () => {
           id="nascimento"
           type="date"
           v-model="localData.data_nascimento"
+          :class="{ 'border-red-500 focus-visible:ring-red-500': hasError('data_nascimento') }"
         />
+        <p
+          v-if="hasError('data_nascimento')"
+          class="text-xs text-destructive mt-1"
+        >
+          {{ getError("data_nascimento") }}
+        </p>
       </div>
 
       <div class="space-y-2 md:col-span-2">
@@ -183,9 +241,13 @@ const handleSave = () => {
           type="password"
           v-model="localData.password"
           placeholder="Digite a senha"
+          :class="{ 'border-red-500 focus-visible:ring-red-500': hasError('password') }"
         />
+        <p v-if="hasError('password')" class="text-xs text-destructive mt-1">
+          {{ getError("password") }}
+        </p>
         <p
-          v-if="modalFunction === 'UP'"
+          v-if="modalFunction === 'UP' && !hasError('password')"
           class="text-[11px] text-muted-foreground italic"
         >
           Deixe em branco para manter a senha atual.
@@ -201,3 +263,4 @@ const handleSave = () => {
     </template>
   </CadastroDialog>
 </template>
+

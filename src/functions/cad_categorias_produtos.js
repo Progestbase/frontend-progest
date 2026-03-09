@@ -1,3 +1,5 @@
+import { feedback } from "@/components/ui/feedback-modal";
+
 var ADD_UP = (content, funcao) => {
     content.$axios
         .post(
@@ -17,7 +19,7 @@ var ADD_UP = (content, funcao) => {
         .then(function (response) {
             if (response.data.status) {
                 listAll(content);
-                alert(funcao == "ADD" ? "Cadastrado" : "Atualizado" + " com sucesso");
+                feedback.success(funcao == "ADD" ? "Cadastrado com sucesso" : "Atualizado com sucesso");
                 if (funcao == "ADD") {
                     content.modalData.id = response.data.data.id;
                     content.$store.commit("setIdDataLoaded", response.data.data.id);
@@ -31,7 +33,7 @@ var ADD_UP = (content, funcao) => {
                 for (let erro of Object.values(response.data.erros)) {
                     erros += erro + "\n";
                 }
-                alert(erros);
+                feedback.validation(response.data.erros);
             } else {
                 console.log(
                     "Erro ao " + (funcao == "ADD" ? "cadastrar" : "atualizar"),

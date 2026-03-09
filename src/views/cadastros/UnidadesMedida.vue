@@ -1,9 +1,10 @@
 <script setup>
-import { computed, onMounted, getCurrentInstance } from "vue";
+import { computed, ref, onMounted, getCurrentInstance } from "vue";
 import { useStore } from "vuex";
 import LinkModal01 from "@/components/layouts/LinkModal01.vue";
 import TemplateAdmin from "@/views/roleAdmin/TemplateAdmin.vue";
 import ModalUnidadesMedida from "@/components/cadastros/ModalUnidadesMedida.vue";
+import ModalUnidadesMedidaView from "@/components/cadastros/ModalUnidadesMedidaView.vue";
 import DataTable from "@/components/ui/data-table/DataTable.vue";
 import { Badge } from "@/components/ui/badge";
 import { RulerIcon, CheckCircle2Icon, BoxIcon } from "lucide-vue-next";
@@ -22,13 +23,20 @@ const varsModalData = {
 const columns = [
   { key: "id", label: "#", align: "center", sortable: true },
   { key: "nome", label: "Identificação", sortable: true },
-  { key: "quantidade_unidade_minima", label: "Qtde Mínima", align: "center" },
-  { key: "status", label: "Status", align: "center" },
+  { key: "quantidade_unidade_minima", label: "Qtde Mínima", align: "center", sortable: true },
+  { key: "status", label: "Status", align: "center", sortable: true },
 ];
 
-const listUnidadesMedida = computed(
-  () => store.state.listUnidadesMedida?.data || [],
-);
+// Estado de busca e ordenação
+const searchQuery = ref("");
+const sortBy = ref("nome");
+const sortDir = ref("asc");
+
+const listUnidadesMedida = computed(() => {
+  const data = store.state.listUnidadesMedida;
+  return data?.data || data || [];
+});
+
 const pagination = computed(() => {
   const list = store.state.listUnidadesMedida;
   if (list && list.current_page) {
@@ -42,24 +50,32 @@ const pagination = computed(() => {
   return null;
 });
 
-const formattedUnidadesMedida = computed(() => {
-  return listUnidadesMedida.value.map((unidade) => ({
-    id: unidade.id,
-    nome: unidade.nome,
-    quantidade_unidade_minima: unidade.quantidade_unidade_minima,
-    status: unidade.status === "A" ? "Ativo" : "Inativo",
-  }));
-});
-
 const listAllUnidadesMedida = (url = null) => {
   functions.listAll(
-    { $axios: proxy.$axios, $store: store, $toastr: proxy.$toastr },
+    {
+      $axios: proxy.$axios,
+      $store: store,
+      $toastr: proxy.$toastr,
+      search: searchQuery.value,
+      sort_by: sortBy.value,
+      sort_dir: sortDir.value,
+    },
     url,
   );
 };
 
 const handleSearch = (query) => {
-  store.state.searchFilters = query ? [{ nome: query }] : [{}];
+  searchQuery.value = query;
+  listAllUnidadesMedida();
+};
+
+const handleSort = (key) => {
+  if (sortBy.value === key) {
+    sortDir.value = sortDir.value === "asc" ? "desc" : "asc";
+  } else {
+    sortBy.value = key;
+    sortDir.value = "asc";
+  }
   listAllUnidadesMedida();
 };
 
@@ -67,6 +83,23 @@ const handlePaginate = (page) => {
   let url =
     typeof page === "number" ? `/unidadeMedida/list?page=${page}` : page;
   listAllUnidadesMedida(url);
+};
+
+// Modal de visualização
+const isViewModalOpen = ref(false);
+const viewingItem = ref({});
+
+const handleView = (item) => {
+  functions.listData({
+    idData: item.id,
+    $axios: proxy.$axios,
+    $store: store,
+    $toastr: proxy.$toastr,
+    callback: () => {
+      viewingItem.value = store.state.modalData.modalData || {};
+      isViewModalOpen.value = true;
+    },
+  });
 };
 
 const handleEdit = (item) => {
@@ -82,10 +115,10 @@ const handleEdit = (item) => {
   });
 };
 
-const handleDelete = (id) => {
+const handleToggleStatus = (item) => {
   functions.deleteData(
     { $axios: proxy.$axios, $store: store, $toastr: proxy.$toastr },
-    id,
+    item.id,
   );
 };
 
@@ -102,13 +135,15 @@ onMounted(listAllUnidadesMedida);
         <div class="p-8 flex-1 flex flex-col">
           <DataTable
             :columns="columns"
-            :data="formattedUnidadesMedida"
+            :data="listUnidadesMedida"
             :loading="store.state.isSearching"
             :pagination="pagination"
             @search="handleSearch"
             @paginate="handlePaginate"
+            @sort="handleSort"
+            @view="handleView"
             @edit="handleEdit"
-            @delete="handleDelete"
+            @toggle-status="handleToggleStatus"
           >
             <!-- Actions Slot -->
             <template #actions>
@@ -137,10 +172,9 @@ onMounted(listAllUnidadesMedida);
                 >
                   {{ item.nome.substring(0, 2).toUpperCase() }}
                 </div>
-                <span
-                  class="font-bold text-slate-700 text-sm tracking-tight uppercase"
-                  >{{ item.nome }}</span
-                >
+                <span class="font-bold text-slate-700 text-sm tracking-tight">
+                  {{ item.nome }}
+                </span>
               </div>
             </template>
 
@@ -191,6 +225,10 @@ onMounted(listAllUnidadesMedida);
 
       <!-- Modals -->
       <ModalUnidadesMedida :functions="functions" />
+      <ModalUnidadesMedidaView
+        v-model:open="isViewModalOpen"
+        :item="viewingItem"
+      />
     </div>
   </TemplateAdmin>
 </template>

@@ -1,17 +1,26 @@
 <script setup>
-import { computed, onMounted, getCurrentInstance } from "vue";
+import { computed, ref, onMounted, getCurrentInstance } from "vue";
 import { useStore } from "vuex";
 import LinkModal01 from "@/components/layouts/LinkModal01.vue";
 import TemplateAdmin from "@/views/roleAdmin/TemplateAdmin.vue";
 import ModalUser01 from "@/components/cadastros/ModalUser01.vue";
+import ModalUserView from "@/components/cadastros/ModalUserView.vue";
 import DataTable from "@/components/ui/data-table/DataTable.vue";
 import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   UserPlusIcon,
   UserCircleIcon,
   MailIcon,
   PhoneIcon,
   FingerprintIcon,
+  FilterIcon,
 } from "lucide-vue-next";
 import functions from "@/functions/cad_usuarios.js";
 
@@ -35,8 +44,14 @@ const columns = [
   { key: "name", label: "Colaborador", sortable: true },
   { key: "email", label: "Contato", sortable: true },
   { key: "cpf", label: "Documento" },
-  { key: "status", label: "Status", align: "center" },
+  { key: "status", label: "Status", align: "center", sortable: true },
 ];
+
+// Estado de busca, ordenação e filtros
+const searchQuery = ref("");
+const sortBy = ref("name");
+const sortDir = ref("asc");
+const filterTipoVinculo = ref("");
 
 const listUsers = computed(() => {
   const usersData = store.state.listUsers;
@@ -56,32 +71,72 @@ const pagination = computed(() => {
   return null;
 });
 
-const formattedUsers = computed(() => {
-  return listUsers.value.map((u) => ({
-    ...u,
-    status: u.status === "A" ? "Ativo" : "Inativo",
-  }));
-});
+const listTiposVinculo = computed(() => store.state.listTiposVinculo || []);
+
+// Nota: a conversão de status (A → "Ativo", I → "Inativo") já é feita
+// no listALL do cad_usuarios.js (enrichedUsers). Não reconverter aqui.
 
 const listAllUsers = (url = null) => {
   functions
     .listTiposVinculo({ $axios: proxy.$axios, $store: store })
     .finally(() => {
       functions.listALL(
-        { $axios: proxy.$axios, $store: store, $toastr: proxy.$toastr },
+        {
+          $axios: proxy.$axios,
+          $store: store,
+          $toastr: proxy.$toastr,
+          // Novos parâmetros para busca, ordenação e filtro
+          search: searchQuery.value,
+          sort_by: sortBy.value,
+          sort_dir: sortDir.value,
+          tipo_vinculo: filterTipoVinculo.value,
+        },
         url,
       );
     });
 };
 
 const handleSearch = (query) => {
-  store.state.searchFilters = query ? [{ name: query }] : [{}];
+  searchQuery.value = query;
+  listAllUsers();
+};
+
+const handleSort = (key) => {
+  if (sortBy.value === key) {
+    // Toggle da direção se clicar na mesma coluna
+    sortDir.value = sortDir.value === "asc" ? "desc" : "asc";
+  } else {
+    sortBy.value = key;
+    sortDir.value = "asc";
+  }
+  listAllUsers();
+};
+
+const handleFilterTipoVinculo = (value) => {
+  filterTipoVinculo.value = value === "all" ? "" : value;
   listAllUsers();
 };
 
 const handlePaginate = (page) => {
   let url = typeof page === "number" ? `/user/list?page=${page}` : page;
   listAllUsers(url);
+};
+
+// Modal de visualização
+const isViewModalOpen = ref(false);
+const viewingUser = ref({});
+
+const handleView = (item) => {
+  functions.listData({
+    idData: item.id,
+    $axios: proxy.$axios,
+    $store: store,
+    $toastr: proxy.$toastr,
+    callback: () => {
+      viewingUser.value = store.state.modalData.modalData || {};
+      isViewModalOpen.value = true;
+    },
+  });
 };
 
 const handleEdit = (item) => {
@@ -97,10 +152,10 @@ const handleEdit = (item) => {
   });
 };
 
-const handleDelete = (id) => {
+const handleToggleStatus = (item) => {
   functions.deleteData(
     { $axios: proxy.$axios, $store: store, $toastr: proxy.$toastr },
-    id,
+    item.id,
   );
 };
 
@@ -117,16 +172,44 @@ onMounted(listAllUsers);
         <div class="p-8 flex-1 flex flex-col">
           <DataTable
             :columns="columns"
-            :data="formattedUsers"
+            :data="listUsers"
             :loading="store.state.isSearching"
             :pagination="pagination"
             @search="handleSearch"
             @paginate="handlePaginate"
+            @sort="handleSort"
+            @view="handleView"
             @edit="handleEdit"
-            @delete="handleDelete"
+            @toggle-status="handleToggleStatus"
           >
             <!-- Actions Slot -->
             <template #actions>
+              <!-- Filtro por Tipo de Vínculo -->
+              <div class="flex items-center gap-2">
+                <div class="flex items-center gap-1.5 text-slate-400">
+                  <FilterIcon class="w-3.5 h-3.5" />
+                </div>
+                <Select
+                  :model-value="filterTipoVinculo || 'all'"
+                  @update:model-value="handleFilterTipoVinculo"
+                >
+                  <SelectTrigger
+                    class="h-10 w-[180px] text-sm bg-slate-50 border-slate-100 rounded-xl"
+                  >
+                    <SelectValue placeholder="Tipo de Vínculo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos os Vínculos</SelectItem>
+                    <SelectItem
+                      v-for="tipo in listTiposVinculo"
+                      :key="tipo.id"
+                      :value="tipo.id.toString()"
+                    >
+                      {{ tipo.nome }}
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
               <LinkModal01
                 label="NOVO COLABORADOR"
                 :titleModal="titleModal"
@@ -231,6 +314,10 @@ onMounted(listAllUsers);
 
       <!-- Modals -->
       <ModalUser01 :functions="functions" />
+      <ModalUserView
+        v-model:open="isViewModalOpen"
+        :user="viewingUser"
+      />
     </div>
   </TemplateAdmin>
 </template>

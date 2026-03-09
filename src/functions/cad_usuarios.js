@@ -1,3 +1,5 @@
+import { feedback } from "@/components/ui/feedback-modal";
+
 var ADD_UP = (content, funcao) => {
   // Construir payload do usuário removendo campos de vinculação a setores/unidades
   const rawUserData =
@@ -24,11 +26,6 @@ var ADD_UP = (content, funcao) => {
     .then(function (response) {
       if (response.data.status) {
         listALL(content);
-        alert(
-          funcao == "ADD"
-            ? "Usuário cadastrado com sucesso!"
-            : "Usuário atualizado com sucesso!"
-        );
 
         if (funcao == "ADD") {
           content.modalData.id = response.data.data.id;
@@ -36,6 +33,18 @@ var ADD_UP = (content, funcao) => {
         }
         content.$store.commit("setModalTitle", response.data.data.name);
         content.$store.commit("setModalFunction", "UP");
+        content.$store.commit("setModalErrors", {});
+
+        // Fechar o modal antes de exibir o feedback
+        if (content.onSuccess && typeof content.onSuccess === "function") {
+          content.onSuccess();
+        }
+
+        feedback.success(
+          funcao == "ADD"
+            ? "Usuário cadastrado com sucesso!"
+            : "Usuário atualizado com sucesso!"
+        );
       } else {
         console.log("Erro inesperado com status 200", response);
       }
@@ -44,6 +53,7 @@ var ADD_UP = (content, funcao) => {
       console.error("Erro capturado globalmente:", error);
     });
 };
+
 
 var EDIT_PERFIL = (content, funcao) => {
   // Ao editar perfil, garantir que não enviamos Setores/Unidades por este módulo
@@ -72,7 +82,7 @@ var EDIT_PERFIL = (content, funcao) => {
         content.$store.commit("setListUserPerfil", response.data.data);
         sessionStorage.setItem("user", JSON.stringify(response.data.data));
         console.log("USER:", response.data.data);
-      } 
+      }
     })
     .catch(function (error) {
       console.log("Erro ao editar perfil:", error);
@@ -86,6 +96,10 @@ var listALL = (content, url = null) => {
       url == null ? "/user/list" : url,
       {
         filters: content.$store.state.searchFilters,
+        search: content.search || "",
+        sort_by: content.sort_by || "name",
+        sort_dir: content.sort_dir || "asc",
+        tipo_vinculo: content.tipo_vinculo || "",
       },
       {
         headers: {
@@ -104,6 +118,8 @@ var listALL = (content, url = null) => {
 
           return {
             ...user,
+            // Preservar o ID original do tipo de vínculo
+            tipo_vinculo_id: user.tipo_vinculo,
             // Substitui o valor numérico pelo nome do tipo de vínculo
             tipo_vinculo: tipoVinculo ? tipoVinculo.nome : "N/A",
             // Substitui A/I por Ativo/Inativo
@@ -184,7 +200,7 @@ var toggleData = (content, idToggle, metodo, field = null, checkd = null) => {
       if (response.data.attached) {
         content.$toastr.s(
           (response.data.attached.length > 0 ? "Vinculado" : "Desvinculado") +
-            " com sucesso"
+          " com sucesso"
         );
       } else {
         content.$toastr.s("Atualizado com sucesso");
@@ -244,10 +260,39 @@ var listUnidades = (content, url = null) => {
     });
 };
 
+var deleteData = (content, id) => {
+  if (!confirm("Tem certeza que deseja alterar o status deste usuário?")) {
+    return;
+  }
+
+  content.$axios
+    .post(
+      `/user/delete/${id}`,
+      {},
+      {
+        headers: {
+          Authorization: "Bearer " + content.$store.getters.getUserToken,
+        },
+      }
+    )
+    .then((response) => {
+      if (response.data.status) {
+        listALL(content);
+        feedback.success(response.data.message || "Status atualizado com sucesso!");
+      } else {
+        feedback.error(response.data.message || "Erro ao alterar status.");
+      }
+    })
+    .catch((error) => {
+      console.error("Erro ao alterar status do usuário:", error);
+    });
+};
+
 var exportFunctions = {
   ADD_UP: ADD_UP,
   listALL: listALL,
   listData: listData,
+  deleteData: deleteData,
   toggleData: toggleData,
   EDIT_PERFIL: EDIT_PERFIL,
   listTiposVinculo: listTiposVinculo,

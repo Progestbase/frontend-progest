@@ -88,6 +88,8 @@ var ADD_UP = (content, funcao) => {
               e
             );
           }
+          
+          content.$store.commit("setModalOpen", false);
         }, 100);
       } else if (response.data.status === "error" && response.data.errors) {
         let erros = "";

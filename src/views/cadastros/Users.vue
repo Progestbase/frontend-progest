@@ -21,6 +21,7 @@ import {
   PhoneIcon,
   FingerprintIcon,
   FilterIcon,
+  BriefcaseIcon,
 } from "lucide-vue-next";
 import functions from "@/functions/cad_usuarios.js";
 
@@ -43,7 +44,8 @@ const columns = [
   { key: "id", label: "#", align: "center", sortable: true },
   { key: "name", label: "Colaborador", sortable: true },
   { key: "email", label: "Contato", sortable: true },
-  { key: "cpf", label: "Documento" },
+  { key: "cpf", label: "CPF" },
+  { key: "tipo_vinculo", label: "Vínculo", align: "center", sortable: true },
   { key: "status", label: "Status", align: "center", sortable: true },
 ];
 
@@ -73,27 +75,58 @@ const pagination = computed(() => {
 
 const listTiposVinculo = computed(() => store.state.listTiposVinculo || []);
 
+const tipoVinculoMap = computed(() => {
+  const map = {};
+  listTiposVinculo.value.forEach((tipo) => {
+    map[tipo.id] = tipo.nome;
+    map[String(tipo.id)] = tipo.nome;
+  });
+  console.log("🗺️ Mapa de tipos de vínculo criado:", map);
+  console.log("📋 Lista de tipos disponíveis:", listTiposVinculo.value);
+  return map;
+});
+
+const getTipoVinculoColor = (tipoId) => {
+  const id = typeof tipoId === 'string' ? parseInt(tipoId) : tipoId;
+  const colors = {
+    1: "bg-blue-50 text-blue-700 border-blue-200", 
+    2: "bg-green-50 text-green-700 border-green-200", 
+    3: "bg-amber-50 text-amber-700 border-amber-200", 
+    4: "bg-purple-50 text-purple-700 border-purple-200", 
+    5: "bg-orange-50 text-orange-700 border-orange-200", 
+    6: "bg-cyan-50 text-cyan-700 border-cyan-200", 
+    7: "bg-pink-50 text-pink-700 border-pink-200", 
+  };
+  return colors[id] || "bg-slate-50 text-slate-700 border-slate-200";
+};
+
+const formatCPF = (cpf) => {
+  if (!cpf) return "---.---.------";
+  const cleaned = cpf.replace(/\D/g, "");
+  if (cleaned.length === 11) {
+    return cleaned.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4");
+  }
+  return cpf;
+};
+
 // Nota: a conversão de status (A → "Ativo", I → "Inativo") já é feita
 // no listALL do cad_usuarios.js (enrichedUsers). Não reconverter aqui.
 
-const listAllUsers = (url = null) => {
-  functions
-    .listTiposVinculo({ $axios: proxy.$axios, $store: store })
-    .finally(() => {
-      functions.listALL(
-        {
-          $axios: proxy.$axios,
-          $store: store,
-          $toastr: proxy.$toastr,
-          // Novos parâmetros para busca, ordenação e filtro
-          search: searchQuery.value,
-          sort_by: sortBy.value,
-          sort_dir: sortDir.value,
-          tipo_vinculo: filterTipoVinculo.value,
-        },
-        url,
-      );
-    });
+const listAllUsers = async (url = null) => {
+  await functions.listTiposVinculo({ $axios: proxy.$axios, $store: store });
+  
+  functions.listALL(
+    {
+      $axios: proxy.$axios,
+      $store: store,
+      $toastr: proxy.$toastr,
+      search: searchQuery.value,
+      sort_by: sortBy.value,
+      sort_dir: sortDir.value,
+      tipo_vinculo: filterTipoVinculo.value,
+    },
+    url,
+  );
 };
 
 const handleSearch = (query) => {
@@ -103,7 +136,6 @@ const handleSearch = (query) => {
 
 const handleSort = (key) => {
   if (sortBy.value === key) {
-    // Toggle da direção se clicar na mesma coluna
     sortDir.value = sortDir.value === "asc" ? "desc" : "asc";
   } else {
     sortBy.value = key;
@@ -164,12 +196,12 @@ onMounted(listAllUsers);
 
 <template>
   <TemplateAdmin>
-    <div class="px-6 py-6 w-full h-full flex flex-col gap-6">
+    <div class="px-4 py-6 w-full h-full flex flex-col gap-6 max-w-[1800px] mx-auto">
       <!-- Main Database Card -->
       <div
         class="bg-white rounded-[2.5rem] border border-slate-200 shadow-2xl shadow-slate-200/30 overflow-hidden flex-1 flex flex-col"
       >
-        <div class="p-8 flex-1 flex flex-col">
+        <div class="p-10 flex-1 flex flex-col">
           <DataTable
             :columns="columns"
             :data="listUsers"
@@ -274,10 +306,27 @@ onMounted(listAllUsers);
             <!-- CPF Column -->
             <template #cell-cpf="{ item }">
               <span
-                class="text-xs font-mono text-slate-500 tabular-nums bg-slate-50 px-2 py-1 rounded-md border border-slate-100"
+                class="text-xs font-mono text-slate-500 tabular-nums bg-slate-50 px-3 py-1.5 rounded-md border border-slate-100"
               >
-                {{ item.cpf || "---.---.---- --" }}
+                {{ formatCPF(item.cpf) }}
               </span>
+            </template>
+
+            <!-- Tipo de Vínculo Column -->
+            <template #cell-tipo_vinculo="{ item }">
+              <div class="flex items-center justify-center gap-2">
+                <div
+                  :class="[
+                    'flex items-center gap-1.5 px-3 py-1.5 rounded-full border-2',
+                    getTipoVinculoColor(item.tipo_vinculo),
+                  ]"
+                >
+                  <BriefcaseIcon class="w-3 h-3" />
+                  <span class="font-bold text-[10px] uppercase tracking-wider">
+                    {{ tipoVinculoMap[item.tipo_vinculo] || `${item.tipo_vinculo}` }}
+                  </span>
+                </div>
+              </div>
             </template>
 
             <!-- Empty State -->

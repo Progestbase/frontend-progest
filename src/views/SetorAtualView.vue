@@ -176,7 +176,13 @@ const loadSetorDetails = async () => {
   loading.value = true;
   const details = store.state.setorDetails;
   if (details?.id) {
-    setor.value = details;
+    const result = await functionsSetor.buscarSetorPorId(details.id);
+    if (result.success) {
+      store.commit("setSetorDetails", result.data);
+      setor.value = result.data;
+    } else {
+      setor.value = details;
+    }
     await carregarDadosOperacionais();
   }
   loading.value = false;
@@ -194,6 +200,19 @@ const confirmarExclusaoSetor = async () => {
   // Lógica de exclusão aqui
   showDeleteDialog.value = false;
 };
+
+// Watch para recarregar dados após atualização do setor
+const isModalOpen = computed(() => store.state.modalData.isModalOpen);
+const modalFunction = computed(() => store.state.modalData.modalFunction);
+let modalWasOpen = false;
+
+watch(isModalOpen, async (newValue, oldValue) => {
+  
+  if (oldValue === true && newValue === false && modalFunction.value === "UP") {
+    console.log("🔄 Recarregando dados do setor após atualização...");
+    await loadSetorDetails();
+  }
+});
 
 onMounted(loadSetorDetails);
 
